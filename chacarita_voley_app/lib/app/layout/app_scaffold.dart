@@ -10,7 +10,7 @@ class AppScaffold extends StatelessWidget {
 
   final String title;
   final Widget child;
-  final Widget? drawer; // podés inyectar tu Drawer custom aquí
+  final Widget? drawer;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,6 @@ class AppScaffold extends StatelessWidget {
       drawer:
           drawer ??
           const Drawer(
-            // por defecto uno simple
             child: SafeArea(
               child: Column(
                 children: [
