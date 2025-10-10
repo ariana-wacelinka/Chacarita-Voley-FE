@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -14,15 +15,28 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentPath = GoRouterState.of(context).uri.path;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       drawer:
           drawer ??
-          const Drawer(
+          Drawer(
             child: SafeArea(
               child: Column(
                 children: [
-                  ListTile(leading: Icon(Icons.home), title: Text('Inicio')),
+                  const ListTile(
+                    leading: Icon(Icons.home),
+                    title: Text('Inicio'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.payment),
+                    title: const Text('Pagos'),
+                    selected: currentPath == '/payments',
+                    onTap: () {
+                      context.goNamed('payments');
+                      Navigator.pop(context);
+                    },
+                  ),
                 ],
               ),
             ),
