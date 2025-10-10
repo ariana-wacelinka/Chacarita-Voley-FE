@@ -129,7 +129,7 @@ extension AppTokensX on BuildContext {
 class AppTheme {
 
 
-  static final _lightScheme = ColorScheme(
+  static ColorScheme get _lightScheme => ColorScheme(
     brightness: Brightness.light,
     primary: const Color(0xFF8C0C10),
 

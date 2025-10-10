@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import '../features/payments/presentation/pages/payments_validation_page.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,8 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/payments',
           name: 'payments',
-          builder: (_, __) => const _Page(text: 'Pagos'),
+          builder: (_, __) =>
+              const PaymentsValidationPage(), //const _Page(text: 'Pagos'),
         ),
         GoRoute(
           path: '/teams',
@@ -44,7 +46,7 @@ String _titleForLocation(String loc) {
   const map = {
     '/': 'Inicio',
     '/users': 'Jugadores',
-    '/payments': 'Pagos',
+    '/payments': 'Validación de Pagos',
     '/teams': 'Equipos',
     '/notifications': 'Notificaciones',
   };
