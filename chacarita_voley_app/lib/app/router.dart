@@ -1,8 +1,12 @@
 import 'package:go_router/go_router.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
+import '../features/home/presentation/pages/home_page.dart';
+import '../features/settings/presentation/pages/settings_page.dart';
+import '../features/settings/presentation/pages/change_password_page.dart';
 
 final appRouter = GoRouter(
+  initialLocation: '/home', // Ir directamente a home
   routes: [
     ShellRoute(
       builder: (context, state, child) {
@@ -11,42 +15,60 @@ final appRouter = GoRouter(
       },
       routes: [
         GoRoute(
-          path: '/',
+          path: '/home',
           name: 'home',
-          builder: (_, __) => const _Page(text: 'Inicio'),
+          builder: (_, __) => const HomePage(),
         ),
         GoRoute(
           path: '/users',
           name: 'users',
-          builder: (_, __) => const _Page(text: 'Jugadores'),
+          builder: (_, __) => const _Page(text: 'Gestión de Jugadores'),
         ),
         GoRoute(
           path: '/payments',
           name: 'payments',
-          builder: (_, __) => const _Page(text: 'Pagos'),
+          builder: (_, __) => const _Page(text: 'Gestión de Cuotas'),
         ),
         GoRoute(
           path: '/teams',
           name: 'teams',
-          builder: (_, __) => const _Page(text: 'Equipos'),
+          builder: (_, __) => const _Page(text: 'Gestión de Equipos'),
         ),
         GoRoute(
           path: '/notifications',
           name: 'notifications',
-          builder: (_, __) => const _Page(text: 'Notificaciones'),
+          builder: (_, __) => const _Page(text: 'Gestión de Notificaciones'),
+        ),
+        GoRoute(
+          path: '/trainings',
+          name: 'trainings',
+          builder: (_, __) => const _Page(text: 'Gestión de Entrenamientos'),
+        ),
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (_, __) => const SettingsPage(),
         ),
       ],
+    ),
+
+    GoRoute(
+      path: '/change-password',
+      name: 'change-password',
+      builder: (_, __) => const ChangePasswordPage(),
     ),
   ],
 );
 
 String _titleForLocation(String loc) {
   const map = {
-    '/': 'Inicio',
-    '/users': 'Jugadores',
-    '/payments': 'Pagos',
-    '/teams': 'Equipos',
-    '/notifications': 'Notificaciones',
+    '/home': '',
+    '/users': 'Gestión de Jugadores',
+    '/payments': 'Gestión de Cuotas',
+    '/teams': 'Gestión de Equipos',
+    '/notifications': 'Gestión de Notificaciones',
+    '/trainings': 'Gestión de Entrenamientos',
+    '/settings': 'Configuraciones',
   };
   return map[loc] ?? '';
 }

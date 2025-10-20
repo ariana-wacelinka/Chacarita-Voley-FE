@@ -9,9 +9,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Chacarita Voley',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      debugShowCheckedModeBanner: false, // Quitar banner de debug
+      theme: AppTheme.light, // Tema claro como principal
+      darkTheme: AppTheme.dark, // Tema oscuro disponible
+      themeMode: ThemeMode.light, // Forzar tema claro por defecto
       routerConfig: appRouter,
     );
   }
