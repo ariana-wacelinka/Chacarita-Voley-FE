@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'app_drawer.dart';
+import '../theme/app_theme.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -15,19 +17,18 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      drawer:
-          drawer ??
-          const Drawer(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  ListTile(leading: Icon(Icons.home), title: Text('Inicio')),
-                ],
-              ),
-            ),
-          ),
-      body: child,
+      backgroundColor: context.tokens.drawer,
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: context.tokens.drawer,
+        centerTitle: true,
+        foregroundColor: context.tokens.text,
+        elevation: 0,
+      ),
+      drawer: drawer ?? const AppDrawer(),
+      body: SafeArea(
+        child: child,
+      ),
     );
   }
 }

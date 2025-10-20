@@ -6,8 +6,6 @@ Color _rgba(int r, int g, int b, double a) =>
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const AppTokens({
-
-
     required this.secondaryButton,
     required this.green,
     required this.permanentWhite,
@@ -127,8 +125,6 @@ extension AppTokensX on BuildContext {
 }
 
 class AppTheme {
-
-
   static final _lightScheme = ColorScheme(
     brightness: Brightness.light,
     primary: const Color(0xFF8C0C10),
@@ -182,37 +178,40 @@ class AppTheme {
   );
 
   static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: _lightScheme,
-        scaffoldBackgroundColor: _lightScheme.background,
-        appBarTheme: AppBarTheme(
-          backgroundColor: _lightScheme.surface,
-          foregroundColor: _lightScheme.onSurface,
-          elevation: 0,
-        ),
-        drawerTheme: DrawerThemeData(
-          backgroundColor: _lightTokens.drawer,
-        ),
-        cardTheme: CardThemeData(
-          color: _lightTokens.card1,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: _lightTokens.stroke),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          hintStyle: TextStyle(color: _lightTokens.placeholder),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: _lightTokens.stroke),
-          ),
-        ),
-        extensions: [_lightTokens],
-      );
-
-
+    useMaterial3: true,
+    colorScheme: _lightScheme,
+    scaffoldBackgroundColor: _lightScheme.background,
+    appBarTheme: AppBarTheme(
+      backgroundColor: _lightScheme.surface,
+      foregroundColor: _lightScheme.onSurface,
+      elevation: 9,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black.withOpacity(0.1),
+      titleTextStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+        color: Colors.black,
+      ),
+    ),
+    drawerTheme: DrawerThemeData(backgroundColor: _lightTokens.drawer),
+    cardTheme: CardThemeData(
+      color: _lightTokens.card1,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: _lightTokens.stroke),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: _lightTokens.placeholder),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _lightTokens.stroke),
+      ),
+    ),
+    extensions: [_lightTokens],
+  );
 
   static final _darkScheme = ColorScheme(
     brightness: Brightness.dark,
@@ -265,17 +264,23 @@ class AppTheme {
   );
 
   static ThemeData get dark => ThemeData(
-        useMaterial3: true,
-        colorScheme: _darkScheme,
-        scaffoldBackgroundColor: _darkScheme.background,
-        appBarTheme: AppBarTheme(
-          backgroundColor: _darkScheme.surface,
-          foregroundColor: _darkScheme.onSurface,
-          elevation: 0,
-        ),
-        drawerTheme: DrawerThemeData(
-          backgroundColor: _darkTokens.drawer,
-        ),
+    useMaterial3: true,
+    colorScheme: _darkScheme,
+    scaffoldBackgroundColor: _darkScheme.background,
+    appBarTheme: AppBarTheme(
+      centerTitle: true,
+      backgroundColor: _darkScheme.surface,
+      foregroundColor: _darkScheme.onSurface,
+      elevation: 2,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black.withOpacity(0.3),
+      titleTextStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+        color: Colors.white,
+      ),
+    ),
+    drawerTheme: DrawerThemeData(backgroundColor: _darkTokens.drawer),
     cardTheme: CardThemeData(
       color: _darkTokens.card1,
       surfaceTintColor: Colors.transparent,
@@ -284,17 +289,14 @@ class AppTheme {
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: _darkTokens.stroke),
       ),
-
-
-
     ),
-        inputDecorationTheme: InputDecorationTheme(
-          hintStyle: TextStyle(color: _darkTokens.placeholder),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: _darkTokens.stroke),
-          ),
-        ),
-        extensions: [_darkTokens],
-      );
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: _darkTokens.placeholder),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _darkTokens.stroke),
+      ),
+    ),
+    extensions: [_darkTokens],
+  );
 }
