@@ -2,11 +2,12 @@ import 'package:go_router/go_router.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../features/home/presentation/pages/home_page.dart';
+import '../features/users/presentation/pages/users_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/home', // Ir directamente a home
+  initialLocation: '/home',
   routes: [
     ShellRoute(
       builder: (context, state, child) {
@@ -22,7 +23,7 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/users',
           name: 'users',
-          builder: (_, __) => const _Page(text: 'Gestión de Jugadores'),
+          builder: (_, __) => const UsersPage(),
         ),
         GoRoute(
           path: '/payments',
