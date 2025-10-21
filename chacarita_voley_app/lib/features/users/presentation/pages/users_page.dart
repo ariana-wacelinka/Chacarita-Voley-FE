@@ -222,10 +222,11 @@ class _UsersPageState extends State<UsersPage> {
                     )
                   : Align(
                       alignment: Alignment.topCenter,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.95,
-                        margin: const EdgeInsets.only(top: 10),
-                        child: DataTable(
+                      child: SingleChildScrollView(
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.95,
+                          margin: const EdgeInsets.only(top: 10),
+                          child: DataTable(
                           headingTextStyle: TextStyle(
                             color: context.tokens.text,
                             fontWeight: FontWeight.bold,
@@ -241,7 +242,7 @@ class _UsersPageState extends State<UsersPage> {
                           dividerThickness: 0,
                           columns: const [
                             DataColumn(label: Text('DNI')),
-                            DataColumn(label: Text('Nombre y Apellido')),
+                            DataColumn(label: Text('Nombre')),
                             DataColumn(label: Text('Equipo')),
                             DataColumn(label: Text('Cuota')),
                             DataColumn(label: SizedBox(width: 32)),
@@ -372,6 +373,7 @@ class _UsersPageState extends State<UsersPage> {
                         ),
                       ),
                     ),
+                  ),
             ),
 
             Container(
