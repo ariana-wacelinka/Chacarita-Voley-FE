@@ -20,11 +20,11 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
-      amount: 20.00,
+      amount: 20000.00,
       status: 'Pendiente',
     ),
     Payment(
-      userName: 'Juan Perez',
+      userName: 'Enrique Cruz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
@@ -32,7 +32,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       status: 'Aprobado',
     ),
     Payment(
-      userName: 'Juan Perez',
+      userName: 'Mari Gonzales',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
@@ -41,7 +41,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     ),
   ];
 
-  // Filtros (DNI, Fecha, Hora como en mockup)
+  // Filter (DateTime, TimeOfDay)
   String _dniFilter = '';
   DateTime? _dateFilter;
   TimeOfDay? _timeFilter;
@@ -51,9 +51,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   final Set<String> _selectedFilters =
-      {}; // Para selección múltiple de filtros (Validados, etc.)
+      {}; // For multiple filter selection (Validated, etc)
 
-  // Formateadores
+  // Formatt
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   final DateFormat _timeFormat = DateFormat('HH:mm');
 
@@ -76,12 +76,10 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: tokens.background,
-            // Fondo blanco o del tema
+            // Background white
             border: Border.all(color: tokens.strokeToNoStroke.withOpacity(0.5)),
-            // Borde gris claro
-            borderRadius: BorderRadius.circular(
-              12.0,
-            ), // Redondeado como en mockup
+            // Gray light border
+            borderRadius: BorderRadius.circular(12.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +88,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 children: [
                   Icon(
                     Icons.check_circle_outline,
-                    color: tokens.gray, // Ícono en gris/negro como en mockup
+                    color: tokens.gray,
                     size: 24.0,
                   ),
                   const SizedBox(width: 8.0),
@@ -99,32 +97,31 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                     style: TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
-                      color:
-                          tokens.text, // Texto principal en negro/gris oscuro
+                      color: tokens.text,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16.0), // Espacio entre título y números
+              const SizedBox(height: 16.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildSummaryItem(
                     number: '70',
                     label: 'Aprobados',
-                    numberColor: tokens.green, // Verde para aprobados
-                    labelColor: tokens.gray, // Gris claro para labels
+                    numberColor: tokens.green,
+                    labelColor: tokens.gray,
                   ),
                   _buildSummaryItem(
                     number: '30',
                     label: 'Rechazados',
-                    numberColor: tokens.redToRosita, // Rojo para rechazados
+                    numberColor: tokens.redToRosita,
                     labelColor: tokens.gray,
                   ),
                   _buildSummaryItem(
                     number: '70',
                     label: 'Pendientes',
-                    numberColor: tokens.pending, // Naranja para pendientes
+                    numberColor: tokens.pending,
                     labelColor: tokens.gray,
                   ),
                 ],
@@ -132,34 +129,29 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             ],
           ),
         ),
-
-        // Separación gris superior (como un Divider sutil en la parte superior del contenedor)
-        Divider(
-          color: tokens.strokeToNoStroke.withOpacity(0.5),
-          // Gris claro para separación
-          thickness: 1.0,
-          height: 1.0, // Ajusta para que sea fina
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Divider(
+            color: tokens.strokeToNoStroke.withOpacity(0.5),
+            thickness: 1.0,
+            height: 1.0,
+          ),
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: tokens.background,
-            // Fondo blanco
             border: Border.all(color: tokens.strokeToNoStroke.withOpacity(0.5)),
-            // Borde gris claro
-            borderRadius: BorderRadius.circular(
-              12.0,
-            ), // Redondeado como en mockup
+            borderRadius: BorderRadius.circular(12.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Título con ícono de embudo
               Row(
                 children: [
                   Icon(
-                    Icons.filter_alt_outlined, // Ícono de embudo (funnel)
+                    Icons.filter_alt_outlined, // Icon Funnel
                     color: tokens.gray,
                     size: 24.0,
                   ),
@@ -175,7 +167,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ],
               ),
               const SizedBox(height: 16.0),
-              // Fechas de inicio y fin (en fila)
               Row(
                 children: [
                   Expanded(
@@ -212,7 +203,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ],
               ),
               const SizedBox(height: 16.0),
-              // Horas de inicio y fin (en fila)
               Row(
                 children: [
                   Expanded(
@@ -245,7 +235,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ],
               ),
               const SizedBox(height: 24.0),
-              // Filtrar por: con botones
+              // Button Filter
               Text(
                 'Filtrar por:',
                 style: TextStyle(fontSize: 14.0, color: tokens.gray),
@@ -264,13 +254,12 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             ],
           ),
         ),
-
         Expanded(
-          // Esto le da un alto finito basado en el espacio disponible
+          // Inifity scroll label payment
           child: PaymentListWidget(initialPayments: initialPayments),
         ),
 
-        // Paginación (simple, como en mockup "1-7 de 87")
+        // Pagination (simple,"1-7 de 87")
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -284,7 +273,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               Text('1-7 de 87', style: TextStyle(color: tokens.text)),
               GFIconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: () {}, // Lógica página siguiente
+                onPressed: () {}, // logic to next page
                 type: GFButtonType.transparent,
               ),
             ],
