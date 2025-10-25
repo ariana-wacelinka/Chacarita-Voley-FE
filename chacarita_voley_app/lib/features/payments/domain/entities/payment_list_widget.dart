@@ -1,14 +1,13 @@
 import 'package:chacarita_voley_app/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart'; // Para GFCard y GFButton
+import 'package:getwidget/getwidget.dart'; // to GFCard y GFButton
 import 'package:intl/intl.dart';
 
-import '../../data/models/payment.dart'; // Para formateo de fechas
+import '../../data/models/payment.dart';
 
-// Widget de lista de pagos con scroll infinito
+// Widget list payment with scroll infinity
 class PaymentListWidget extends StatefulWidget {
-  final List<Payment>
-  initialPayments; // Lista inicial de pagos (podes pasarla desde afuera)
+  final List<Payment> initialPayments;
 
   const PaymentListWidget({super.key, required this.initialPayments});
 
@@ -26,7 +25,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   @override
   void initState() {
     super.initState();
-    _payments = List.from(widget.initialPayments); // Copia inicial
+    _payments = List.from(widget.initialPayments);
     _scrollController.addListener(_onScroll);
   }
 
@@ -36,11 +35,11 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     super.dispose();
   }
 
-  // Simula carga de más datos (reemplazá con tu API)
+  // replace with API)
   Future<void> _loadMorePayments() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulación de delay
+    await Future.delayed(const Duration(seconds: 1)); // Simulate delay
     setState(() {
       _currentPage++;
       _payments.addAll(_generateDummyPayments(_itemsPerPage));
@@ -48,7 +47,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     });
   }
 
-  // Genera datos dummy (reemplazá con tu lógica real)
+  // Generate data dummy
   List<Payment> _generateDummyPayments(int count) {
     final now = DateTime.now();
     return List.generate(
@@ -79,7 +78,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     return ListView.builder(
       controller: _scrollController,
       itemCount: _payments.length + (_payments.length >= _itemsPerPage ? 1 : 0),
-      // +1 para botón si hay más
+      // +1 for button if there is more
       itemBuilder: (context, index) {
         if (index >= _payments.length) {
           return _isLoading
@@ -139,9 +138,11 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: tokens.text,
+                          fontSize: 20,
                         ),
                       ),
-                      const SizedBox(width: 12.0),
+
+                      const SizedBox(width: 12.0, height: 10.0),
                       Container(
                         decoration: BoxDecoration(
                           color: statusColor,
@@ -172,9 +173,13 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8.0),
               Text('DNI: ${payment.dni}', style: TextStyle(color: tokens.gray)),
-              const SizedBox(height: 4.0),
+              const SizedBox(height: 1.0),
+              Divider(
+                color: tokens.strokeToNoStroke.withOpacity(0.5),
+                thickness: 2.0,
+                height: 10.0,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -183,7 +188,10 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                     children: [
                       Text(
                         'Fecha de Pago',
-                        style: TextStyle(color: tokens.gray),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: tokens.gray,
+                        ),
                       ),
                       Text(
                         dateFormat.format(payment.paymentDate),
@@ -194,7 +202,13 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Enviado', style: TextStyle(color: tokens.gray)),
+                      Text(
+                        'Enviado',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: tokens.gray,
+                        ),
+                      ),
                       Text(
                         dateFormat.format(payment.sentDate),
                         style: TextStyle(color: tokens.text),
@@ -210,7 +224,13 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Monto', style: TextStyle(color: tokens.gray)),
+                      Text(
+                        'Monto',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: tokens.gray,
+                        ),
+                      ),
                       Text(
                         '\$${payment.amount.toStringAsFixed(2)}',
                         style: TextStyle(color: tokens.text),
@@ -222,27 +242,37 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                       onPressed: () {},
                       text: 'Modificar',
                       shape: GFButtonShape.pills,
-                      color: tokens.blue,
-                      textStyle: TextStyle(color: tokens.permanentWhite),
+                      icon: Icon(Icons.edit, color: tokens.gray),
+                      color: tokens.lightGray,
+                      textStyle: TextStyle(color: tokens.text),
                     ),
                   if (!showModify)
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.check_circle_outline,
+                    Container(
+                      height: 50,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GFIconButton(
+                            onPressed: () {
+                              // Aceptar
+                            },
+                            icon: const Icon(Icons.check, color: Colors.white),
                             color: tokens.green,
+                            shape: GFIconButtonShape.standard,
+                            // Forma redondeada
+                            padding: EdgeInsets.zero,
                           ),
-                          onPressed: () {},
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.cancel_outlined,
+                          GFIconButton(
+                            onPressed: () {
+                              // Rechazar
+                            },
+                            icon: const Icon(Icons.close, color: Colors.white),
                             color: tokens.redToRosita,
+                            shape: GFIconButtonShape.standard,
+                            padding: EdgeInsets.zero,
                           ),
-                          onPressed: () {},
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                 ],
               ),
