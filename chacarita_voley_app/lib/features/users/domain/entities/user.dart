@@ -1,8 +1,13 @@
+import 'gender.dart';
+
 class User {
+  final String? id;
   final String dni;
   final String nombre;
   final String apellido;
   final DateTime fechaNacimiento;
+  final Gender genero;
+  final String email;
   final String telefono;
   final String? numeroCamiseta;
   final String equipo;
@@ -10,10 +15,13 @@ class User {
   final EstadoCuota estadoCuota;
 
   User({
+    this.id,
     required this.dni,
     required this.nombre,
     required this.apellido,
     required this.fechaNacimiento,
+    required this.genero,
+    required this.email,
     required this.telefono,
     this.numeroCamiseta,
     required this.equipo,
@@ -25,10 +33,13 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
+      id: json['id'],
       dni: json['dni'],
       nombre: json['nombre'],
       apellido: json['apellido'],
       fechaNacimiento: DateTime.parse(json['fechaNacimiento']),
+      genero: Gender.values.firstWhere((e) => e.name == json['genero']),
+      email: json['email'],
       telefono: json['telefono'],
       numeroCamiseta: json['numeroCamiseta'],
       equipo: json['equipo'],
@@ -41,10 +52,13 @@ class User {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'dni': dni,
       'nombre': nombre,
       'apellido': apellido,
       'fechaNacimiento': fechaNacimiento.toIso8601String(),
+      'genero': genero.name,
+      'email': email,
       'telefono': telefono,
       'numeroCamiseta': numeroCamiseta,
       'equipo': equipo,
