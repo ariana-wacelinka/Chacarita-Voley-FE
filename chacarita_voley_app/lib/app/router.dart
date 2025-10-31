@@ -3,6 +3,8 @@ import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/users/presentation/pages/users_page.dart';
+import '../features/users/presentation/pages/register_user_page.dart';
+import '../features/users/presentation/pages/edit_user_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -24,6 +26,20 @@ final appRouter = GoRouter(
           path: '/users',
           name: 'users',
           builder: (_, __) => const UsersPage(),
+          routes: [
+            GoRoute(
+              path: '/register',
+              name: 'register-user',
+              builder: (_, __) => const RegisterUserPage(),
+            ),
+            GoRoute(
+              path: '/:id/edit',
+              name: 'edit-user',
+              builder: (_, state) => EditUserPage(
+                userId: state.pathParameters['id']!,
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: '/payments',
@@ -53,6 +69,18 @@ final appRouter = GoRouter(
       ],
     ),
 
+    GoRoute(
+      path: '/users/register',
+      name: 'users-register',
+      builder: (_, __) => const RegisterUserPage(),
+    ),
+    GoRoute(
+      path: '/users/:id/edit',
+      name: 'users-edit',
+      builder: (_, state) => EditUserPage(
+        userId: state.pathParameters['id']!,
+      ),
+    ),
     GoRoute(
       path: '/change-password',
       name: 'change-password',

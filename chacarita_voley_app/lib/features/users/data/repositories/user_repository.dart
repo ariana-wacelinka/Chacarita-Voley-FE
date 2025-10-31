@@ -1,151 +1,114 @@
 import '../../domain/entities/user.dart';
+import '../../domain/entities/gender.dart';
+import '../../domain/repositories/user_repository_interface.dart';
 
-class UserRepository {
-  static List<User> getUsers() {
-    return [
-      User(
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1990, 5, 15),
-        telefono: '+54 221 123 4567',
-        numeroCamiseta: '10',
-        equipo: 'REC1',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Pamela',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1985, 8, 22),
-        telefono: '+54 221 234 5678',
-        numeroCamiseta: '7',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.ultimoPago,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Lucio',
-        apellido: 'Guerra',
-        fechaNacimiento: DateTime(1992, 3, 10),
-        telefono: '+54 221 345 6789',
-        numeroCamiseta: '15',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Ignacio',
-        apellido: 'Lanzavecchia',
-        fechaNacimiento: DateTime(1988, 12, 5),
-        telefono: '+54 221 456 7890',
-        numeroCamiseta: null,
-        equipo: 'REC1',
-        tipo: UserType.profesor,
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Pamela',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1987, 9, 18),
-        telefono: '+54 221 567 8901',
-        numeroCamiseta: '3',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.ultimoPago,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Lucio',
-        apellido: 'Guerra',
-        fechaNacimiento: DateTime(1995, 7, 25),
-        telefono: '+54 221 678 9012',
-        numeroCamiseta: '8',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1993, 4, 12),
-        telefono: '+54 221 789 0123',
-        numeroCamiseta: '22',
-        equipo: 'REC1',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Pamela',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1989, 11, 30),
-        telefono: '+54 221 890 1234',
-        numeroCamiseta: '4',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.ultimoPago,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Lucio',
-        apellido: 'Guerra',
-        fechaNacimiento: DateTime(1991, 6, 8),
-        telefono: '+54 221 901 2345',
-        numeroCamiseta: '11',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1986, 2, 14),
-        telefono: '+54 221 012 3456',
-        numeroCamiseta: '19',
-        equipo: 'REC1',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Pamela',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1994, 10, 3),
-        telefono: '+54 221 123 4567',
-        numeroCamiseta: '6',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.ultimoPago,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Lucio',
-        apellido: 'Guerra',
-        fechaNacimiento: DateTime(1990, 1, 20),
-        telefono: '+54 221 234 5678',
-        numeroCamiseta: '13',
-        equipo: 'CHR',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1988, 8, 17),
-        telefono: '+54 221 345 6789',
-        numeroCamiseta: '25',
-        equipo: 'REC1',
-        tipo: UserType.jugador,
-        estadoCuota: EstadoCuota.alDia,
-      ),
-    ];
+class UserRepository implements UserRepositoryInterface {
+  static final List<User> _users = [
+    User(
+      id: '1',
+      dni: '12345678',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      fechaNacimiento: DateTime(1990, 5, 15),
+      genero: Gender.masculino,
+      email: 'juan.perez@example.com',
+      telefono: '+54 221 123 4567',
+      numeroCamiseta: '10',
+      equipo: 'REC1',
+      tipo: UserType.jugador,
+      estadoCuota: EstadoCuota.alDia,
+    ),
+    User(
+      id: '2',
+      dni: '87654321',
+      nombre: 'Pamela',
+      apellido: 'Perez',
+      fechaNacimiento: DateTime(1985, 8, 22),
+      genero: Gender.femenino,
+      email: 'pamela.perez@example.com',
+      telefono: '+54 221 234 5678',
+      numeroCamiseta: '7',
+      equipo: 'CHR',
+      tipo: UserType.jugador,
+      estadoCuota: EstadoCuota.ultimoPago,
+    ),
+    User(
+      id: '3',
+      dni: '23456789',
+      nombre: 'Lucio',
+      apellido: 'Guerra',
+      fechaNacimiento: DateTime(1992, 3, 10),
+      genero: Gender.masculino,
+      email: 'lucio.guerra@example.com',
+      telefono: '+54 221 345 6789',
+      numeroCamiseta: '15',
+      equipo: 'CHR',
+      tipo: UserType.jugador,
+      estadoCuota: EstadoCuota.vencida,
+    ),
+    User(
+      id: '4',
+      dni: '34567890',
+      nombre: 'Ignacio',
+      apellido: 'Lanzavecchia',
+      fechaNacimiento: DateTime(1988, 12, 5),
+      genero: Gender.masculino,
+      email: 'ignacio.lanzavecchia@example.com',
+      telefono: '+54 221 456 7890',
+      numeroCamiseta: null,
+      equipo: 'REC1',
+      tipo: UserType.profesor,
+      estadoCuota: EstadoCuota.alDia,
+    ),
+  ];
+
+  @override
+  List<User> getUsers() {
+    return List.from(_users);
+  }
+
+  @override
+  User? getUserById(String id) {
+    try {
+      return _users.firstWhere((user) => user.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<User> createUser(User user) async {
+    final newId = (_users.length + 1).toString();
+    final newUser = User(
+      id: newId,
+      dni: user.dni,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      fechaNacimiento: user.fechaNacimiento,
+      genero: user.genero,
+      email: user.email,
+      telefono: user.telefono,
+      numeroCamiseta: user.numeroCamiseta,
+      equipo: user.equipo,
+      tipo: user.tipo,
+      estadoCuota: user.estadoCuota,
+    );
+    _users.add(newUser);
+    return newUser;
+  }
+
+  @override
+  Future<User> updateUser(User user) async {
+    final index = _users.indexWhere((u) => u.id == user.id);
+    if (index != -1) {
+      _users[index] = user;
+      return user;
+    }
+    throw Exception('Usuario no encontrado');
+  }
+
+  @override
+  Future<void> deleteUser(String id) async {
+    _users.removeWhere((user) => user.id == id);
   }
 }

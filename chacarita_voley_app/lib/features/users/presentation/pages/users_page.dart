@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/user.dart';
@@ -30,13 +31,20 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadUsers();
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
   void _loadUsers() {
-    _allUsers = UserRepository.getUsers();
+    final repository = UserRepository();
+    _allUsers = repository.getUsers();
     _filteredUsers = List.from(_allUsers);
     _updateDisplayedUsers();
   }
@@ -299,6 +307,7 @@ class _UsersPageState extends State<UsersPage> {
                                         case 'view':
                                           break;
                                         case 'edit':
+                                          context.go('/users/${user.id}/edit');
                                           break;
                                         case 'delete':
                                           _showDeleteDialog(user);
@@ -431,7 +440,7 @@ class _UsersPageState extends State<UsersPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => context.go('/users/register'),
         backgroundColor: context.tokens.redToRosita,
         child: const Icon(Symbols.add, color: Colors.white),
       ),
@@ -441,11 +450,11 @@ class _UsersPageState extends State<UsersPage> {
   Widget _buildEstadoCuotaIcon(BuildContext context, EstadoCuota estado) {
     switch (estado) {
       case EstadoCuota.alDia:
-        return Icon(Symbols.check_circle, color: Colors.green, size: 20);
+        return Icon(Symbols.check_circle, color: context.tokens.green, size: 20);
       case EstadoCuota.vencida:
-        return Icon(Symbols.cancel, color: Colors.red, size: 20);
+        return Icon(Symbols.cancel, color: context.tokens.redToRosita, size: 20);
       case EstadoCuota.ultimoPago:
-        return Icon(Symbols.schedule, color: Colors.orange, size: 20);
+        return Icon(Symbols.schedule, color: context.tokens.pending, size: 20);
     }
   }
 }
