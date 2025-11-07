@@ -77,7 +77,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           decoration: BoxDecoration(
             color: tokens.background,
             // Background white
-            border: Border.all(color: tokens.strokeToNoStroke.withOpacity(0.5)),
+            border: Border.all(color: tokens.strokeToNoStroke),
             // Gray light border
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -132,7 +132,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Divider(
-            color: tokens.strokeToNoStroke.withOpacity(0.5),
+            color: tokens.strokeToNoStroke,
             thickness: 1.0,
             height: 1.0,
           ),
@@ -142,7 +142,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: tokens.background,
-            border: Border.all(color: tokens.strokeToNoStroke.withOpacity(0.5)),
+            border: Border.all(color: tokens.strokeToNoStroke),
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: Column(
@@ -267,7 +267,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             children: [
               GFIconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () {}, // Lógica página anterior
+                onPressed: () {}, // Logic to next page
                 type: GFButtonType.transparent,
               ),
               Text('1-7 de 87', style: TextStyle(color: tokens.text)),
@@ -311,15 +311,34 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     required VoidCallback onTap,
   }) {
     final tokens = context.tokens;
+
+    bool hasAsterisk = label.endsWith(' *');
+    String textPart = hasAsterisk
+        ? label.substring(0, label.length - 2).trim()
+        : label;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.0,
-            color: tokens.redToRosita, // Asterisco rojo
-          ),
+        Row(
+          children: [
+            Text(
+              textPart,
+              style: TextStyle(
+                fontSize: 14.0,
+                color: tokens
+                    .text, // Texto en negro (asumiendo tokens.text es negro)
+              ),
+            ),
+            if (hasAsterisk)
+              Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  color: tokens.redToRosita, // Solo asterisco rojo
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 4.0),
         GestureDetector(
@@ -359,15 +378,34 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     required VoidCallback onTap,
   }) {
     final tokens = context.tokens;
+
+    bool hasAsterisk = label.endsWith(' *');
+    String textPart = hasAsterisk
+        ? label.substring(0, label.length - 2).trim()
+        : label;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.0,
-            color: tokens.redToRosita, // Asterisco rojo
-          ),
+        Row(
+          children: [
+            Text(
+              textPart,
+              style: TextStyle(
+                fontSize: 14.0,
+                color: tokens
+                    .text, // Texto en negro (asumiendo tokens.text es negro)
+              ),
+            ),
+            if (hasAsterisk)
+              Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  color: tokens.redToRosita, // Solo asterisco rojo
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 4.0),
         GestureDetector(
