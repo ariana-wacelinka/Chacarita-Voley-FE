@@ -162,11 +162,17 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.visibility),
+                        icon: Icon(
+                          Icons.visibility_outlined,
+                          color: tokens.gray,
+                        ),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: const Icon(Icons.description),
+                        icon: Icon(
+                          Icons.description_outlined,
+                          color: tokens.gray,
+                        ),
                         onPressed: () {},
                       ),
                     ],
@@ -176,7 +182,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
               Text('DNI: ${payment.dni}', style: TextStyle(color: tokens.gray)),
               const SizedBox(height: 1.0),
               Divider(
-                color: tokens.strokeToNoStroke.withOpacity(0.5),
+                color: tokens.strokeToNoStroke,
                 thickness: 2.0,
                 height: 10.0,
               ),
@@ -243,11 +249,12 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                       text: 'Modificar',
                       shape: GFButtonShape.pills,
                       icon: Icon(Icons.edit, color: tokens.gray),
-                      color: tokens.lightGray,
+                      color: tokens.background,
                       textStyle: TextStyle(color: tokens.text),
+                      borderSide: BorderSide(color: tokens.gray),
                     ),
                   if (!showModify)
-                    Container(
+                    SizedBox(
                       height: 50,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
