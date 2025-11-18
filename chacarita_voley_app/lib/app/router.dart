@@ -5,6 +5,8 @@ import '../features/home/presentation/pages/home_page.dart';
 import '../features/users/presentation/pages/users_page.dart';
 import '../features/users/presentation/pages/register_user_page.dart';
 import '../features/users/presentation/pages/edit_user_page.dart';
+import '../features/users/presentation/pages/view_user_page.dart';
+import '../features/users/presentation/pages/attendance_history_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -65,6 +67,17 @@ final appRouter = GoRouter(
       path: '/users/:id/edit',
       name: 'users-edit',
       builder: (_, state) => EditUserPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/users/:id/view',
+      name: 'users-view',
+      builder: (_, state) => ViewUserPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/users/:id/attendance',
+      name: 'users-attendance',
+      builder: (_, state) =>
+          AttendanceHistoryPage(userId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/change-password',
