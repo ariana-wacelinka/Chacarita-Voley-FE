@@ -31,7 +31,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
 
     try {
       await _createUserUseCase.execute(user);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -64,7 +64,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
             duration: const Duration(seconds: 3),
           ),
         );
-        
+
         context.go('/users');
       }
     } catch (e) {
@@ -73,11 +73,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
@@ -118,10 +114,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
         backgroundColor: context.tokens.card1,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Symbols.arrow_back,
-            color: context.tokens.text,
-          ),
+          icon: Icon(Symbols.arrow_back, color: context.tokens.text),
           onPressed: () => context.go('/users'),
         ),
         title: Text(
@@ -134,21 +127,23 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.tokens.redToRosita,
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.tokens.redToRosita,
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: UserFormWidget(
+                  onSave: _handleSaveUser,
+                  submitButtonText: 'Registrar usuario',
                 ),
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: UserFormWidget(
-                onSave: _handleSaveUser,
-                submitButtonText: 'Registrar usuario',
-              ),
-            ),
+      ),
     );
   }
 }
