@@ -28,7 +28,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
   final _fechaNacimientoController = TextEditingController();
   final _emailController = TextEditingController();
   final _celularController = TextEditingController();
-  
+
   DateTime? _fechaNacimiento;
   Gender? _generoSeleccionado;
   Set<UserType> _tiposSeleccionados = {UserType.jugador};
@@ -52,7 +52,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
     _fechaNacimiento = user.fechaNacimiento;
     _fechaNacimientoController.text = _formatDate(user.fechaNacimiento);
     _generoSeleccionado = user.genero;
-    _tiposSeleccionados = {user.tipo};
+    _tiposSeleccionados = Set.from(user.tipos);
   }
 
   @override
@@ -79,15 +79,13 @@ class _UserFormWidgetState extends State<UserFormWidget> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: context.tokens.redToRosita,
-            ),
+            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         _fechaNacimiento = picked;
@@ -108,21 +106,28 @@ class _UserFormWidgetState extends State<UserFormWidget> {
         email: _emailController.text,
         telefono: _celularController.text,
         equipo: 'CHR',
-        tipo: _tiposSeleccionados.first,
+        tipos: _tiposSeleccionados,
         estadoCuota: EstadoCuota.alDia,
       );
-      
+
       widget.onSave(user);
     }
   }
 
   Widget _buildUserTypeCard(UserType type, IconData icon) {
     final isSelected = _tiposSeleccionados.contains(type);
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
-          _tiposSeleccionados = {type};
+          if (isSelected) {
+            // Solo permitir deseleccionar si hay más de un tipo seleccionado
+            if (_tiposSeleccionados.length > 1) {
+              _tiposSeleccionados.remove(type);
+            }
+          } else {
+            _tiposSeleccionados.add(type);
+          }
         });
       },
       child: Container(
@@ -130,18 +135,11 @@ class _UserFormWidgetState extends State<UserFormWidget> {
         decoration: BoxDecoration(
           color: context.tokens.card1,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: context.tokens.stroke,
-            width: 1,
-          ),
+          border: Border.all(color: context.tokens.stroke, width: 1),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: context.tokens.placeholder,
-              size: 20,
-            ),
+            Icon(icon, color: context.tokens.placeholder, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -154,11 +152,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
               ),
             ),
             if (isSelected)
-              Icon(
-                Symbols.check,
-                color: context.tokens.redToRosita,
-                size: 20,
-              ),
+              Icon(Symbols.check, color: context.tokens.redToRosita, size: 20),
           ],
         ),
       ),
@@ -185,7 +179,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                 Row(
                   children: [
                     Icon(
-                      Symbols.person,
+                      Symbols.shield,
                       color: context.tokens.redToRosita,
                       size: 20,
                     ),
@@ -193,7 +187,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     Text(
                       'Tipo de Usuario',
                       style: TextStyle(
-                        color: context.tokens.text,
+                        color: context.tokens.redToRosita,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -205,12 +199,15 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                 const SizedBox(height: 8),
                 _buildUserTypeCard(UserType.profesor, Symbols.school),
                 const SizedBox(height: 8),
-                _buildUserTypeCard(UserType.administrador, Symbols.admin_panel_settings),
+                _buildUserTypeCard(
+                  UserType.administrador,
+                  Symbols.admin_panel_settings,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -223,11 +220,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Symbols.person,
-                      color: context.tokens.text,
-                      size: 20,
-                    ),
+                    Icon(Symbols.person, color: context.tokens.text, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'Datos Personales',
@@ -240,7 +233,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -261,15 +254,21 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.stroke),
+                                borderSide: BorderSide(
+                                  color: context.tokens.stroke,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.stroke),
+                                borderSide: BorderSide(
+                                  color: context.tokens.stroke,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.redToRosita),
+                                borderSide: BorderSide(
+                                  color: context.tokens.redToRosita,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -305,15 +304,21 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.stroke),
+                                borderSide: BorderSide(
+                                  color: context.tokens.stroke,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.stroke),
+                                borderSide: BorderSide(
+                                  color: context.tokens.stroke,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: context.tokens.redToRosita),
+                                borderSide: BorderSide(
+                                  color: context.tokens.redToRosita,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -333,7 +338,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   'DNI *',
                   style: TextStyle(
@@ -372,7 +377,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   'Fecha de nacimiento *',
                   style: TextStyle(
@@ -417,7 +422,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   'Género *',
                   style: TextStyle(
@@ -472,7 +477,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -502,7 +507,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   'Email *',
                   style: TextStyle(
@@ -544,7 +549,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   'Celular *',
                   style: TextStyle(
@@ -586,7 +591,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
