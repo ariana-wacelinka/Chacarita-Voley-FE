@@ -19,7 +19,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   late final UserRepository _userRepository;
   User? _user;
   bool _isLoading = true;
-  
+
   // Datos de ejemplo de asistencias
   final List<AttendanceRecord> _attendanceHistory = [
     AttendanceRecord(
@@ -83,8 +83,9 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
 
   int get _presentCount => _attendanceHistory.where((a) => a.wasPresent).length;
   int get _absentCount => _attendanceHistory.where((a) => !a.wasPresent).length;
-  double get _attendancePercentage => 
-      _attendanceHistory.isEmpty ? 0 : (_presentCount / _attendanceHistory.length) * 100;
+  double get _attendancePercentage => _attendanceHistory.isEmpty
+      ? 0
+      : (_presentCount / _attendanceHistory.length) * 100;
 
   @override
   Widget build(BuildContext context) {
@@ -150,9 +151,11 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         ),
         centerTitle: true,
       ),
-      body: _attendanceHistory.isEmpty 
-        ? _buildEmptyState(context)
-        : _buildAttendanceContent(context),
+      body: SafeArea(
+        child: _attendanceHistory.isEmpty
+            ? _buildEmptyState(context)
+            : _buildAttendanceContent(context),
+      ),
     );
   }
 
@@ -198,7 +201,11 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
             children: [
               Row(
                 children: [
-                  Icon(Symbols.check_circle, color: context.tokens.text, size: 20),
+                  Icon(
+                    Symbols.check_circle,
+                    color: context.tokens.text,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Resumen de Asistencias',
@@ -237,7 +244,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
             ],
           ),
         ),
-        
+
         // Lista de asistencias
         Expanded(
           child: ListView.separated(
@@ -250,16 +257,19 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
             },
           ),
         ),
-        
+
         // Paginación
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
                 onPressed: () {},
-                icon: Icon(Symbols.chevron_left, color: context.tokens.placeholder),
+                icon: Icon(
+                  Symbols.chevron_left,
+                  color: context.tokens.placeholder,
+                ),
               ),
               Text(
                 '1-15 de 87',
@@ -271,7 +281,10 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
               ),
               IconButton(
                 onPressed: () {},
-                icon: Icon(Symbols.chevron_right, color: context.tokens.placeholder),
+                icon: Icon(
+                  Symbols.chevron_right,
+                  color: context.tokens.placeholder,
+                ),
               ),
             ],
           ),
@@ -280,7 +293,12 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     );
   }
 
-  Widget _buildSummaryItem(BuildContext context, String value, String label, Color color) {
+  Widget _buildSummaryItem(
+    BuildContext context,
+    String value,
+    String label,
+    Color color,
+  ) {
     return Column(
       children: [
         Text(
@@ -345,9 +363,9 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
           ),
           Icon(
             record.wasPresent ? Symbols.check : Symbols.close,
-            color: record.wasPresent 
-              ? context.tokens.green 
-              : context.tokens.redToRosita,
+            color: record.wasPresent
+                ? context.tokens.green
+                : context.tokens.redToRosita,
             size: 20,
           ),
         ],

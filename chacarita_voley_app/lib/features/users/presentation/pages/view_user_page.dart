@@ -156,23 +156,25 @@ class _ViewUserPageState extends State<ViewUserPage> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildUserTypeSection(context),
-            const SizedBox(height: 24),
-            _buildPersonalDataSection(context),
-            const SizedBox(height: 24),
-            _buildContactDataSection(context),
-            const SizedBox(height: 24),
-            _buildTeamsSection(context),
-            const SizedBox(height: 24),
-            _buildQuickActionsSection(context),
-            const SizedBox(height: 32),
-            _buildActionButtons(context),
-            const SizedBox(height: 24),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildUserTypeSection(context),
+              const SizedBox(height: 24),
+              _buildPersonalDataSection(context),
+              const SizedBox(height: 24),
+              _buildContactDataSection(context),
+              const SizedBox(height: 24),
+              _buildTeamsSection(context),
+              const SizedBox(height: 24),
+              _buildQuickActionsSection(context),
+              const SizedBox(height: 32),
+              _buildActionButtons(context),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -556,38 +558,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
               color: context.tokens.text,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDataRow(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: context.tokens.placeholder,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
             ),
           ),
         ],

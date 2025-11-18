@@ -142,63 +142,65 @@ class _EditUserPageState extends State<EditUserPage> {
         ),
         centerTitle: true,
       ),
-      body: _isLoadingUser
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.tokens.redToRosita,
+      body: SafeArea(
+        child: _isLoadingUser
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.tokens.redToRosita,
+                  ),
+                ),
+              )
+            : _user == null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Symbols.error,
+                      size: 64,
+                      color: context.tokens.placeholder,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Usuario no encontrado',
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.tokens.redToRosita,
+                      ),
+                      child: const Text(
+                        'Volver a la lista',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.tokens.redToRosita,
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: UserFormWidget(
+                  initialUser: _user,
+                  onSave: _handleUpdateUser,
+                  submitButtonText: 'Guardar cambios',
                 ),
               ),
-            )
-          : _user == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Symbols.error,
-                    size: 64,
-                    color: context.tokens.placeholder,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Usuario no encontrado',
-                    style: TextStyle(
-                      color: context.tokens.text,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => context.pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.tokens.redToRosita,
-                    ),
-                    child: const Text(
-                      'Volver a la lista',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.tokens.redToRosita,
-                ),
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: UserFormWidget(
-                initialUser: _user,
-                onSave: _handleUpdateUser,
-                submitButtonText: 'Guardar cambios',
-              ),
-            ),
+      ),
     );
   }
 }
