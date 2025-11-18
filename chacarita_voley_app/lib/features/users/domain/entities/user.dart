@@ -11,7 +11,7 @@ class User {
   final String telefono;
   final String? numeroCamiseta;
   final String equipo;
-  final UserType tipo;
+  final Set<UserType> tipos;
   final EstadoCuota estadoCuota;
 
   User({
@@ -25,7 +25,7 @@ class User {
     required this.telefono,
     this.numeroCamiseta,
     required this.equipo,
-    required this.tipo,
+    required this.tipos,
     required this.estadoCuota,
   });
 
@@ -43,7 +43,9 @@ class User {
       telefono: json['telefono'],
       numeroCamiseta: json['numeroCamiseta'],
       equipo: json['equipo'],
-      tipo: UserType.values.firstWhere((e) => e.name == json['tipo']),
+      tipos: (json['tipos'] as List<dynamic>)
+          .map((e) => UserType.values.firstWhere((type) => type.name == e))
+          .toSet(),
       estadoCuota: EstadoCuota.values.firstWhere(
         (e) => e.name == json['estadoCuota'],
       ),
@@ -62,7 +64,7 @@ class User {
       'telefono': telefono,
       'numeroCamiseta': numeroCamiseta,
       'equipo': equipo,
-      'tipo': tipo.name,
+      'tipos': tipos.map((e) => e.name).toList(),
       'estadoCuota': estadoCuota.name,
     };
   }
