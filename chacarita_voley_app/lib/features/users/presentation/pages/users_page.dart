@@ -311,7 +311,7 @@ class _UsersPageState extends State<UsersPage> {
                                             );
                                             break;
                                           case 'edit':
-                                            context.go(
+                                            context.push(
                                               '/users/${user.id}/edit',
                                             );
                                             break;
