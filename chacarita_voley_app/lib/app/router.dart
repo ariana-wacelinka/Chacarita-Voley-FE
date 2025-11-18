@@ -26,20 +26,6 @@ final appRouter = GoRouter(
           path: '/users',
           name: 'users',
           builder: (_, __) => const UsersPage(),
-          routes: [
-            GoRoute(
-              path: '/register',
-              name: 'register-user',
-              builder: (_, __) => const RegisterUserPage(),
-            ),
-            GoRoute(
-              path: '/:id/edit',
-              name: 'edit-user',
-              builder: (_, state) => EditUserPage(
-                userId: state.pathParameters['id']!,
-              ),
-            ),
-          ],
         ),
         GoRoute(
           path: '/payments',
@@ -69,6 +55,7 @@ final appRouter = GoRouter(
       ],
     ),
 
+    // Rutas independientes con AppBar personalizado
     GoRoute(
       path: '/users/register',
       name: 'users-register',
@@ -77,9 +64,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/users/:id/edit',
       name: 'users-edit',
-      builder: (_, state) => EditUserPage(
-        userId: state.pathParameters['id']!,
-      ),
+      builder: (_, state) => EditUserPage(userId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/change-password',
