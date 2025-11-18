@@ -235,154 +235,162 @@ class _UsersPageState extends State<UsersPage> {
                           width: MediaQuery.of(context).size.width * 0.95,
                           margin: const EdgeInsets.only(top: 10),
                           child: DataTable(
-                          headingTextStyle: TextStyle(
-                            color: context.tokens.text,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          dataTextStyle: TextStyle(
-                            color: context.tokens.text,
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                          ),
-                          columnSpacing: 12,
-                          horizontalMargin: 5,
-                          dividerThickness: 0,
-                          columns: const [
-                            DataColumn(label: Text('DNI')),
-                            DataColumn(label: Text('Nombre')),
-                            DataColumn(label: Text('Equipo')),
-                            DataColumn(label: Text('Cuota')),
-                            DataColumn(label: SizedBox(width: 32)),
-                          ],
-                          rows: _displayedUsers.map((user) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(user.dni)),
-                                DataCell(Text(user.nombreCompleto)),
-                                DataCell(
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: context.tokens.card3,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: context.tokens.strokeToNoStroke,
-                                        width: 1,
+                            headingTextStyle: TextStyle(
+                              color: context.tokens.text,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            dataTextStyle: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.normal,
+                            ),
+                            columnSpacing: 12,
+                            horizontalMargin: 5,
+                            dividerThickness: 0,
+                            columns: const [
+                              DataColumn(label: Text('DNI')),
+                              DataColumn(label: Text('Nombre')),
+                              DataColumn(label: Text('Equipo')),
+                              DataColumn(label: Text('Cuota')),
+                              DataColumn(label: SizedBox(width: 32)),
+                            ],
+                            rows: _displayedUsers.map((user) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(user.dni)),
+                                  DataCell(Text(user.nombreCompleto)),
+                                  DataCell(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
-                                    ),
-                                    child: Text(
-                                      user.equipo,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: context.tokens.text,
+                                      decoration: BoxDecoration(
+                                        color: context.tokens.card3,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color:
+                                              context.tokens.strokeToNoStroke,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        user.equipo,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: context.tokens.text,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  Center(
-                                    child: _buildEstadoCuotaIcon(
-                                      context,
-                                      user.estadoCuota,
+                                  DataCell(
+                                    Center(
+                                      child: _buildEstadoCuotaIcon(
+                                        context,
+                                        user.estadoCuota,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  PopupMenuButton<String>(
-                                    padding: EdgeInsets.zero,
-                                    icon: Icon(
-                                      Symbols.more_vert,
-                                      color: context.tokens.placeholder,
-                                      weight: 1000,
-                                      size: 18,
-                                    ),
-                                    tooltip: 'Más opciones',
-                                    onSelected: (value) {
-                                      switch (value) {
-                                        case 'view':
-                                          break;
-                                        case 'edit':
-                                          context.go('/users/${user.id}/edit');
-                                          break;
-                                        case 'delete':
-                                          _showDeleteDialog(user);
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'view',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Symbols.visibility,
-                                              size: 18,
-                                              color: context.tokens.text,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Ver',
-                                              style: TextStyle(
+                                  DataCell(
+                                    PopupMenuButton<String>(
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(
+                                        Symbols.more_vert,
+                                        color: context.tokens.placeholder,
+                                        weight: 1000,
+                                        size: 18,
+                                      ),
+                                      tooltip: 'Más opciones',
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case 'view':
+                                            context.go(
+                                              '/users/${user.id}/view',
+                                            );
+                                            break;
+                                          case 'edit':
+                                            context.go(
+                                              '/users/${user.id}/edit',
+                                            );
+                                            break;
+                                          case 'delete':
+                                            _showDeleteDialog(user);
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          value: 'view',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Symbols.visibility,
+                                                size: 18,
                                                 color: context.tokens.text,
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Ver',
+                                                style: TextStyle(
+                                                  color: context.tokens.text,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Symbols.edit,
-                                              size: 18,
-                                              color: context.tokens.text,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Modificar',
-                                              style: TextStyle(
+                                        PopupMenuItem(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Symbols.edit,
+                                                size: 18,
                                                 color: context.tokens.text,
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Modificar',
+                                                style: TextStyle(
+                                                  color: context.tokens.text,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Symbols.delete,
-                                              size: 18,
-                                              color: context.tokens.redToRosita,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Eliminar',
-                                              style: TextStyle(
+                                        PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Symbols.delete,
+                                                size: 18,
                                                 color:
                                                     context.tokens.redToRosita,
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Eliminar',
+                                                style: TextStyle(
+                                                  color: context
+                                                      .tokens
+                                                      .redToRosita,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
-                  ),
             ),
 
             Container(
@@ -450,9 +458,17 @@ class _UsersPageState extends State<UsersPage> {
   Widget _buildEstadoCuotaIcon(BuildContext context, EstadoCuota estado) {
     switch (estado) {
       case EstadoCuota.alDia:
-        return Icon(Symbols.check_circle, color: context.tokens.green, size: 20);
+        return Icon(
+          Symbols.check_circle,
+          color: context.tokens.green,
+          size: 20,
+        );
       case EstadoCuota.vencida:
-        return Icon(Symbols.cancel, color: context.tokens.redToRosita, size: 20);
+        return Icon(
+          Symbols.cancel,
+          color: context.tokens.redToRosita,
+          size: 20,
+        );
       case EstadoCuota.ultimoPago:
         return Icon(Symbols.schedule, color: context.tokens.pending, size: 20);
     }
