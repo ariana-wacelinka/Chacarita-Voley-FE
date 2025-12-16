@@ -321,7 +321,9 @@ class _TeamsPageState extends State<TeamsPage> {
                                                   // TODO: Implementar vista de detalle
                                                   break;
                                                 case 'edit':
-                                                  // TODO: Implementar edición
+                                                  context.push(
+                                                    '/teams/edit/${team.id}',
+                                                  );
                                                   break;
                                                 case 'delete':
                                                   _showDeleteDialog(team);

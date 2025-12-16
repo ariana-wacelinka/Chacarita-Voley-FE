@@ -5,9 +5,10 @@ class TeamService implements TeamServiceInterface {
   // TODO: Inyectar GraphQL client cuando esté configurado
   // final GraphQLClient _graphQLClient;
 
-  TeamService({
-    // required GraphQLClient graphQLClient,
-  }); // : _graphQLClient = graphQLClient;
+  TeamService();
+  // TeamService({
+  //   required GraphQLClient graphQLClient,
+  // }) : _graphQLClient = graphQLClient;
 
   // TODO: Implementar mutation createTeam
   // mutation CreateTeam($input: CreateTeamInput!) {

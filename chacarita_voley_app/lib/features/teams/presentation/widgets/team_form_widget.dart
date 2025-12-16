@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:getwidget/getwidget.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../../users/domain/entities/user.dart';
+import '../../../users/domain/entities/gender.dart';
 import '../../domain/entities/team.dart';
 
 class TeamFormWidget extends StatefulWidget {
@@ -35,18 +35,40 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       _nombreController.text = widget.team!.nombre;
       _abreviacionController.text = widget.team!.abreviacion;
       _selectedTipo = widget.team!.tipo;
-      // Por ahora usamos el primer entrenador, pero se adaptará a múltiples
-      if (widget.team!.entrenador.isNotEmpty) {
-        _selectedEntrenadores = [widget.team!.entrenador];
-      }
       _integrantes = List.from(widget.team!.integrantes);
     }
   }
 
-  Future<void> _loadUsers() async {
-    final users = await _userRepository.getUsers();
+  void _loadUsers() async {
+    final users = _userRepository.getUsers();
     setState(() {
       _users = users;
+
+      // Cargar entrenadores después de tener la lista de usuarios
+      if (widget.team != null && widget.team!.entrenador.isNotEmpty) {
+        // Buscar el ID del entrenador por nombre
+        final entrenador = _users.firstWhere(
+          (u) => '${u.nombre} ${u.apellido}' == widget.team!.entrenador,
+          orElse: () => _users.isNotEmpty
+              ? _users.first
+              : User(
+                  id: 'temp',
+                  nombre: 'Sin',
+                  apellido: 'Entrenador',
+                  dni: '',
+                  email: '',
+                  telefono: '',
+                  fechaNacimiento: DateTime.now(),
+                  genero: Gender.masculino,
+                  equipo: '',
+                  tipos: {UserType.profesor},
+                  estadoCuota: EstadoCuota.alDia,
+                ),
+        );
+        if (entrenador.id != null) {
+          _selectedEntrenadores = [entrenador.id!];
+        }
+      }
     });
   }
 
@@ -62,7 +84,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       setState(() {
         _integrantes.add(
           TeamMember(
-            dni: user.dni ?? '',
+            dni: user.dni,
             nombre: user.nombre,
             apellido: user.apellido,
             numeroCamiseta: numeroCamiseta,
@@ -261,6 +283,19 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                 children: _selectedEntrenadores.map((id) {
                                   final user = _users.firstWhere(
                                     (u) => u.id == id,
+                                    orElse: () => User(
+                                      id: id,
+                                      nombre: 'Usuario',
+                                      apellido: 'Desconocido',
+                                      dni: '',
+                                      email: '',
+                                      telefono: '',
+                                      fechaNacimiento: DateTime.now(),
+                                      genero: Gender.masculino,
+                                      equipo: '',
+                                      tipos: {UserType.jugador},
+                                      estadoCuota: EstadoCuota.alDia,
+                                    ),
                                   );
                                   return Chip(
                                     label: Text(
@@ -375,8 +410,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                         children: (() {
                           final filteredUsers = _users.where((user) {
                             if (user.id == null) return false;
-                            if (_integrantes.any((m) => m.dni == user.dni))
+                            if (_integrantes.any((m) => m.dni == user.dni)) {
                               return false;
+                            }
                             final fullName = '${user.nombre} ${user.apellido}'
                                 .toLowerCase();
                             final dni = user.dni.toLowerCase();
@@ -504,7 +540,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     icon: Icon(
                                       Symbols.delete,
                                       size: 18,
-                                      color: colorScheme.error,
+                                      color: colorScheme.primary,
                                     ),
                                     onPressed: () => _removeMember(member.dni),
                                     tooltip: 'Eliminar',
@@ -526,7 +562,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             child: FilledButton(
               onPressed: _handleSubmit,
               style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.error,
+                backgroundColor: colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
