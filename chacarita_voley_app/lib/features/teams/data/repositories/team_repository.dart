@@ -6,37 +6,84 @@ class TeamRepository implements TeamRepositoryInterface {
     Team(
       id: '1',
       nombre: 'Chaca Rojo',
+      abreviacion: 'CHR',
+      tipo: TeamType.competitivo,
       entrenador: 'Ana Martínez',
-      jugadoresActuales: 10,
-      jugadoresMaximos: 20,
+      integrantes: [
+        TeamMember(
+          dni: '12345678',
+          nombre: 'Juan',
+          apellido: 'Pérez',
+          numeroCamiseta: '10',
+        ),
+        TeamMember(
+          dni: '23456789',
+          nombre: 'Carlos',
+          apellido: 'López',
+          numeroCamiseta: '7',
+        ),
+      ],
     ),
     Team(
       id: '2',
       nombre: 'Chaca Blanco',
+      abreviacion: 'CHB',
+      tipo: TeamType.competitivo,
       entrenador: 'Roberto García',
-      jugadoresActuales: 2,
-      jugadoresMaximos: 20,
+      integrantes: [
+        TeamMember(
+          dni: '34567890',
+          nombre: 'Miguel',
+          apellido: 'Sánchez',
+          numeroCamiseta: '15',
+        ),
+      ],
     ),
     Team(
       id: '3',
       nombre: 'Chaca Feme',
+      abreviacion: 'CHF',
+      tipo: TeamType.competitivo,
       entrenador: 'Laura Fernández',
-      jugadoresActuales: 15,
-      jugadoresMaximos: 20,
+      integrantes: [
+        TeamMember(
+          dni: '45678901',
+          nombre: 'María',
+          apellido: 'González',
+          numeroCamiseta: '5',
+        ),
+        TeamMember(
+          dni: '56789012',
+          nombre: 'Paula',
+          apellido: 'Martínez',
+          numeroCamiseta: '12',
+        ),
+      ],
     ),
     Team(
       id: '4',
       nombre: 'Chacarita',
+      abreviacion: 'CHA',
+      tipo: TeamType.competitivo,
       entrenador: 'Diego Rodríguez',
-      jugadoresActuales: 15,
-      jugadoresMaximos: 20,
+      integrantes: [
+        TeamMember(
+          dni: '67890123',
+          nombre: 'Fernando',
+          apellido: 'Flores',
+          numeroCamiseta: '9',
+        ),
+      ],
     ),
     Team(
       id: '5',
       nombre: 'Recreativo 1',
+      abreviacion: 'REC',
+      tipo: TeamType.recreativo,
       entrenador: 'María Sánchez',
-      jugadoresActuales: 15,
-      jugadoresMaximos: 20,
+      integrantes: [
+        TeamMember(dni: '78901234', nombre: 'Jorge', apellido: 'Díaz'),
+      ],
     ),
   ];
 

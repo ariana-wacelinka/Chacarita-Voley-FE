@@ -35,7 +35,6 @@ class _TeamsPageState extends State<TeamsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadTeams();
   }
 
   @override
@@ -290,7 +289,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
-                                                '${team.jugadoresActuales}/${team.jugadoresMaximos}',
+                                                '${team.jugadoresActuales}/20',
                                                 style: TextStyle(
                                                   color: context.tokens.text,
                                                   fontWeight: FontWeight.w600,
@@ -467,9 +466,7 @@ class _TeamsPageState extends State<TeamsPage> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implementar registro de equipo
-        },
+        onPressed: () => context.push('/teams/register'),
         backgroundColor: context.tokens.redToRosita,
         child: const Icon(Symbols.group_add, color: Colors.white),
       ),

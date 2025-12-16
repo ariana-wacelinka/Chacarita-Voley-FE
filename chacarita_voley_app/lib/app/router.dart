@@ -8,6 +8,7 @@ import '../features/users/presentation/pages/edit_user_page.dart';
 import '../features/users/presentation/pages/view_user_page.dart';
 import '../features/users/presentation/pages/attendance_history_page.dart';
 import '../features/teams/presentation/pages/teams_page.dart';
+import '../features/teams/presentation/pages/register_team_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -58,7 +59,6 @@ final appRouter = GoRouter(
       ],
     ),
 
-    // Rutas independientes con AppBar personalizado
     GoRoute(
       path: '/users/register',
       name: 'users-register',
@@ -79,6 +79,11 @@ final appRouter = GoRouter(
       name: 'users-attendance',
       builder: (_, state) =>
           AttendanceHistoryPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/teams/register',
+      name: 'teams-register',
+      builder: (_, __) => const RegisterTeamPage(),
     ),
     GoRoute(
       path: '/change-password',
