@@ -7,6 +7,7 @@ import '../features/users/presentation/pages/register_user_page.dart';
 import '../features/users/presentation/pages/edit_user_page.dart';
 import '../features/users/presentation/pages/view_user_page.dart';
 import '../features/users/presentation/pages/attendance_history_page.dart';
+import '../features/teams/presentation/pages/teams_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -37,7 +38,7 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/teams',
           name: 'teams',
-          builder: (_, __) => const _Page(text: 'Gestión de Equipos'),
+          builder: (_, __) => const TeamsPage(),
         ),
         GoRoute(
           path: '/notifications',
