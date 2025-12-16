@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/entities/gender.dart';
@@ -163,12 +164,19 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                 children: [
                   Row(
                     children: [
-                      Icon(Symbols.shield, size: 14, color: colorScheme.error),
+                      Icon(
+                        Symbols.shield,
+                        size: 20,
+                        color: context.tokens.redToRosita,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Tipo de Equipo',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: context.tokens.redToRosita,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -214,12 +222,15 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                 children: [
                   Row(
                     children: [
-                      Icon(Symbols.group, size: 14, color: colorScheme.primary),
+                      Icon(Symbols.group, size: 20, color: context.tokens.text),
                       const SizedBox(width: 8),
                       Text(
                         'Información General',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -374,14 +385,17 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                     children: [
                       Icon(
                         Symbols.group_add,
-                        size: 14,
-                        color: colorScheme.primary,
+                        size: 20,
+                        color: context.tokens.text,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Integrantes',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
