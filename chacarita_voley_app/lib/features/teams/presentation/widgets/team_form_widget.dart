@@ -234,7 +234,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   TextFormField(
                     controller: _nombreController,
                     decoration: const InputDecoration(
@@ -252,7 +252,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   TextFormField(
                     controller: _abreviacionController,
                     decoration: const InputDecoration(
@@ -504,7 +504,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                           dataTextStyle: const TextStyle(fontSize: 13),
                           columns: [
                             const DataColumn(label: Text('DNI')),
-                            const DataColumn(label: Text('Nombre y Apellido')),
+                            const DataColumn(label: Text('Nombre')),
                             DataColumn(
                               label: Text(
                                 _selectedTipo == TeamType.competitivo
