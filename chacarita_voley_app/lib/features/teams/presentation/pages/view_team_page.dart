@@ -22,6 +22,118 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   Team? _team;
   bool _isLoading = true;
 
+  void _showCompetitiveDataDialog(TeamMember member) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Datos competitivos'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.nombreCompleto.trim().isEmpty
+                      ? member.dni
+                      : member.nombreCompleto,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Número de camiseta: ${member.numeroCamiseta ?? '-'}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditCompetitiveDataDialog({
+    required int memberIndex,
+    required TeamMember member,
+  }) {
+    final controller = TextEditingController(text: member.numeroCamiseta ?? '');
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modificar datos competitivos'),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    member.nombreCompleto.trim().isEmpty
+                        ? member.dni
+                        : member.nombreCompleto,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('competitive-jersey-number-field'),
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Número de camiseta',
+                      hintText: 'Ej: 10',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              key: const Key('competitive-save-button'),
+              onPressed: () {
+                final value = controller.text.trim();
+                final updated = member.copyWith(
+                  numeroCamiseta: value.isEmpty ? null : value,
+                );
+
+                setState(() {
+                  final updatedMembers = List<TeamMember>.from(
+                    _team!.integrantes,
+                  );
+                  updatedMembers[memberIndex] = updated;
+                  _team = _team!.copyWith(integrantes: updatedMembers);
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -451,7 +563,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                               ),
                             const DataColumn(label: SizedBox(width: 24)),
                           ],
-                          rows: _team!.integrantes.map((member) {
+                          rows: _team!.integrantes.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final member = entry.value;
                             return DataRow(
                               cells: [
                                 DataCell(Text(member.dni)),
@@ -465,7 +579,29 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                       size: 18,
                                     ),
                                     onSelected: (value) {
-                                      // TODO: Implementar acciones
+                                      switch (value) {
+                                        case 'ver_datos':
+                                          _showCompetitiveDataDialog(member);
+                                          break;
+                                        case 'modificar_datos':
+                                          _showEditCompetitiveDataDialog(
+                                            memberIndex: index,
+                                            member: member,
+                                          );
+                                          break;
+                                        case 'visualizar':
+                                        case 'ver':
+                                          context.push(
+                                            '/users/${member.dni}/view',
+                                          );
+                                          break;
+                                        case 'modificar':
+                                        case 'modificar_usuario':
+                                          context.push(
+                                            '/users/${member.dni}/edit',
+                                          );
+                                          break;
+                                      }
                                     },
                                     itemBuilder: (context) {
                                       if (_team!.tipo == TeamType.competitivo) {
@@ -485,6 +621,10 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                           const PopupMenuItem(
                                             value: 'visualizar',
                                             child: Text('Visualizar jugador'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'modificar_usuario',
+                                            child: Text('Modificar usuario'),
                                           ),
                                         ];
                                       } else {
