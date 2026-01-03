@@ -22,6 +22,7 @@ class _EditUserPageState extends State<EditUserPage> {
   User? _user;
   bool _isLoading = false;
   bool _isLoadingUser = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -31,12 +32,23 @@ class _EditUserPageState extends State<EditUserPage> {
     _loadUser();
   }
 
-  void _loadUser() {
-    final user = _userRepository.getUserById(widget.userId);
-    setState(() {
-      _user = user;
-      _isLoadingUser = false;
-    });
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoadingUser = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _user = null;
+        _isLoadingUser = false;
+        _loadError = 'Error al cargar usuario';
+      });
+    }
   }
 
   Future<void> _handleUpdateUser(User user) async {
@@ -149,6 +161,39 @@ class _EditUserPageState extends State<EditUserPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(
                     context.tokens.redToRosita,
                   ),
+                ),
+              )
+            : _loadError != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Symbols.error,
+                      size: 64,
+                      color: context.tokens.placeholder,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _loadError!,
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.tokens.redToRosita,
+                      ),
+                      child: const Text(
+                        'Volver a la lista',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               )
             : _user == null

@@ -4,6 +4,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/environment.dart';
 import '../../../../core/network/graphql_client_factory.dart';
+import '../../../users/data/repositories/user_repository.dart';
+import '../../../users/domain/entities/user.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../data/services/team_service.dart';
@@ -21,6 +23,10 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   late final TeamRepository _repository;
   Team? _team;
   bool _isLoading = true;
+
+  String _resolveUserIdForMember(TeamMember member) {
+    return member.dni;
+  }
 
   void _showCompetitiveDataDialog(TeamMember member) {
     showDialog<void>(
@@ -591,15 +597,15 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                           break;
                                         case 'visualizar':
                                         case 'ver':
-                                          context.push(
-                                            '/users/${member.dni}/view',
-                                          );
+                                          final userId =
+                                              _resolveUserIdForMember(member);
+                                          context.push('/users/$userId/view');
                                           break;
                                         case 'modificar':
                                         case 'modificar_usuario':
-                                          context.push(
-                                            '/users/${member.dni}/edit',
-                                          );
+                                          final userId =
+                                              _resolveUserIdForMember(member);
+                                          context.push('/users/$userId/edit');
                                           break;
                                       }
                                     },

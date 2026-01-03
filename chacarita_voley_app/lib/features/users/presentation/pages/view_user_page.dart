@@ -22,6 +22,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
   late final DeleteUserUseCase _deleteUserUseCase;
   User? _user;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -31,12 +32,22 @@ class _ViewUserPageState extends State<ViewUserPage> {
     _loadUser();
   }
 
-  void _loadUser() {
-    final user = _userRepository.getUserById(widget.userId);
-    setState(() {
-      _user = user;
-      _isLoading = false;
-    });
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Error al cargar usuario';
+      });
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -92,6 +103,46 @@ class _ViewUserPageState extends State<ViewUserPage> {
             valueColor: AlwaysStoppedAnimation<Color>(
               context.tokens.redToRosita,
             ),
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: context.tokens.background,
+        appBar: AppBar(
+          backgroundColor: context.tokens.card1,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+            onPressed: () => context.go('/users'),
+          ),
+          title: Text(
+            _errorMessage!,
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Symbols.error, size: 64, color: context.tokens.placeholder),
+              const SizedBox(height: 16),
+              Text(
+                'No se pudo cargar el usuario',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       );

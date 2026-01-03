@@ -85,7 +85,9 @@ void main() {
         ),
         GoRoute(
           path: '/users/:id/view',
-          builder: (_, __) => const Scaffold(body: Text('USER_VIEW_PAGE')),
+          builder: (_, state) => Scaffold(
+            body: Text('USER_VIEW_PAGE_${state.pathParameters['id']}'),
+          ),
         ),
         GoRoute(
           path: '/users/:id/edit',
@@ -107,6 +109,6 @@ void main() {
     await tester.tap(find.text('Visualizar jugador'));
     await tester.pumpAndSettle();
 
-    expect(find.text('USER_VIEW_PAGE'), findsOneWidget);
+    expect(find.text('USER_VIEW_PAGE_12345678'), findsOneWidget);
   });
 }

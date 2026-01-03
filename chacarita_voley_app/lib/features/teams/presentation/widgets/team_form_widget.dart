@@ -41,7 +41,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   }
 
   void _loadUsers() async {
-    final users = _userRepository.getUsers();
+    final users = await _userRepository.getUsers();
+    if (!mounted) return;
     setState(() {
       _users = users;
 

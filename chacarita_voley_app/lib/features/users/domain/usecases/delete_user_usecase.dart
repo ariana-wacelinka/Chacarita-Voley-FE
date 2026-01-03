@@ -1,7 +1,7 @@
-import '../../data/repositories/user_repository.dart';
+import '../repositories/user_repository_interface.dart';
 
 class DeleteUserUseCase {
-  final UserRepository _userRepository;
+  final UserRepositoryInterface _userRepository;
 
   DeleteUserUseCase(this._userRepository);
 

@@ -19,6 +19,8 @@ class _UsersPageState extends State<UsersPage> {
   List<User> _filteredUsers = [];
   List<User> _displayedUsers = [];
   String _searchQuery = '';
+  bool _isLoadingUsers = true;
+  String? _loadError;
 
   static const int _usersPerPage = 12;
   int _currentPage = 0;
@@ -31,22 +33,37 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadUsers();
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  void _loadUsers() {
-    final repository = UserRepository();
-    _allUsers = repository.getUsers();
-    _filteredUsers = List.from(_allUsers);
-    _updateDisplayedUsers();
+  Future<void> _loadUsers() async {
+    setState(() {
+      _isLoadingUsers = true;
+      _loadError = null;
+    });
+
+    try {
+      final repository = UserRepository();
+      final users = await repository.getUsers();
+      if (!mounted) return;
+
+      setState(() {
+        _allUsers = users;
+        _isLoadingUsers = false;
+      });
+      _onSearchChanged();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _allUsers = [];
+        _filteredUsers = [];
+        _displayedUsers = [];
+        _isLoadingUsers = false;
+        _loadError = 'Error al cargar usuarios';
+      });
+    }
   }
 
   void _onSearchChanged() {
@@ -205,7 +222,37 @@ class _UsersPageState extends State<UsersPage> {
             ),
 
             Expanded(
-              child: _filteredUsers.isEmpty
+              child: _isLoadingUsers
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          context.tokens.redToRosita,
+                        ),
+                      ),
+                    )
+                  : _loadError != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Symbols.error,
+                            size: 64,
+                            color: context.tokens.placeholder,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _loadError!,
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _filteredUsers.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
