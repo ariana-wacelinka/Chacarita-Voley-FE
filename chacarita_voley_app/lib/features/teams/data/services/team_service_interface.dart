@@ -2,6 +2,11 @@ import '../models/team_response_model.dart';
 
 abstract class TeamServiceInterface {
   Future<List<TeamResponseModel>> getTeams();
+  Future<PaginatedTeamResponse> getAllTeams({
+    required int page,
+    required int size,
+    TeamFilters? filters,
+  });
   Future<TeamResponseModel?> getTeamById(String id);
   Future<TeamResponseModel> createTeam(CreateTeamRequestModel request);
   Future<TeamResponseModel> updateTeam(UpdateTeamRequestModel request);

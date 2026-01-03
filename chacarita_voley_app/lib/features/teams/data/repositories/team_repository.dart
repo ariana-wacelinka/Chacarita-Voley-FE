@@ -1,7 +1,14 @@
 import '../../domain/entities/team.dart';
 import '../../domain/repositories/team_repository_interface.dart';
+import '../services/team_service_interface.dart';
+import '../models/team_response_model.dart';
 
 class TeamRepository implements TeamRepositoryInterface {
+  final TeamServiceInterface? _teamService;
+
+  TeamRepository({TeamServiceInterface? teamService})
+    : _teamService = teamService;
+
   static final List<Team> _teams = [
     Team(
       id: '1',
@@ -89,8 +96,63 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<List<Team>> getTeams() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_teams);
+    final List<Team> allTeams = List.from(_teams);
+
+    // Intentar obtener equipos del backend
+    if (_teamService != null) {
+      try {
+        // ignore: avoid_print
+        print('🔍 Obteniendo equipos del backend...');
+        final backendTeams = await _teamService.getTeams();
+        // ignore: avoid_print
+        print('✅ Equipos obtenidos del backend: ${backendTeams.length}');
+        // Convertir TeamResponseModel a Team
+        for (final teamModel in backendTeams) {
+          // ignore: avoid_print
+          print(
+            '📦 Procesando equipo: ${teamModel.name} (ID: ${teamModel.id})',
+          );
+          allTeams.add(_mapTeamResponseToTeam(teamModel));
+        }
+      } catch (e, stackTrace) {
+        // Si falla la llamada al backend, solo usar equipos hardcodeados
+        // ignore: avoid_print
+        print('❌ Error obteniendo equipos del backend: $e');
+        // ignore: avoid_print
+        print('Stack trace: $stackTrace');
+      }
+    } else {
+      // ignore: avoid_print
+      print('⚠️ TeamService es null, solo usando equipos hardcodeados');
+    }
+
+    // ignore: avoid_print
+    print('📊 Total de equipos: ${allTeams.length}');
+    return allTeams;
+  }
+
+  Team _mapTeamResponseToTeam(TeamResponseModel model) {
+    return Team(
+      id: model.id,
+      nombre: model.name,
+      abreviacion: model.name
+          .substring(0, model.name.length > 4 ? 4 : model.name.length)
+          .toUpperCase(),
+      tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
+      entrenador: (model.professors != null && model.professors!.isNotEmpty)
+          ? model.professors!.first.id
+          : '',
+      integrantes: (model.players ?? [])
+          .map(
+            (player) => TeamMember(
+              dni: player.id,
+              nombre: '',
+              apellido: '',
+              numeroCamiseta: player.jerseyNumber,
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override
