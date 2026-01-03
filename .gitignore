@@ -34,3 +34,4 @@ google-services.json
 *.hprof
 
 .github/
+chacarita_voley_app/lib/core/environment.dart
