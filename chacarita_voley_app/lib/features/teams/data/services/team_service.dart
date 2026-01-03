@@ -1,4 +1,5 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
+import '../../../../core/network/graphql_client_factory.dart';
 import 'team_service_interface.dart';
 import '../models/team_response_model.dart';
 
@@ -74,23 +75,36 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _deleteTeamMutation = r'''
-    mutation DeleteTeam($id: String!) {
+    mutation DeleteTeam($id: ID!) {
       deleteTeam(id: $id)
     }
   ''';
 
   @override
   Future<void> deleteTeam(String id) async {
+    const mutation = r'''
+      mutation deleteTeam($id: ID!) {
+        deleteTeam(id: $id)
+      }
+    ''';
+
     final result = await _graphQLClient.mutate(
-      MutationOptions(
-        document: gql(_deleteTeamMutation),
-        variables: {'id': id},
-      ),
+      MutationOptions(document: gql(mutation), variables: {'id': id}),
     );
 
     if (result.hasException) {
-      throw Exception(result.exception.toString());
+      throw Exception(result.exception);
     }
+
+    // El backend devuelve true/false, no un objeto
+    final deleted = result.data?['deleteTeam'] as bool?;
+
+    if (deleted != true) {
+      throw Exception('No se pudo eliminar el equipo');
+    }
+
+    // Resetear cache para forzar refetch en próxima query
+    _graphQLClient.cache.store.reset();
   }
 
   static const String _getAllTeamsQuery = r'''
@@ -133,10 +147,13 @@ class TeamService implements TeamServiceInterface {
     required int size,
     TeamFilters? filters,
   }) async {
-    final result = await _graphQLClient.query(
-      QueryOptions(
-        document: gql(_getAllTeamsQuery),
-        variables: {'page': page, 'size': size},
+    final result = await GraphQLClientFactory.withFreshClient(
+      run: (freshClient) => freshClient.query(
+        QueryOptions(
+          document: gql(_getAllTeamsQuery),
+          variables: {'page': page, 'size': size},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
       ),
     );
 

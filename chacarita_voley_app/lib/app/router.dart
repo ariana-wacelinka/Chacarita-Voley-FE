@@ -10,6 +10,7 @@ import '../features/users/presentation/pages/attendance_history_page.dart';
 import '../features/teams/presentation/pages/teams_page.dart';
 import '../features/teams/presentation/pages/register_team_page.dart';
 import '../features/teams/presentation/pages/edit_team_page.dart';
+import '../features/teams/presentation/pages/view_team_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -85,6 +86,11 @@ final appRouter = GoRouter(
       path: '/teams/register',
       name: 'teams-register',
       builder: (_, __) => const RegisterTeamPage(),
+    ),
+    GoRoute(
+      path: '/teams/view/:id',
+      name: 'teams-view',
+      builder: (_, state) => ViewTeamPage(teamId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/teams/edit/:id',

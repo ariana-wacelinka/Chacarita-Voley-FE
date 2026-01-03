@@ -24,6 +24,7 @@ class _TeamsPageState extends State<TeamsPage> {
   List<Team> _displayedTeams = [];
   String _searchQuery = '';
   bool _isLoading = true;
+  String? _lastRoute;
 
   static const int _teamsPerPage = 12;
   int _currentPage = 0;
@@ -31,10 +32,7 @@ class _TeamsPageState extends State<TeamsPage> {
   @override
   void initState() {
     super.initState();
-    final graphQLClient = GraphQLClientFactory.create(
-      baseUrl: Environment.baseUrl,
-    );
-    final teamService = TeamService(graphQLClient: graphQLClient);
+    final teamService = TeamService(graphQLClient: GraphQLClientFactory.client);
     _repository = TeamRepository(teamService: teamService);
     _loadTeams();
     _searchController.addListener(_onSearchChanged);
@@ -43,6 +41,18 @@ class _TeamsPageState extends State<TeamsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Recargar siempre que volvemos a /teams desde otra ruta
+    final currentRoute = GoRouterState.of(context).uri.path;
+    if (currentRoute == '/teams' &&
+        _lastRoute != null &&
+        _lastRoute != '/teams') {
+      // Recargar después de un frame para evitar rebuild durante build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        print('🔄 Volviendo a /teams desde $_lastRoute - Recargando...');
+        _loadTeams();
+      });
+    }
+    _lastRoute = currentRoute;
   }
 
   @override
@@ -326,7 +336,9 @@ class _TeamsPageState extends State<TeamsPage> {
                                             onSelected: (value) {
                                               switch (value) {
                                                 case 'view':
-                                                  // TODO: Implementar vista de detalle
+                                                  context.push(
+                                                    '/teams/view/${team.id}',
+                                                  );
                                                   break;
                                                 case 'edit':
                                                   context.push(

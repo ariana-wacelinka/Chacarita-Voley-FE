@@ -9,6 +9,8 @@ class TeamRepository implements TeamRepositoryInterface {
   TeamRepository({TeamServiceInterface? teamService})
     : _teamService = teamService;
 
+  // Equipos hardcodeados - mantenidos para futuros usos/testing
+
   static final List<Team> _teams = [
     Team(
       id: '1',
@@ -96,7 +98,8 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<List<Team>> getTeams() async {
-    final List<Team> allTeams = List.from(_teams);
+    // Lista que se mostrará en la tabla (solo backend)
+    final List<Team> displayTeams = [];
 
     // Intentar obtener equipos del backend
     if (_teamService != null) {
@@ -112,10 +115,10 @@ class TeamRepository implements TeamRepositoryInterface {
           print(
             '📦 Procesando equipo: ${teamModel.name} (ID: ${teamModel.id})',
           );
-          allTeams.add(_mapTeamResponseToTeam(teamModel));
+          displayTeams.add(_mapTeamResponseToTeam(teamModel));
         }
       } catch (e, stackTrace) {
-        // Si falla la llamada al backend, solo usar equipos hardcodeados
+        // Si falla la llamada al backend, devolver lista vacía
         // ignore: avoid_print
         print('❌ Error obteniendo equipos del backend: $e');
         // ignore: avoid_print
@@ -123,12 +126,12 @@ class TeamRepository implements TeamRepositoryInterface {
       }
     } else {
       // ignore: avoid_print
-      print('⚠️ TeamService es null, solo usando equipos hardcodeados');
+      print('⚠️ TeamService es null, no se pueden obtener equipos');
     }
 
     // ignore: avoid_print
-    print('📊 Total de equipos: ${allTeams.length}');
-    return allTeams;
+    print('📊 Total de equipos del backend: ${displayTeams.length}');
+    return displayTeams;
   }
 
   Team _mapTeamResponseToTeam(TeamResponseModel model) {
@@ -167,22 +170,83 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<void> createTeam(Team team) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _teams.add(team);
+    print('➕ Repository: Intentando crear equipo: ${team.nombre}');
+
+    // Primero crear en el backend si existe el servicio
+    if (_teamService != null) {
+      try {
+        print('📡 Llamando al servicio GraphQL para crear...');
+        final request = CreateTeamRequestModel(
+          name: team.nombre,
+          isCompetitive: team.tipo == TeamType.competitivo,
+          playerIds: team.integrantes.map((m) => m.dni).toList(),
+          professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],
+        );
+        await _teamService!.createTeam(request);
+        print('✅ Equipo creado en el backend');
+      } catch (e) {
+        print('❌ Error al crear en el backend: $e');
+        rethrow;
+      }
+    } else {
+      // Si no hay servicio, solo agregarlo a la lista local
+      await Future.delayed(const Duration(milliseconds: 300));
+      _teams.add(team);
+    }
   }
 
   @override
   Future<void> updateTeam(Team team) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = _teams.indexWhere((t) => t.id == team.id);
-    if (index != -1) {
-      _teams[index] = team;
+    print(
+      '✏️ Repository: Intentando actualizar equipo: ${team.nombre} (ID: ${team.id})',
+    );
+
+    // Primero actualizar en el backend si existe el servicio
+    if (_teamService != null) {
+      try {
+        print('📡 Llamando al servicio GraphQL para actualizar...');
+        final request = UpdateTeamRequestModel(
+          id: team.id,
+          name: team.nombre,
+          isCompetitive: team.tipo == TeamType.competitivo,
+          playerIds: team.integrantes.map((m) => m.dni).toList(),
+          professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],
+        );
+        await _teamService!.updateTeam(request);
+        print('✅ Equipo actualizado en el backend');
+      } catch (e) {
+        print('❌ Error al actualizar en el backend: $e');
+        rethrow;
+      }
+    } else {
+      // Si no hay servicio, solo actualizar en la lista local
+      await Future.delayed(const Duration(milliseconds: 300));
+      final index = _teams.indexWhere((t) => t.id == team.id);
+      if (index != -1) {
+        _teams[index] = team;
+      }
     }
   }
 
   @override
   Future<void> deleteTeam(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _teams.removeWhere((team) => team.id == id);
+    // ignore: avoid_print
+    print('🗑️ Repository: Eliminando equipo con ID: $id');
+
+    if (_teamService != null) {
+      try {
+        // ignore: avoid_print
+        print('📡 Llamando al servicio GraphQL para eliminar...');
+        await _teamService!.deleteTeam(id);
+        // ignore: avoid_print
+        print('✅ Equipo eliminado del backend correctamente');
+      } catch (e) {
+        // ignore: avoid_print
+        print('❌ Error al eliminar del backend: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No se puede eliminar: TeamService es null');
+    }
   }
 }
