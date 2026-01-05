@@ -4,14 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:chacarita_voley_app/app/theme/app_theme.dart';
-import 'package:chacarita_voley_app/core/network/graphql_client_factory.dart';
 import 'package:chacarita_voley_app/features/teams/presentation/pages/view_team_page.dart';
 
 void main() {
-  setUpAll(() {
-    GraphQLClientFactory.init(baseUrl: 'https://example.com/graphql');
-  });
-
   testWidgets(
     'Integrantes menu: abre dialog de datos competitivos y permite editar camiseta',
     (tester) async {

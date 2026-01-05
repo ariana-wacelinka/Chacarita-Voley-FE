@@ -160,6 +160,29 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<Team?> getTeamById(String id) async {
+    if (_teamService != null) {
+      try {
+        // ignore: avoid_print
+        print('🔍 Obteniendo equipo por ID: $id del backend...');
+        final teamModel = await _teamService.getTeamById(id);
+        if (teamModel == null) {
+          // ignore: avoid_print
+          print('⚠️ Equipo no encontrado en el backend');
+          return null;
+        }
+        // ignore: avoid_print
+        print('✅ Equipo encontrado: ${teamModel.name}');
+        return _mapTeamResponseToTeam(teamModel);
+      } catch (e) {
+        // ignore: avoid_print
+        print('❌ Error obteniendo equipo del backend: $e');
+        rethrow;
+      }
+    }
+
+    // Fallback a lista local si no hay servicio configurado
+    // ignore: avoid_print
+    print('⚠️ TeamService es null, usando datos locales');
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       return _teams.firstWhere((team) => team.id == id);

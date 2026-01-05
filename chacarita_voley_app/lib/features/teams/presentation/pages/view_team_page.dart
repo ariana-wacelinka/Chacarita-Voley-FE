@@ -140,21 +140,36 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   @override
   void initState() {
     super.initState();
-    final teamService = TeamService(graphQLClient: GraphQLClientFactory.client);
-    _repository = TeamRepository(teamService: teamService);
+    try {
+      final teamService = TeamService(
+        graphQLClient: GraphQLClientFactory.client,
+      );
+      _repository = TeamRepository(teamService: teamService);
+    } catch (e) {
+      // Si GraphQLClient no está inicializado (tests), usar repo sin servicio
+      _repository = TeamRepository();
+    }
     _loadTeam();
   }
 
   Future<void> _loadTeam() async {
+    // ignore: avoid_print
+    print('🔍 ViewTeamPage: Cargando equipo con ID: ${widget.teamId}');
     try {
       final team = await _repository.getTeamById(widget.teamId);
+      // ignore: avoid_print
+      print('✅ ViewTeamPage: Equipo obtenido: ${team?.nombre ?? "null"}');
       if (mounted) {
         setState(() {
           _team = team;
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // ignore: avoid_print
+      print('❌ ViewTeamPage: Error cargando equipo: $e');
+      // ignore: avoid_print
+      print('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoading = false;

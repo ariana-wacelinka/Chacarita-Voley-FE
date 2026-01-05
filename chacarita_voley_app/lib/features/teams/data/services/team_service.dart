@@ -41,7 +41,7 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _updateTeamMutation = r'''
-    mutation UpdateTeam($id: String!, $input: UpdateTeamInput!) {
+    mutation UpdateTeam($id: ID!, $input: UpdateTeamInput!) {
       updateTeam(id: $id, input: $input) {
         id
         isCompetitive
@@ -112,8 +112,6 @@ class TeamService implements TeamServiceInterface {
             id
             jerseyNumber
             leagueId
-            assistances { id }
-            dues { id }
           }
           professors { id }
           trainings {
@@ -167,12 +165,16 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _getTeamByIdQuery = r'''
-    query GetTeamById($id: String!) {
+    query GetTeamById($id: ID!) {
       getTeamById(id: $id) {
         id
         isCompetitive
         name
-        players { id }
+        players {
+          id
+          jerseyNumber
+          leagueId
+        }
         professors { id }
         trainings { dayOfWeek endTime id location startTime trainingType }
       }
@@ -199,7 +201,7 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _addPlayersToTeamMutation = r'''
-    mutation AddPlayersToTeam($teamId: String!, $playersIds: String!) {
+    mutation AddPlayersToTeam($teamId: ID!, $playersIds: String!) {
       addPlayersToTeam(teamId: $teamId, playersIds: $playersIds) {
         id
         isCompetitive
@@ -233,7 +235,7 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _addProfessorsToTeamMutation = r'''
-    mutation AddProfessorsToTeam($teamId: String!, $professorsIds: String!) {
+    mutation AddProfessorsToTeam($teamId: ID!, $professorsIds: String!) {
       addProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
         id
         isCompetitive
@@ -267,7 +269,7 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _removePlayersFromTeamMutation = r'''
-    mutation RemovePlayersFromTeam($teamId: String!, $playerIds: String!) {
+    mutation RemovePlayersFromTeam($teamId: ID!, $playerIds: String!) {
       removePlayersToTeam(teamId: $teamId, playerIds: $playerIds) {
         id
         isCompetitive
@@ -301,7 +303,7 @@ class TeamService implements TeamServiceInterface {
   }
 
   static const String _removeProfessorsFromTeamMutation = r'''
-    mutation RemoveProfessorsFromTeam($teamId: String!, $professorsIds: String!) {
+    mutation RemoveProfessorsFromTeam($teamId: ID!, $professorsIds: String!) {
       removeProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
         id
         isCompetitive
