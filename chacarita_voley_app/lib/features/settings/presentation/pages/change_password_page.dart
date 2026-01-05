@@ -306,7 +306,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             'Cambiar contraseña',
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(fontSize: 20)
-                                ?.copyWith(
+                                .copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w400,
                                 ),

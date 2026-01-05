@@ -182,7 +182,7 @@ class TeamRepository implements TeamRepositoryInterface {
           playerIds: team.integrantes.map((m) => m.dni).toList(),
           professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],
         );
-        await _teamService!.createTeam(request);
+        await _teamService.createTeam(request);
         print('✅ Equipo creado en el backend');
       } catch (e) {
         print('❌ Error al crear en el backend: $e');
@@ -212,7 +212,7 @@ class TeamRepository implements TeamRepositoryInterface {
           playerIds: team.integrantes.map((m) => m.dni).toList(),
           professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],
         );
-        await _teamService!.updateTeam(request);
+        await _teamService.updateTeam(request);
         print('✅ Equipo actualizado en el backend');
       } catch (e) {
         print('❌ Error al actualizar en el backend: $e');
@@ -237,7 +237,7 @@ class TeamRepository implements TeamRepositoryInterface {
       try {
         // ignore: avoid_print
         print('📡 Llamando al servicio GraphQL para eliminar...');
-        await _teamService!.deleteTeam(id);
+        await _teamService.deleteTeam(id);
         // ignore: avoid_print
         print('✅ Equipo eliminado del backend correctamente');
       } catch (e) {

@@ -74,12 +74,6 @@ class TeamService implements TeamServiceInterface {
     );
   }
 
-  static const String _deleteTeamMutation = r'''
-    mutation DeleteTeam($id: ID!) {
-      deleteTeam(id: $id)
-    }
-  ''';
-
   @override
   Future<void> deleteTeam(String id) async {
     const mutation = r'''

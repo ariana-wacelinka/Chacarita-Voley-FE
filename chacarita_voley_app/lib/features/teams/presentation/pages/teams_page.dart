@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/environment.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
