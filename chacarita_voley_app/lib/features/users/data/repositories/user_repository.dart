@@ -32,6 +32,9 @@ class UserRepository implements UserRepositoryInterface {
     roles
     surname
     birthDate
+    admin {
+      id
+    }
     player {
       id
       leagueId
@@ -39,6 +42,10 @@ class UserRepository implements UserRepositoryInterface {
       teams { id isCompetitive name }
       dues { id }
       assistances { id }
+    }
+    professor {
+      id
+      teams { id isCompetitive name }
     }
   ''';
 
@@ -260,31 +267,80 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   Map<String, dynamic> _mapUserToCreateInput(User user) {
-    return {
+    if (user.nombre.isEmpty) {
+      throw Exception('El nombre es obligatorio');
+    }
+    if (user.apellido.isEmpty) {
+      throw Exception('El apellido es obligatorio');
+    }
+    if (user.dni.isEmpty) {
+      throw Exception('El DNI es obligatorio');
+    }
+    if (user.email.isEmpty) {
+      throw Exception('El email es obligatorio');
+    }
+
+    final input = <String, dynamic>{
       'name': user.nombre,
       'surname': user.apellido,
       'dni': user.dni,
       'email': user.email,
-      'phone': user.telefono,
-      'gender': _mapGenderToApi(user.genero),
-      'birthDate': _formatBirthDate(user.fechaNacimiento),
       'roles': _mapRolesToApi(user.tipos),
     };
+
+    if (user.telefono.isNotEmpty) {
+      input['phone'] = user.telefono;
+    }
+    if (user.genero != Gender.otro) {
+      input['gender'] = _mapGenderToApi(user.genero);
+    }
+    final birthDate = _formatBirthDate(user.fechaNacimiento);
+    if (birthDate.isNotEmpty) {
+      input['birthDate'] = birthDate;
+    }
+
+    return input;
   }
 
   Map<String, dynamic> _mapUserToUpdateInput(User user) {
-    final jersey = int.tryParse(user.numeroCamiseta ?? '');
-    return {
+    if (user.nombre.isEmpty) {
+      throw Exception('El nombre es obligatorio');
+    }
+    if (user.apellido.isEmpty) {
+      throw Exception('El apellido es obligatorio');
+    }
+    if (user.dni.isEmpty) {
+      throw Exception('El DNI es obligatorio');
+    }
+    if (user.email.isEmpty) {
+      throw Exception('El email es obligatorio');
+    }
+
+    final input = <String, dynamic>{
       'name': user.nombre,
       'surname': user.apellido,
       'dni': user.dni,
       'email': user.email,
-      'phone': user.telefono,
-      'gender': _mapGenderToApi(user.genero),
-      'birthDate': _formatBirthDate(user.fechaNacimiento),
       'roles': _mapRolesToApi(user.tipos),
-      if (jersey != null) 'jerseyNumber': jersey,
     };
+
+    if (user.telefono.isNotEmpty) {
+      input['phone'] = user.telefono;
+    }
+    if (user.genero != Gender.otro) {
+      input['gender'] = _mapGenderToApi(user.genero);
+    }
+    final birthDate = _formatBirthDate(user.fechaNacimiento);
+    if (birthDate.isNotEmpty) {
+      input['birthDate'] = birthDate;
+    }
+
+    final jersey = int.tryParse(user.numeroCamiseta ?? '');
+    if (jersey != null) {
+      input['jerseyNumber'] = jersey;
+    }
+
+    return input;
   }
 
   String _formatBirthDate(DateTime date) {
