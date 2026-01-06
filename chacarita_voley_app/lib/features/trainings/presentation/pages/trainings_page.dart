@@ -15,6 +15,7 @@ class TrainingsPage extends StatefulWidget {
 class _TrainingsPageState extends State<TrainingsPage> {
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
+  List<Training> _allTrainings = [];
   bool _isLoading = true;
   bool _showFilters = false;
 
@@ -24,6 +25,10 @@ class _TrainingsPageState extends State<TrainingsPage> {
   final _endTimeController = TextEditingController();
 
   TrainingStatus? _selectedStatus;
+
+  int _currentPage = 0;
+  final int _itemsPerPage = 10;
+  int get _totalPages => (_allTrainings.length / _itemsPerPage).ceil();
 
   @override
   void initState() {
@@ -46,7 +51,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
       final trainings = await _repository.getTrainings(status: _selectedStatus);
       if (mounted) {
         setState(() {
-          _trainings = trainings;
+          _allTrainings = trainings;
+          _currentPage = 0;
+          _updatePagedTrainings();
           _isLoading = false;
         });
       }
@@ -54,6 +61,24 @@ class _TrainingsPageState extends State<TrainingsPage> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  void _updatePagedTrainings() {
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage).clamp(
+      0,
+      _allTrainings.length,
+    );
+    _trainings = _allTrainings.sublist(startIndex, endIndex);
+  }
+
+  void _goToPage(int page) {
+    if (page >= 0 && page < _totalPages) {
+      setState(() {
+        _currentPage = page;
+        _updatePagedTrainings();
+      });
     }
   }
 
@@ -89,7 +114,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/trainings/create'),
         backgroundColor: context.tokens.redToRosita,
-        child: const Icon(Symbols.add, color: Colors.white),
+        child: const Icon(Symbols.sports, color: Colors.white, size: 28),
       ),
     );
   }
@@ -413,13 +438,53 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   Widget _buildTrainingsList(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _trainings.length,
-      itemBuilder: (context, index) {
-        final training = _trainings[index];
-        return _buildTrainingCard(context, training);
-      },
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _trainings.length,
+            itemBuilder: (context, index) {
+              final training = _trainings[index];
+              return _buildTrainingCard(context, training);
+            },
+          ),
+        ),
+        if (_totalPages > 1) _buildPagination(context),
+      ],
+    );
+  }
+
+  Widget _buildPagination(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.tokens.background,
+        border: Border(top: BorderSide(color: context.tokens.stroke)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: Icon(Symbols.chevron_left, color: context.tokens.text),
+            onPressed: _currentPage > 0
+                ? () => _goToPage(_currentPage - 1)
+                : null,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Página ${_currentPage + 1} de $_totalPages',
+            style: TextStyle(color: context.tokens.text, fontSize: 14),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Symbols.chevron_right, color: context.tokens.text),
+            onPressed: _currentPage < _totalPages - 1
+                ? () => _goToPage(_currentPage + 1)
+                : null,
+          ),
+        ],
+      ),
     );
   }
 
@@ -435,7 +500,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -446,7 +511,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         training.dateFormatted,
                         style: TextStyle(
                           color: context.tokens.text,
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -454,7 +519,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 4,
+                        vertical: 0,
                       ),
                       decoration: BoxDecoration(
                         color: training.status == TrainingStatus.proximo
@@ -485,81 +550,112 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Prof. ${training.professorName} - ${training.teamName}',
-                  style: TextStyle(
-                    color: context.tokens.placeholder,
-                    fontSize: 12,
+                Transform.translate(
+                  offset: const Offset(0, -12),
+                  child: Text(
+                    'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                    style: TextStyle(
+                      color: context.tokens.placeholder,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Symbols.schedule,
-                      size: 16,
-                      color: context.tokens.placeholder,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${training.startTime} - ${training.endTime}',
-                      style: TextStyle(
-                        color: context.tokens.text,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Symbols.group,
-                      size: 16,
-                      color: context.tokens.placeholder,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${training.presentCount}/${training.totalPlayers}',
-                      style: TextStyle(
-                        color: context.tokens.text,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
           Divider(color: context.tokens.stroke, height: 1),
-          InkWell(
-            onTap: () => context.push('/trainings/${training.id}/attendance'),
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Icon(
-                    Symbols.check_circle,
-                    size: 18,
-                    color: context.tokens.text,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Pasar asistencia',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Symbols.schedule,
+                      size: 18,
+                      color: context.tokens.placeholder,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${training.startTime} - ${training.endTime}',
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${training.presentCount}/${training.totalPlayers}',
+                      style: TextStyle(
+                        color: context.tokens.placeholder,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Symbols.group,
+                      size: 18,
+                      color: context.tokens.placeholder,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: 26),
+                  child: Text(
+                    training.location,
                     style: TextStyle(
-                      color: context.tokens.text,
+                      color: context.tokens.placeholder,
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const Spacer(),
-                  Icon(
-                    Symbols.chevron_right,
-                    size: 18,
-                    color: context.tokens.placeholder,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () =>
+                      context.push('/trainings/${training.id}/attendance'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.tokens.card1,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.tokens.stroke),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Symbols.check_circle,
+                          size: 20,
+                          color: context.tokens.text,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Pasar asistencia',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Symbols.chevron_right,
+                          size: 20,
+                          color: context.tokens.placeholder,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
