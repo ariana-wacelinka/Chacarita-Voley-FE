@@ -304,7 +304,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
           _team!.nombre,
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
