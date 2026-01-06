@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -84,6 +85,85 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   void _toggleFilters() {}
+
+  Future<void> _pickTime(TextEditingController controller) async {
+    final now = DateTime.now();
+    DateTime initialDateTime = DateTime(now.year, now.month, now.day);
+
+    if (controller.text.isNotEmpty) {
+      final parts = controller.text.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          initialDateTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+        }
+      }
+    }
+
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        DateTime selected = initialDateTime;
+        return Container(
+          decoration: BoxDecoration(
+            color: context.tokens.card1,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Seleccionar horario',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, selected),
+                    child: Text(
+                      'Listo',
+                      style: TextStyle(color: context.tokens.redToRosita),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 180,
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  initialDateTime: initialDateTime,
+                  onDateTimeChanged: (dateTime) {
+                    selected = dateTime;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null) {
+      final hour = picked.hour.toString().padLeft(2, '0');
+      final minute = picked.minute.toString().padLeft(2, '0');
+      controller.text = '$hour:$minute';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +260,20 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     const SizedBox(height: 4),
                     TextField(
                       controller: _startDateController,
+                      readOnly: true,
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: now,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          _startDateController.text =
+                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'DD/MM/AAAA',
                         hintStyle: TextStyle(color: context.tokens.placeholder),
@@ -219,6 +313,20 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     const SizedBox(height: 4),
                     TextField(
                       controller: _endDateController,
+                      readOnly: true,
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: now,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          _endDateController.text =
+                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'DD/MM/AAAA',
                         hintStyle: TextStyle(color: context.tokens.placeholder),
@@ -262,6 +370,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     const SizedBox(height: 4),
                     TextField(
                       controller: _startTimeController,
+                      readOnly: true,
+                      onTap: () => _pickTime(_startTimeController),
                       decoration: InputDecoration(
                         hintText: 'HH:MM',
                         hintStyle: TextStyle(color: context.tokens.placeholder),
@@ -301,6 +411,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     const SizedBox(height: 4),
                     TextField(
                       controller: _endTimeController,
+                      readOnly: true,
+                      onTap: () => _pickTime(_endTimeController),
                       decoration: InputDecoration(
                         hintText: 'HH:MM',
                         hintStyle: TextStyle(color: context.tokens.placeholder),
