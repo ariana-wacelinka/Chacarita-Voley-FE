@@ -17,7 +17,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
   List<Training> _trainings = [];
   List<Training> _allTrainings = [];
   bool _isLoading = true;
-  bool _showFilters = false;
 
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -82,9 +81,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
     }
   }
 
-  void _toggleFilters() {
-    setState(() => _showFilters = !_showFilters);
-  }
+  void _toggleFilters() {}
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +90,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
-            if (_showFilters) _buildFilterSection(context),
             Expanded(
               child: _isLoading
                   ? Center(
@@ -119,55 +114,14 @@ class _TrainingsPageState extends State<TrainingsPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.tokens.card1,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Entrenamientos',
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: context.tokens.redToRosita,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              onPressed: _toggleFilters,
-              icon: Icon(
-                _showFilters ? Symbols.filter_alt_off : Symbols.filter_alt,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFilterSection(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.tokens.card1,
-        border: Border(bottom: BorderSide(color: context.tokens.stroke)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,14 +131,14 @@ class _TrainingsPageState extends State<TrainingsPage> {
               Icon(
                 Symbols.filter_alt,
                 color: context.tokens.redToRosita,
-                size: 20,
+                size: 24,
               ),
               const SizedBox(width: 8),
               Text(
                 'Filtro',
                 style: TextStyle(
-                  color: context.tokens.redToRosita,
-                  fontSize: 16,
+                  color: context.tokens.text,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -198,7 +152,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Fecha de inicio *',
+                      'Fecha de inicio',
                       style: TextStyle(
                         color: context.tokens.text,
                         fontSize: 12,
@@ -237,7 +191,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Fecha de fin *',
+                      'Fecha de fin',
                       style: TextStyle(
                         color: context.tokens.text,
                         fontSize: 12,
@@ -280,7 +234,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hora de inicio *',
+                      'Hora de inicio',
                       style: TextStyle(
                         color: context.tokens.text,
                         fontSize: 12,
@@ -319,7 +273,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hora de fin *',
+                      'Hora de fin',
                       style: TextStyle(
                         color: context.tokens.text,
                         fontSize: 12,
@@ -443,9 +397,14 @@ class _TrainingsPageState extends State<TrainingsPage> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: _trainings.length,
+            itemCount: _trainings.length + 1,
             itemBuilder: (context, index) {
-              final training = _trainings[index];
+              if (index == 0) {
+                return _buildFilterSection(context);
+              }
+
+              final trainingIndex = index - 1;
+              final training = _trainings[trainingIndex];
               return _buildTrainingCard(context, training);
             },
           ),
