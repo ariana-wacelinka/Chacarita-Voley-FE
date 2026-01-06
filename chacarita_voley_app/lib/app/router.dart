@@ -13,6 +13,7 @@ import '../features/teams/presentation/pages/edit_team_page.dart';
 import '../features/teams/presentation/pages/view_team_page.dart';
 import '../features/trainings/presentation/pages/trainings_page.dart';
 import '../features/trainings/presentation/pages/attendance_training_page.dart';
+import '../features/trainings/presentation/pages/new_training_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -98,6 +99,14 @@ final appRouter = GoRouter(
       path: '/teams/edit/:id',
       name: 'teams-edit',
       builder: (_, state) => EditTeamPage(teamId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/trainings/create',
+      name: 'trainings-create',
+      builder: (_, state) => NewTrainingPage(
+        teamId: state.uri.queryParameters['teamId'],
+        teamName: state.uri.queryParameters['teamName'],
+      ),
     ),
     GoRoute(
       path: '/trainings/:id/attendance',
