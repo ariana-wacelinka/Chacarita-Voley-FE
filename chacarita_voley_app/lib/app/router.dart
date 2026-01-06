@@ -11,6 +11,8 @@ import '../features/teams/presentation/pages/teams_page.dart';
 import '../features/teams/presentation/pages/register_team_page.dart';
 import '../features/teams/presentation/pages/edit_team_page.dart';
 import '../features/teams/presentation/pages/view_team_page.dart';
+import '../features/trainings/presentation/pages/trainings_page.dart';
+import '../features/trainings/presentation/pages/attendance_training_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -51,7 +53,7 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/trainings',
           name: 'trainings',
-          builder: (_, __) => const _Page(text: 'Gestión de Entrenamientos'),
+          builder: (_, __) => const TrainingsPage(),
         ),
         GoRoute(
           path: '/settings',
@@ -96,6 +98,12 @@ final appRouter = GoRouter(
       path: '/teams/edit/:id',
       name: 'teams-edit',
       builder: (_, state) => EditTeamPage(teamId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/trainings/:id/attendance',
+      name: 'trainings-attendance',
+      builder: (_, state) =>
+          AttendanceTrainingPage(trainingId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/change-password',
