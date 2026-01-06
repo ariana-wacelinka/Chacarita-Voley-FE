@@ -5,6 +5,8 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
+enum _TrainingMenuAction { view, edit, delete }
+
 class TrainingsPage extends StatefulWidget {
   const TrainingsPage({super.key});
 
@@ -106,10 +108,33 @@ class _TrainingsPageState extends State<TrainingsPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/trainings/create'),
-        backgroundColor: context.tokens.redToRosita,
-        child: const Icon(Symbols.sports, color: Colors.white, size: 28),
+      floatingActionButton: SizedBox(
+        width: 64,
+        height: 64,
+        child: FloatingActionButton(
+          onPressed: () => context.push('/trainings/create'),
+          backgroundColor: context.tokens.redToRosita,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Center(
+                child: Icon(
+                  Symbols.sports_volleyball,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const Positioned(
+                top: 8,
+                right: 8,
+                child: Icon(Symbols.add, color: Colors.white, size: 16),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -459,7 +484,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 2, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -501,11 +526,50 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => _showOptionsMenu(context, training),
+                    PopupMenuButton<_TrainingMenuAction>(
                       icon: Icon(Symbols.more_vert, color: context.tokens.text),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: context.tokens.card1,
+                      elevation: 4,
+                      onSelected: (action) {
+                        switch (action) {
+                          case _TrainingMenuAction.view:
+                            context.push('/trainings/${training.id}');
+                            break;
+                          case _TrainingMenuAction.edit:
+                            context.push('/trainings/${training.id}/edit');
+                            break;
+                          case _TrainingMenuAction.delete:
+                            _showDeleteDialog(context, training);
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: _TrainingMenuAction.view,
+                          child: Text(
+                            'Ver',
+                            style: TextStyle(color: context.tokens.text),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: _TrainingMenuAction.edit,
+                          child: Text(
+                            'Modificar',
+                            style: TextStyle(color: context.tokens.text),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: _TrainingMenuAction.delete,
+                          child: Text(
+                            'Eliminar',
+                            style: TextStyle(color: context.tokens.redToRosita),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -616,51 +680,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showOptionsMenu(BuildContext context, Training training) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tokens.card1,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Symbols.visibility, color: context.tokens.text),
-            title: Text('Ver', style: TextStyle(color: context.tokens.text)),
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/trainings/${training.id}');
-            },
-          ),
-          ListTile(
-            leading: Icon(Symbols.edit, color: context.tokens.text),
-            title: Text(
-              'Modificar',
-              style: TextStyle(color: context.tokens.text),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/trainings/${training.id}/edit');
-            },
-          ),
-          ListTile(
-            leading: Icon(Symbols.delete, color: context.tokens.redToRosita),
-            title: Text(
-              'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              _showDeleteDialog(context, training);
-            },
           ),
         ],
       ),
