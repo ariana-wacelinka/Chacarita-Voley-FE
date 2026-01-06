@@ -9,7 +9,10 @@ import '../../data/repositories/training_repository.dart';
 enum _TrainingMenuAction { view, edit, delete }
 
 class TrainingsPage extends StatefulWidget {
-  const TrainingsPage({super.key});
+  final String? teamId;
+  final String? teamName;
+
+  const TrainingsPage({super.key, this.teamId, this.teamName});
 
   @override
   State<TrainingsPage> createState() => _TrainingsPageState();
@@ -192,7 +195,16 @@ class _TrainingsPageState extends State<TrainingsPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () => context.push('/trainings/create'),
+          onPressed: () {
+            if (widget.teamId != null && widget.teamName != null) {
+              final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
+              context.push(
+                '/trainings/create?teamId=${widget.teamId}&teamName=$teamNameEncoded',
+              );
+            } else {
+              context.push('/trainings/create');
+            }
+          },
           backgroundColor: context.tokens.redToRosita,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -505,7 +517,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
           Icon(Symbols.sports, size: 64, color: context.tokens.placeholder),
           const SizedBox(height: 16),
           Text(
-            'No hay entrenamientos',
+            widget.teamName != null
+                ? 'No hay entrenamientos para ${widget.teamName}'
+                : 'No hay entrenamientos',
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 18,

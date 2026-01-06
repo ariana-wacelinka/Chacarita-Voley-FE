@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -41,6 +42,85 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
   bool _isLoadingTeams = false;
 
   final Set<int> _selectedWeekdays = {};
+
+  Future<void> _pickTime(TextEditingController controller) async {
+    final now = DateTime.now();
+    DateTime initialDateTime = DateTime(now.year, now.month, now.day);
+
+    if (controller.text.isNotEmpty) {
+      final parts = controller.text.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          initialDateTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+        }
+      }
+    }
+
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        DateTime selected = initialDateTime;
+        return Container(
+          decoration: BoxDecoration(
+            color: context.tokens.card1,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Seleccionar horario',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, selected),
+                    child: Text(
+                      'Listo',
+                      style: TextStyle(color: context.tokens.redToRosita),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 180,
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  initialDateTime: initialDateTime,
+                  onDateTimeChanged: (dateTime) {
+                    selected = dateTime;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null) {
+      final hour = picked.hour.toString().padLeft(2, '0');
+      final minute = picked.minute.toString().padLeft(2, '0');
+      controller.text = '$hour:$minute';
+    }
+  }
 
   @override
   void initState() {
@@ -163,7 +243,14 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
         ),
       );
 
-      context.go('/trainings');
+      if (widget.teamId != null && widget.teamName != null) {
+        final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
+        context.go(
+          '/trainings?teamId=${widget.teamId}&teamName=$teamNameEncoded',
+        );
+      } else {
+        context.go('/trainings');
+      }
     } catch (_) {
       if (!mounted) return;
 
@@ -215,7 +302,16 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.go('/trainings'),
+          onPressed: () {
+            if (widget.teamId != null && widget.teamName != null) {
+              final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
+              context.go(
+                '/trainings?teamId=${widget.teamId}&teamName=$teamNameEncoded',
+              );
+            } else {
+              context.go('/trainings');
+            }
+          },
         ),
         title: Text(
           'Nuevo Entrenamiento',
@@ -411,6 +507,20 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: _startDateController,
+                      readOnly: true,
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: now,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          _startDateController.text =
+                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'DD/MM/AAAA',
                         suffixIcon: Icon(
@@ -418,7 +528,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una fecha';
@@ -444,6 +553,20 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: _endDateController,
+                      readOnly: true,
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: now,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          _endDateController.text =
+                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'DD/MM/AAAA',
                         suffixIcon: Icon(
@@ -451,7 +574,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una fecha';
@@ -481,6 +603,8 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: _startTimeController,
+                      readOnly: true,
+                      onTap: () => _pickTime(_startTimeController),
                       decoration: InputDecoration(
                         hintText: 'HH:MM',
                         suffixIcon: Icon(
@@ -488,7 +612,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una hora';
@@ -514,6 +637,8 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: _endTimeController,
+                      readOnly: true,
+                      onTap: () => _pickTime(_endTimeController),
                       decoration: InputDecoration(
                         hintText: 'HH:MM',
                         suffixIcon: Icon(
@@ -521,7 +646,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una hora';

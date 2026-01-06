@@ -9,11 +9,17 @@ class AppScaffold extends StatelessWidget {
     required this.title,
     required this.child,
     this.drawer,
+    this.subtitle,
+    this.showDrawer = true,
+    this.onBack,
   });
 
   final String title;
   final Widget child;
   final Widget? drawer;
+  final String? subtitle;
+  final bool showDrawer;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +27,11 @@ class AppScaffold extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+
+        if (onBack != null) {
+          onBack!();
+          return;
+        }
 
         final currentRoute = GoRouterState.of(context).uri.path;
         if (currentRoute == '/home') {
@@ -34,13 +45,36 @@ class AppScaffold extends StatelessWidget {
       child: Scaffold(
         backgroundColor: context.tokens.drawer,
         appBar: AppBar(
-          title: Text(title),
+          leading: onBack != null
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back, color: context.tokens.text),
+                  onPressed: onBack,
+                )
+              : null,
+          title: subtitle == null
+              ? Text(title)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, textAlign: TextAlign.center),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.tokens.placeholder,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
           backgroundColor: context.tokens.drawer,
           centerTitle: true,
           foregroundColor: context.tokens.text,
           elevation: 0,
         ),
-        drawer: drawer ?? const AppDrawer(),
+        drawer: showDrawer ? (drawer ?? const AppDrawer()) : null,
         body: SafeArea(child: child),
       ),
     );

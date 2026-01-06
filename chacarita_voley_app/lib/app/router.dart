@@ -25,7 +25,21 @@ final appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) {
         final title = _titleForLocation(state.uri.path);
-        return AppScaffold(title: title, child: child);
+        final subtitle = _subtitleForLocation(state);
+        final isTeamTrainings =
+            state.uri.path == '/trainings' &&
+            state.uri.queryParameters['teamId'] != null;
+        final teamId = state.uri.queryParameters['teamId'];
+
+        return AppScaffold(
+          title: title,
+          subtitle: subtitle,
+          child: child,
+          showDrawer: !isTeamTrainings,
+          onBack: isTeamTrainings && teamId != null
+              ? () => context.go('/teams/view/$teamId')
+              : null,
+        );
       },
       routes: [
         GoRoute(
@@ -56,7 +70,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/trainings',
           name: 'trainings',
-          builder: (_, __) => const TrainingsPage(),
+          builder: (_, state) => TrainingsPage(
+            teamId: state.uri.queryParameters['teamId'],
+            teamName: state.uri.queryParameters['teamName'],
+          ),
         ),
         GoRoute(
           path: '/settings',
@@ -142,6 +159,13 @@ String _titleForLocation(String loc) {
     '/settings': 'Configuraciones',
   };
   return map[loc] ?? '';
+}
+
+String? _subtitleForLocation(GoRouterState state) {
+  if (state.uri.path == '/trainings') {
+    return state.uri.queryParameters['teamName'];
+  }
+  return null;
 }
 
 class _Page extends StatelessWidget {

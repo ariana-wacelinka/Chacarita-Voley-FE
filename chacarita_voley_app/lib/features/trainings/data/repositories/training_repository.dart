@@ -198,6 +198,107 @@ class TrainingRepository implements TrainingRepositoryInterface {
         ),
       ],
     ),
+    // Entrenamientos de ejemplo para equipos reales del backend
+    Training(
+      id: '4',
+      teamId: '165',
+      teamName: 'Chaca Feme',
+      professorId: '4',
+      professorName: 'Profesor 1',
+      date: DateTime(2025, 6, 20),
+      startTime: '19:00',
+      endTime: '20:30',
+      location: 'Gimnasio Principal',
+      type: TrainingType.tecnico,
+      status: TrainingStatus.proximo,
+      attendances: [
+        PlayerAttendance(
+          playerId: '1',
+          playerName: 'Jugadora 1',
+          isPresent: true,
+        ),
+        PlayerAttendance(
+          playerId: '2',
+          playerName: 'Jugadora 2',
+          isPresent: false,
+        ),
+      ],
+    ),
+    Training(
+      id: '5',
+      teamId: '166',
+      teamName: 'Chaca Blanco',
+      professorId: '4',
+      professorName: 'Profesor 1',
+      date: DateTime(2025, 6, 22),
+      startTime: '18:30',
+      endTime: '20:00',
+      location: 'Cancha Exterior',
+      type: TrainingType.fisico,
+      status: TrainingStatus.proximo,
+      attendances: [
+        PlayerAttendance(
+          playerId: '1',
+          playerName: 'Jugador 1',
+          isPresent: true,
+        ),
+        PlayerAttendance(
+          playerId: '2',
+          playerName: 'Jugador 2',
+          isPresent: true,
+        ),
+      ],
+    ),
+    Training(
+      id: '6',
+      teamId: '168',
+      teamName: 'Chaca Rojo',
+      professorId: '4',
+      professorName: 'Profesor 1',
+      date: DateTime(2025, 6, 24),
+      startTime: '19:30',
+      endTime: '21:00',
+      location: 'Gimnasio Principal',
+      type: TrainingType.partido,
+      status: TrainingStatus.proximo,
+      attendances: [
+        PlayerAttendance(
+          playerId: '1',
+          playerName: 'Jugador 1',
+          isPresent: true,
+        ),
+        PlayerAttendance(
+          playerId: '2',
+          playerName: 'Jugador 2',
+          isPresent: false,
+        ),
+      ],
+    ),
+    Training(
+      id: '7',
+      teamId: '172',
+      teamName: 'Chaca Negro',
+      professorId: '4',
+      professorName: 'Profesor 1',
+      date: DateTime(2025, 6, 26),
+      startTime: '20:00',
+      endTime: '21:30',
+      location: 'Cancha Exterior',
+      type: TrainingType.tecnico,
+      status: TrainingStatus.proximo,
+      attendances: [
+        PlayerAttendance(
+          playerId: '1',
+          playerName: 'Jugador 1',
+          isPresent: true,
+        ),
+        PlayerAttendance(
+          playerId: '2',
+          playerName: 'Jugador 2',
+          isPresent: true,
+        ),
+      ],
+    ),
   ];
 
   @override

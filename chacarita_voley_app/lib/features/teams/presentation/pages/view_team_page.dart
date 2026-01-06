@@ -717,7 +717,14 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                         children: [
                           InkWell(
                             onTap: () {
-                              // TODO: Implementar gestión de entrenamiento
+                              if (_team == null) return;
+
+                              final teamNameEncoded = Uri.encodeComponent(
+                                _team!.nombre,
+                              );
+                              context.go(
+                                '/trainings?teamId=${_team!.id}&teamName=$teamNameEncoded',
+                              );
                             },
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(12),

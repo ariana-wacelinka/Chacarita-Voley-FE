@@ -283,6 +283,8 @@ class _TeamsPageState extends State<TeamsPage> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.normal,
                                   ),
+                                  headingRowHeight: 40,
+                                  dataRowMinHeight: 44,
                                   columnSpacing: 12,
                                   horizontalMargin: 5,
                                   dividerThickness: 0,
@@ -290,7 +292,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                     DataColumn(label: Text('Nombre')),
                                     DataColumn(label: Text('Entrenador')),
                                     DataColumn(label: Text('Jugadores')),
-                                    DataColumn(label: SizedBox(width: 32)),
+                                    DataColumn(label: SizedBox(width: 0)),
                                   ],
                                   rows: _displayedTeams.map((team) {
                                     return DataRow(
@@ -319,99 +321,117 @@ class _TeamsPageState extends State<TeamsPage> {
                                           ),
                                         ),
                                         DataCell(
-                                          PopupMenuButton<String>(
-                                            padding: EdgeInsets.zero,
-                                            icon: Icon(
-                                              Symbols.more_vert,
-                                              color: context.tokens.placeholder,
-                                              weight: 1000,
-                                              size: 18,
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Transform.translate(
+                                              offset: const Offset(4, 0),
+                                              child: PopupMenuButton<String>(
+                                                padding: EdgeInsets.zero,
+                                                icon: Icon(
+                                                  Symbols.more_vert,
+                                                  color: context
+                                                      .tokens
+                                                      .placeholder,
+                                                  weight: 1000,
+                                                  size: 18,
+                                                ),
+                                                tooltip: 'Más opciones',
+                                                onSelected: (value) {
+                                                  switch (value) {
+                                                    case 'view':
+                                                      context.push(
+                                                        '/teams/view/${team.id}',
+                                                      );
+                                                      break;
+                                                    case 'edit':
+                                                      context.push(
+                                                        '/teams/edit/${team.id}',
+                                                      );
+                                                      break;
+                                                    case 'delete':
+                                                      _showDeleteDialog(team);
+                                                      break;
+                                                  }
+                                                },
+                                                itemBuilder: (context) => [
+                                                  PopupMenuItem(
+                                                    value: 'view',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.visibility,
+                                                          size: 18,
+                                                          color: context
+                                                              .tokens
+                                                              .text,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Ver',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .text,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem(
+                                                    value: 'edit',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.edit,
+                                                          size: 18,
+                                                          color: context
+                                                              .tokens
+                                                              .text,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Modificar',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .text,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem(
+                                                    value: 'delete',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.delete,
+                                                          size: 18,
+                                                          color: context
+                                                              .tokens
+                                                              .redToRosita,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Eliminar',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .redToRosita,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            tooltip: 'Más opciones',
-                                            onSelected: (value) {
-                                              switch (value) {
-                                                case 'view':
-                                                  context.push(
-                                                    '/teams/view/${team.id}',
-                                                  );
-                                                  break;
-                                                case 'edit':
-                                                  context.push(
-                                                    '/teams/edit/${team.id}',
-                                                  );
-                                                  break;
-                                                case 'delete':
-                                                  _showDeleteDialog(team);
-                                                  break;
-                                              }
-                                            },
-                                            itemBuilder: (context) => [
-                                              PopupMenuItem(
-                                                value: 'view',
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Symbols.visibility,
-                                                      size: 18,
-                                                      color:
-                                                          context.tokens.text,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      'Ver',
-                                                      style: TextStyle(
-                                                        color:
-                                                            context.tokens.text,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              PopupMenuItem(
-                                                value: 'edit',
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Symbols.edit,
-                                                      size: 18,
-                                                      color:
-                                                          context.tokens.text,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      'Modificar',
-                                                      style: TextStyle(
-                                                        color:
-                                                            context.tokens.text,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              PopupMenuItem(
-                                                value: 'delete',
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Symbols.delete,
-                                                      size: 18,
-                                                      color: context
-                                                          .tokens
-                                                          .redToRosita,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      'Eliminar',
-                                                      style: TextStyle(
-                                                        color: context
-                                                            .tokens
-                                                            .redToRosita,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
                                           ),
                                         ),
                                       ],
