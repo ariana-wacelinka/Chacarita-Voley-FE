@@ -174,7 +174,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
           'Modificar Equipo',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),

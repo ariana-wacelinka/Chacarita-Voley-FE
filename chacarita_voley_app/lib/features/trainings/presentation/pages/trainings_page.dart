@@ -109,8 +109,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
         ),
       ),
       floatingActionButton: SizedBox(
-        width: 64,
-        height: 64,
+        width: 56,
+        height: 56,
         child: FloatingActionButton(
           onPressed: () => context.push('/trainings/create'),
           backgroundColor: context.tokens.redToRosita,
@@ -119,18 +119,12 @@ class _TrainingsPageState extends State<TrainingsPage> {
           ),
           child: Stack(
             fit: StackFit.expand,
-            children: [
-              const Center(
-                child: Icon(
-                  Symbols.sports_volleyball,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              const Positioned(
+            children: const [
+              Icon(Symbols.sports_volleyball, color: Colors.white, size: 26),
+              Positioned(
                 top: 8,
                 right: 8,
-                child: Icon(Symbols.add, color: Colors.white, size: 16),
+                child: Icon(Symbols.add, color: Colors.white, size: 14),
               ),
             ],
           ),
@@ -691,10 +685,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
-        title: Text(
-          '¿Eliminar entrenamiento?',
-          style: TextStyle(color: context.tokens.text),
-        ),
         content: Text(
           '¿Estás seguro de que querés eliminar este entrenamiento?',
           style: TextStyle(color: context.tokens.text),

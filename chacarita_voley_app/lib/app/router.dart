@@ -14,6 +14,8 @@ import '../features/teams/presentation/pages/view_team_page.dart';
 import '../features/trainings/presentation/pages/trainings_page.dart';
 import '../features/trainings/presentation/pages/attendance_training_page.dart';
 import '../features/trainings/presentation/pages/new_training_page.dart';
+import '../features/trainings/presentation/pages/view_training_page.dart';
+import '../features/trainings/presentation/pages/edit_training_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -96,17 +98,24 @@ final appRouter = GoRouter(
       builder: (_, state) => ViewTeamPage(teamId: state.pathParameters['id']!),
     ),
     GoRoute(
-      path: '/teams/edit/:id',
-      name: 'teams-edit',
-      builder: (_, state) => EditTeamPage(teamId: state.pathParameters['id']!),
-    ),
-    GoRoute(
       path: '/trainings/create',
       name: 'trainings-create',
       builder: (_, state) => NewTrainingPage(
         teamId: state.uri.queryParameters['teamId'],
         teamName: state.uri.queryParameters['teamName'],
       ),
+    ),
+    GoRoute(
+      path: '/trainings/:id',
+      name: 'trainings-view',
+      builder: (_, state) =>
+          ViewTrainingPage(trainingId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/trainings/:id/edit',
+      name: 'trainings-edit',
+      builder: (_, state) =>
+          EditTrainingPage(trainingId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/trainings/:id/attendance',

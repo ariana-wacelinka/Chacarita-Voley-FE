@@ -3,29 +3,21 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/environment.dart';
-import '../../../../core/network/graphql_client_factory.dart';
-import '../../../teams/domain/entities/team.dart';
-import '../../../teams/data/repositories/team_repository.dart';
-import '../../../teams/data/services/team_service.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
-class NewTrainingPage extends StatefulWidget {
-  final String? teamId;
-  final String? teamName;
+class EditTrainingPage extends StatefulWidget {
+  final String trainingId;
 
-  const NewTrainingPage({super.key, this.teamId, this.teamName});
+  const EditTrainingPage({super.key, required this.trainingId});
 
   @override
-  State<NewTrainingPage> createState() => _NewTrainingPageState();
+  State<EditTrainingPage> createState() => _EditTrainingPageState();
 }
 
-class _NewTrainingPageState extends State<NewTrainingPage> {
+class _EditTrainingPageState extends State<EditTrainingPage> {
   final _formKey = GlobalKey<FormState>();
   final _repository = TrainingRepository();
-
-  late final TeamRepository _teamRepository;
 
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -33,35 +25,14 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
   final _endTimeController = TextEditingController();
   final _locationController = TextEditingController();
 
-  String? _selectedTeamId;
-  String? _selectedTeamName;
   TrainingType? _selectedType;
-
-  List<Team> _teams = [];
-  bool _isLoadingTeams = false;
-
-  final Set<int> _selectedWeekdays = {};
+  Training? _originalTraining;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-
-    try {
-      final graphQLClient = GraphQLClientFactory.create(
-        baseUrl: Environment.baseUrl,
-      );
-      final teamService = TeamService(graphQLClient: graphQLClient);
-      _teamRepository = TeamRepository(teamService: teamService);
-    } catch (e) {
-      _teamRepository = TeamRepository();
-    }
-
-    if (widget.teamId != null && widget.teamName != null) {
-      _selectedTeamId = widget.teamId;
-      _selectedTeamName = widget.teamName;
-    } else {
-      _loadTeams();
-    }
+    _loadTraining();
   }
 
   @override
@@ -74,62 +45,46 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
     super.dispose();
   }
 
-  Future<void> _loadTeams() async {
-    setState(() {
-      _isLoadingTeams = true;
-    });
-
+  Future<void> _loadTraining() async {
+    setState(() => _isLoading = true);
     try {
-      final teams = await _teamRepository.getTeams();
+      final training = await _repository.getTrainingById(widget.trainingId);
       if (!mounted) return;
 
+      if (training != null) {
+        _originalTraining = training;
+        _startDateController.text = _formatDate(training.date);
+        _endDateController.text = _formatDate(training.date);
+        _startTimeController.text = training.startTime;
+        _endTimeController.text = training.endTime;
+        _locationController.text = training.location;
+        _selectedType = training.type;
+      }
+
       setState(() {
-        _teams = teams;
+        _isLoading = false;
       });
-    } finally {
+    } catch (_) {
       if (mounted) {
-        setState(() {
-          _isLoadingTeams = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_originalTraining == null) return;
 
-    final teamId = _selectedTeamId;
-    final teamName = _selectedTeamName;
-
-    if (teamId == null || teamName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Seleccioná un equipo para el entrenamiento'),
-          backgroundColor: context.tokens.redToRosita,
-        ),
-      );
-      return;
-    }
-
-    final date = _parseDate(_startDateController.text.trim());
-
-    final training = Training(
-      id: '',
-      teamId: teamId,
-      teamName: teamName,
-      professorId: '4',
-      professorName: 'Profesor 1',
-      date: date,
+    final updated = _originalTraining!.copyWith(
+      date: _parseDate(_startDateController.text.trim()),
       startTime: _startTimeController.text.trim(),
       endTime: _endTimeController.text.trim(),
       location: _locationController.text.trim(),
-      type: _selectedType ?? TrainingType.fisico,
-      status: TrainingStatus.proximo,
-      attendances: const [],
+      type: _selectedType ?? _originalTraining!.type,
     );
 
     try {
-      await _repository.createTraining(training);
+      await _repository.updateTraining(updated);
 
       if (!mounted) return;
 
@@ -145,7 +100,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Entrenamiento registrado exitosamente',
+                  'Entrenamiento actualizado exitosamente',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -175,7 +130,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Error al registrar entrenamiento',
+                  'Error al actualizar entrenamiento',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -206,6 +161,13 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
     return DateTime.now();
   }
 
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -215,62 +177,92 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.go('/trainings'),
+          onPressed: () => context.pop(),
         ),
         title: Text(
-          'Nuevo Entrenamiento',
+          'Editar Entrenamiento',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTeamCard(context),
-                const SizedBox(height: 16),
-                _buildDateTimeCard(context),
-                const SizedBox(height: 16),
-                _buildDetailsCard(context),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: context.tokens.redToRosita,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  context.tokens.redToRosita,
+                ),
+              ),
+            )
+          : _originalTraining == null
+          ? _buildErrorState(context)
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTeamSummaryCard(context),
+                      const SizedBox(height: 16),
+                      _buildDateTimeCard(context),
+                      const SizedBox(height: 16),
+                      _buildDetailsCard(context),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _submit,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: context.tokens.redToRosita,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Guardar cambios',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Registrar entrenamiento',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Symbols.error, size: 64, color: context.tokens.placeholder),
+          const SizedBox(height: 16),
+          Text(
+            'Entrenamiento no encontrado',
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildTeamCard(BuildContext context) {
-    final isFixedTeam = widget.teamId != null && widget.teamName != null;
+  Widget _buildTeamSummaryCard(BuildContext context) {
+    final training = _originalTraining!;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -301,65 +293,14 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
             ],
           ),
           const SizedBox(height: 12),
-          if (isFixedTeam)
-            Text(
-              'Equipo: ${widget.teamName}',
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            )
-          else
-            Builder(
-              builder: (context) {
-                if (_isLoadingTeams) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: LinearProgressIndicator(minHeight: 2),
-                  );
-                }
-
-                if (_teams.isEmpty) {
-                  return Text(
-                    'No hay equipos disponibles',
-                    style: TextStyle(
-                      color: context.tokens.placeholder,
-                      fontSize: 13,
-                    ),
-                  );
-                }
-
-                return DropdownButtonFormField<String>(
-                  value: _selectedTeamId,
-                  decoration: const InputDecoration(
-                    labelText: 'Seleccionar equipo',
-                  ),
-                  items: _teams
-                      .map(
-                        (team) => DropdownMenuItem(
-                          value: team.id,
-                          child: Text(team.nombre),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedTeamId = value;
-                      _selectedTeamName = _teams
-                          .firstWhere((t) => t.id == value)
-                          .nombre;
-                    });
-                  },
-                  validator: (value) {
-                    if (!isFixedTeam && (value == null || value.isEmpty)) {
-                      return 'Seleccioná un equipo';
-                    }
-                    return null;
-                  },
-                );
-              },
+          Text(
+            'Equipo: ${training.teamName}',
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ],
       ),
     );
@@ -533,59 +474,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Repetir los días...',
-            style: TextStyle(color: context.tokens.text, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(7, (index) {
-              const labels = [
-                'Lunes',
-                'Martes',
-                'Miércoles',
-                'Jueves',
-                'Viernes',
-                'Sábado',
-                'Domingo',
-              ];
-              final isSelected = _selectedWeekdays.contains(index);
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedWeekdays.remove(index);
-                    } else {
-                      _selectedWeekdays.add(index);
-                    }
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? context.tokens.redToRosita
-                        : context.tokens.card1,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: context.tokens.stroke),
-                  ),
-                  child: Text(
-                    labels[index],
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : context.tokens.text,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              );
-            }),
           ),
         ],
       ),

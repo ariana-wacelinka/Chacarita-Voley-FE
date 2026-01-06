@@ -124,10 +124,6 @@ class _TeamsPageState extends State<TeamsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
-        title: Text(
-          '¿Eliminar equipo?',
-          style: TextStyle(color: context.tokens.text),
-        ),
         content: Text(
           '¿Estás seguro de que deseas eliminar el equipo "${team.nombre}"?',
           style: TextStyle(color: context.tokens.text),

@@ -18,6 +18,8 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   final _repository = TrainingRepository();
   Training? _training;
   bool _isLoading = true;
+  bool _hasChanges = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -45,24 +47,57 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   Future<void> _toggleAttendance(String playerId, bool currentValue) async {
     if (_training == null) return;
 
-    try {
-      final updatedAttendances = _training!.attendances.map((attendance) {
-        if (attendance.playerId == playerId) {
-          return attendance.copyWith(isPresent: !currentValue);
-        }
-        return attendance;
-      }).toList();
+    final updatedAttendances = _training!.attendances.map((attendance) {
+      if (attendance.playerId == playerId) {
+        return attendance.copyWith(isPresent: !currentValue);
+      }
+      return attendance;
+    }).toList();
 
-      await _repository.updateAttendance(widget.trainingId, updatedAttendances);
-      await _loadTraining();
+    setState(() {
+      _training = _training!.copyWith(attendances: updatedAttendances);
+      _hasChanges = true;
+    });
+  }
+
+  Future<void> _saveAttendance() async {
+    if (_training == null || !_hasChanges || _isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _repository.updateAttendance(
+        widget.trainingId,
+        _training!.attendances,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _hasChanges = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Asistencia guardada correctamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al actualizar asistencia: $e'),
+            content: Text('Error al guardar asistencia: $e'),
             backgroundColor: context.tokens.redToRosita,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }
@@ -82,7 +117,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
           'Pasar Asistencia',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -155,21 +190,18 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                             training.dateFormatted,
                             style: TextStyle(
                               color: context.tokens.text,
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 32),
-                        child: Text(
-                          'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
-                          style: TextStyle(
-                            color: context.tokens.placeholder,
-                            fontSize: 12,
-                          ),
+                      Text(
+                        'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                        style: TextStyle(
+                          color: context.tokens.placeholder,
+                          fontSize: 12,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -322,33 +354,6 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Icon(Symbols.group, size: 20, color: context.tokens.text),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Asistencia',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${training.presentCount}/${training.totalPlayers}',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -360,11 +365,47 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
-                    itemCount: training.attendances.length,
+                    itemCount: training.attendances.length + 1,
                     separatorBuilder: (context, index) =>
                         Divider(color: context.tokens.stroke, height: 1),
                     itemBuilder: (context, index) {
-                      final attendance = training.attendances[index];
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Symbols.group,
+                                size: 20,
+                                color: context.tokens.text,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Asistencia',
+                                style: TextStyle(
+                                  color: context.tokens.text,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${training.presentCount}/${training.totalPlayers}',
+                                style: TextStyle(
+                                  color: context.tokens.text,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final attendance = training.attendances[index - 1];
                       return _buildAttendanceItem(
                         context,
                         attendance,
@@ -422,41 +463,50 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
     PlayerAttendance attendance,
     String playerId,
   ) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: SizedBox(
-        width: 0,
-        child: Text(
-          playerId,
-          style: TextStyle(color: context.tokens.placeholder, fontSize: 13),
-        ),
-      ),
-      title: Text(
-        attendance.playerName,
-        style: TextStyle(color: context.tokens.text, fontSize: 14),
-      ),
-      trailing: InkWell(
-        onTap: () =>
-            _toggleAttendance(attendance.playerId, attendance.isPresent),
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: attendance.isPresent
-                ? context.tokens.redToRosita
-                : Colors.transparent,
-            border: Border.all(
-              color: attendance.isPresent
-                  ? context.tokens.redToRosita
-                  : context.tokens.stroke,
-              width: 2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(
+              playerId,
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 13),
             ),
-            borderRadius: BorderRadius.circular(4),
           ),
-          child: attendance.isPresent
-              ? Icon(Symbols.check, size: 16, color: Colors.white)
-              : null,
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              attendance.playerName,
+              style: TextStyle(color: context.tokens.text, fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 12),
+          InkWell(
+            onTap: () =>
+                _toggleAttendance(attendance.playerId, attendance.isPresent),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: attendance.isPresent
+                    ? context.tokens.redToRosita
+                    : Colors.transparent,
+                border: Border.all(
+                  color: attendance.isPresent
+                      ? context.tokens.redToRosita
+                      : context.tokens.stroke,
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: attendance.isPresent
+                  ? Icon(Symbols.check, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -468,103 +518,46 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         color: context.tokens.background,
         border: Border(top: BorderSide(color: context.tokens.stroke)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => context.push('/trainings/${training.id}/edit'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.card1,
-                foregroundColor: context.tokens.text,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: context.tokens.stroke),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Symbols.edit, size: 18, color: context.tokens.text),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Modificar entrenamiento',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isSaving ? null : _saveAttendance,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.tokens.gray,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: _isSaving
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _showDeleteDialog(context, training),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Symbols.check, size: 18, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Guardar asistencia',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Symbols.delete, size: 18, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    'Eliminar entrenamiento',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, Training training) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.tokens.card1,
-        title: Text(
-          '¿Eliminar entrenamiento?',
-          style: TextStyle(color: context.tokens.text),
         ),
-        content: Text(
-          '¿Estás seguro de que querés eliminar este entrenamiento?',
-          style: TextStyle(color: context.tokens.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: context.tokens.placeholder),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _repository.deleteTraining(training.id);
-              if (context.mounted) {
-                Navigator.pop(context);
-                context.go('/trainings');
-              }
-            },
-            child: Text(
-              'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
-            ),
-          ),
-        ],
       ),
     );
   }

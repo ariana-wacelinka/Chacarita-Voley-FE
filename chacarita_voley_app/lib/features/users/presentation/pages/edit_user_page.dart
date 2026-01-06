@@ -148,7 +148,7 @@ class _EditUserPageState extends State<EditUserPage> {
           'Modificar Usuario',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
