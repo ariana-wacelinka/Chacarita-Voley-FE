@@ -51,26 +51,32 @@ class AppScaffold extends StatelessWidget {
                   onPressed: onBack,
                 )
               : null,
-          title: subtitle == null
-              ? Text(title)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(title, textAlign: TextAlign.center),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: context.tokens.placeholder,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
+          title: Center(
+            child: Transform.translate(
+              offset: const Offset(-20, 0),
+              child: subtitle == null
+                  ? Text(title, textAlign: TextAlign.center)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(title, textAlign: TextAlign.center),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: context.tokens.placeholder,
+                                fontSize: 12,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+            ),
+          ),
           backgroundColor: context.tokens.drawer,
-          centerTitle: true,
+          centerTitle: false,
           foregroundColor: context.tokens.text,
           elevation: 0,
         ),
