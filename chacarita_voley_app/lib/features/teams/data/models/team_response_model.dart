@@ -65,6 +65,7 @@ class UserModel {
 class TeamResponseModel {
   final String id;
   final String name;
+  final String? abbreviation;
   final bool isCompetitive;
   final List<UserModel>? players;
   final List<UserModel>? professors;
@@ -73,6 +74,7 @@ class TeamResponseModel {
   TeamResponseModel({
     required this.id,
     required this.name,
+    this.abbreviation,
     required this.isCompetitive,
     this.players,
     this.professors,
@@ -83,6 +85,7 @@ class TeamResponseModel {
     return TeamResponseModel(
       id: json['id'] as String,
       name: json['name'] as String,
+      abbreviation: json['abbreviation'] as String?,
       isCompetitive: json['isCompetitive'] as bool,
       players: (json['players'] as List<dynamic>?)
           ?.map((p) => UserModel.fromJson(p as Map<String, dynamic>))
@@ -100,6 +103,7 @@ class TeamResponseModel {
     return {
       'id': id,
       'name': name,
+      if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
       if (players != null) 'players': players!.map((p) => p.toJson()).toList(),
       if (professors != null)
@@ -112,12 +116,14 @@ class TeamResponseModel {
 
 class CreateTeamRequestModel {
   final String name;
+  final String? abbreviation;
   final bool isCompetitive;
   final List<String> playerIds;
   final List<String> professorIds;
 
   CreateTeamRequestModel({
     required this.name,
+    this.abbreviation,
     required this.isCompetitive,
     required this.playerIds,
     required this.professorIds,
@@ -126,6 +132,7 @@ class CreateTeamRequestModel {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
       'playerIds': playerIds.join(','),
       'professorIds': professorIds.join(','),
@@ -136,6 +143,7 @@ class CreateTeamRequestModel {
 class UpdateTeamRequestModel {
   final String id;
   final String? name;
+  final String? abbreviation;
   final bool? isCompetitive;
   final List<String>? playerIds;
   final List<String>? professorIds;
@@ -144,6 +152,7 @@ class UpdateTeamRequestModel {
   UpdateTeamRequestModel({
     required this.id,
     this.name,
+    this.abbreviation,
     this.isCompetitive,
     this.playerIds,
     this.professorIds,
@@ -154,6 +163,7 @@ class UpdateTeamRequestModel {
     return {
       'id': id,
       if (name != null) 'name': name,
+      if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
       if (playerIds != null) 'playerIds': playerIds!.join(','),
       if (professorIds != null) 'professorIds': professorIds!.join(','),

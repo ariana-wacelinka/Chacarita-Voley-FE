@@ -138,9 +138,11 @@ class TeamRepository implements TeamRepositoryInterface {
     return Team(
       id: model.id,
       nombre: model.name,
-      abreviacion: model.name
-          .substring(0, model.name.length > 4 ? 4 : model.name.length)
-          .toUpperCase(),
+      abreviacion:
+          model.abbreviation ??
+          model.name
+              .substring(0, model.name.length > 4 ? 4 : model.name.length)
+              .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
       entrenador: (model.professors != null && model.professors!.isNotEmpty)
           ? model.professors!.first.id
@@ -201,6 +203,7 @@ class TeamRepository implements TeamRepositoryInterface {
         print('📡 Llamando al servicio GraphQL para crear...');
         final request = CreateTeamRequestModel(
           name: team.nombre,
+          abbreviation: team.abreviacion,
           isCompetitive: team.tipo == TeamType.competitivo,
           playerIds: team.integrantes.map((m) => m.dni).toList(),
           professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],
@@ -231,6 +234,7 @@ class TeamRepository implements TeamRepositoryInterface {
         final request = UpdateTeamRequestModel(
           id: team.id,
           name: team.nombre,
+          abbreviation: team.abreviacion,
           isCompetitive: team.tipo == TeamType.competitivo,
           playerIds: team.integrantes.map((m) => m.dni).toList(),
           professorIds: team.entrenador.isNotEmpty ? [team.entrenador] : [],

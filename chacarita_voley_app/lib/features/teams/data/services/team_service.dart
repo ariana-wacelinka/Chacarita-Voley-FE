@@ -13,9 +13,10 @@ class TeamService implements TeamServiceInterface {
     mutation CreateTeam($input: CreateTeamInput!) {
       createTeam(input: $input) {
         id
+        abbreviation
         isCompetitive
         name
-        players { id }
+        players { id jerseyNumber leagueId }
         professors { id }
         trainings { dayOfWeek endTime id location startTime trainingType }
       }
@@ -44,9 +45,10 @@ class TeamService implements TeamServiceInterface {
     mutation UpdateTeam($id: ID!, $input: UpdateTeamInput!) {
       updateTeam(id: $id, input: $input) {
         id
+        abbreviation
         isCompetitive
         name
-        players { id }
+        players { id jerseyNumber leagueId }
         professors { id }
         trainings { dayOfWeek endTime id location startTime trainingType }
       }
@@ -105,6 +107,7 @@ class TeamService implements TeamServiceInterface {
     query GetAllTeams($page: Int!, $size: Int!) {
       getAllTeams(page: $page, size: $size) {
         content {
+          abbreviation
           id
           name
           isCompetitive
@@ -113,7 +116,9 @@ class TeamService implements TeamServiceInterface {
             jerseyNumber
             leagueId
           }
-          professors { id }
+          professors {
+            id
+          }
           trainings {
             dayOfWeek
             endTime
@@ -126,8 +131,8 @@ class TeamService implements TeamServiceInterface {
         hasNext
         hasPrevious
         pageNumber
-        totalElements
         pageSize
+        totalElements
         totalPages
       }
     }
@@ -167,6 +172,7 @@ class TeamService implements TeamServiceInterface {
   static const String _getTeamByIdQuery = r'''
     query GetTeamById($id: ID!) {
       getTeamById(id: $id) {
+        abbreviation
         id
         isCompetitive
         name
