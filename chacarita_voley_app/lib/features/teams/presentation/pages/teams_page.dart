@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
-import '../../data/services/team_service.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
@@ -16,14 +14,12 @@ class TeamsPage extends StatefulWidget {
 
 class _TeamsPageState extends State<TeamsPage> {
   final TextEditingController _searchController = TextEditingController();
-  late final TeamRepository _repository;
 
   List<Team> _allTeams = [];
   List<Team> _filteredTeams = [];
   List<Team> _displayedTeams = [];
   String _searchQuery = '';
   bool _isLoading = true;
-  String? _lastRoute;
 
   static const int _teamsPerPage = 12;
   int _currentPage = 0;
@@ -31,27 +27,8 @@ class _TeamsPageState extends State<TeamsPage> {
   @override
   void initState() {
     super.initState();
-    final teamService = TeamService(graphQLClient: GraphQLClientFactory.client);
-    _repository = TeamRepository(teamService: teamService);
     _loadTeams();
     _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Recargar siempre que volvemos a /teams desde otra ruta
-    final currentRoute = GoRouterState.of(context).uri.path;
-    if (currentRoute == '/teams' &&
-        _lastRoute != null &&
-        _lastRoute != '/teams') {
-      // Recargar después de un frame para evitar rebuild durante build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        print('🔄 Volviendo a /teams desde $_lastRoute - Recargando...');
-        _loadTeams();
-      });
-    }
-    _lastRoute = currentRoute;
   }
 
   @override
@@ -63,7 +40,8 @@ class _TeamsPageState extends State<TeamsPage> {
   Future<void> _loadTeams() async {
     setState(() => _isLoading = true);
     try {
-      final teams = await _repository.getTeams();
+      final repository = TeamRepository();
+      final teams = await repository.getTeams();
       setState(() {
         _allTeams = teams;
         _filteredTeams = List.from(_allTeams);
@@ -138,7 +116,8 @@ class _TeamsPageState extends State<TeamsPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await _repository.deleteTeam(team.id);
+              final repository = TeamRepository();
+              await repository.deleteTeam(team.id);
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadTeams();

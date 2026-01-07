@@ -60,7 +60,8 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/teams',
           name: 'teams',
-          builder: (_, __) => const TeamsPage(),
+          builder: (_, __) =>
+              TeamsPage(key: ValueKey(DateTime.now().millisecondsSinceEpoch)),
         ),
         GoRoute(
           path: '/notifications',
@@ -115,6 +116,11 @@ final appRouter = GoRouter(
       builder: (_, state) => ViewTeamPage(teamId: state.pathParameters['id']!),
     ),
     GoRoute(
+      path: '/teams/edit/:id',
+      name: 'teams-edit',
+      builder: (_, state) => EditTeamPage(teamId: state.pathParameters['id']!),
+    ),
+    GoRoute(
       path: '/trainings/create',
       name: 'trainings-create',
       builder: (_, state) => NewTrainingPage(
@@ -151,7 +157,7 @@ final appRouter = GoRouter(
 String _titleForLocation(String loc) {
   const map = {
     '/home': '',
-    '/users': 'Gestión de Jugadores',
+    '/users': 'Gestión de Usuarios',
     '/payments': 'Gestión de Cuotas',
     '/teams': 'Gestión de Equipos',
     '/notifications': 'Gestión de Notificaciones',

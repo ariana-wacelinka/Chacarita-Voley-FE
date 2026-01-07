@@ -4,11 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/environment.dart';
-import '../../../../core/network/graphql_client_factory.dart';
 import '../../../teams/domain/entities/team.dart';
 import '../../../teams/data/repositories/team_repository.dart';
-import '../../../teams/data/services/team_service.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
@@ -126,15 +123,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
   void initState() {
     super.initState();
 
-    try {
-      final graphQLClient = GraphQLClientFactory.create(
-        baseUrl: Environment.baseUrl,
-      );
-      final teamService = TeamService(graphQLClient: graphQLClient);
-      _teamRepository = TeamRepository(teamService: teamService);
-    } catch (e) {
-      _teamRepository = TeamRepository();
-    }
+    _teamRepository = TeamRepository();
 
     if (widget.teamId != null && widget.teamName != null) {
       _selectedTeamId = widget.teamId;

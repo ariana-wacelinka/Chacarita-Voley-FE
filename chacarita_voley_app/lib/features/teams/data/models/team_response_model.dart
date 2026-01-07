@@ -40,16 +40,16 @@ class TrainingModel {
 
 class UserModel {
   final String id;
-  final String? jerseyNumber;
-  final String? leagueId;
+  final int? jerseyNumber;
+  final int? leagueId;
 
   UserModel({required this.id, this.jerseyNumber, this.leagueId});
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
-      jerseyNumber: json['jerseyNumber'] as String?,
-      leagueId: json['leagueId'] as String?,
+      jerseyNumber: json['jerseyNumber'] as int?,
+      leagueId: json['leagueId'] as int?,
     );
   }
 
@@ -134,8 +134,9 @@ class CreateTeamRequestModel {
       'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
-      'playerIds': playerIds.join(','),
-      'professorIds': professorIds.join(','),
+      // No enviar playerIds/professorIds si están vacíos
+      if (playerIds.isNotEmpty) 'playerIds': playerIds.join(','),
+      if (professorIds.isNotEmpty) 'professorIds': professorIds.join(','),
     };
   }
 }
@@ -145,8 +146,6 @@ class UpdateTeamRequestModel {
   final String? name;
   final String? abbreviation;
   final bool? isCompetitive;
-  final List<String>? playerIds;
-  final List<String>? professorIds;
   final List<String>? trainingIds;
 
   UpdateTeamRequestModel({
@@ -154,8 +153,6 @@ class UpdateTeamRequestModel {
     this.name,
     this.abbreviation,
     this.isCompetitive,
-    this.playerIds,
-    this.professorIds,
     this.trainingIds,
   });
 
@@ -165,8 +162,6 @@ class UpdateTeamRequestModel {
       if (name != null) 'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
-      if (playerIds != null) 'playerIds': playerIds!.join(','),
-      if (professorIds != null) 'professorIds': professorIds!.join(','),
       if (trainingIds != null) 'trainingIds': trainingIds!.join(','),
     };
   }

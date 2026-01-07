@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
-import '../../data/services/team_service.dart';
 
 class ViewTeamPage extends StatefulWidget {
   final String teamId;
@@ -140,15 +138,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   @override
   void initState() {
     super.initState();
-    try {
-      final teamService = TeamService(
-        graphQLClient: GraphQLClientFactory.client,
-      );
-      _repository = TeamRepository(teamService: teamService);
-    } catch (e) {
-      // Si GraphQLClient no está inicializado (tests), usar repo sin servicio
-      _repository = TeamRepository();
-    }
+    _repository = TeamRepository();
     _loadTeam();
   }
 
@@ -811,7 +801,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: () {
-                  context.push('/teams/edit/${_team!.id}');
+                  context.go('/teams/edit/${_team!.id}');
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: context.tokens.text,

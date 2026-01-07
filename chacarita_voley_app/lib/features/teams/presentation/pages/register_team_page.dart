@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/environment.dart';
-import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
-import '../../data/services/team_service.dart';
 import '../widgets/team_form_widget.dart';
 
 class RegisterTeamPage extends StatefulWidget {
@@ -23,11 +20,7 @@ class _RegisterTeamPageState extends State<RegisterTeamPage> {
   @override
   void initState() {
     super.initState();
-    final graphQLClient = GraphQLClientFactory.create(
-      baseUrl: Environment.baseUrl,
-    );
-    final teamService = TeamService(graphQLClient: graphQLClient);
-    _repository = TeamRepository(teamService: teamService);
+    _repository = TeamRepository();
   }
 
   Future<void> _handleSaveTeam(Team team) async {

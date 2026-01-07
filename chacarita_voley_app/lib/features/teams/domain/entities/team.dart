@@ -13,12 +13,14 @@ enum TeamType {
 }
 
 class TeamMember {
+  final String? playerId; // ID del jugador para mutaciones
   final String dni;
   final String nombre;
   final String apellido;
   final String? numeroCamiseta;
 
   TeamMember({
+    this.playerId,
     required this.dni,
     required this.nombre,
     required this.apellido,
@@ -28,12 +30,14 @@ class TeamMember {
   String get nombreCompleto => '$nombre $apellido';
 
   TeamMember copyWith({
+    String? playerId,
     String? dni,
     String? nombre,
     String? apellido,
     String? numeroCamiseta,
   }) {
     return TeamMember(
+      playerId: playerId ?? this.playerId,
       dni: dni ?? this.dni,
       nombre: nombre ?? this.nombre,
       apellido: apellido ?? this.apellido,

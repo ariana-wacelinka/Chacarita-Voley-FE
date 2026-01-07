@@ -2,6 +2,7 @@ import 'gender.dart';
 
 class User {
   final String? id;
+  final String? playerId; // ID del player (si es jugador)
   final String dni;
   final String nombre;
   final String apellido;
@@ -16,6 +17,7 @@ class User {
 
   User({
     this.id,
+    this.playerId,
     required this.dni,
     required this.nombre,
     required this.apellido,
@@ -34,6 +36,7 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
+      playerId: json['playerId'],
       dni: json['dni'],
       nombre: json['nombre'],
       apellido: json['apellido'],

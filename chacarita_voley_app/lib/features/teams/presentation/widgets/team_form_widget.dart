@@ -86,7 +86,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       setState(() {
         _integrantes.add(
           TeamMember(
-            dni: user.dni,
+            playerId: user.playerId, // ID del jugador para mutaciones
+            dni: user.dni, // DNI para mostrar
             nombre: user.nombre,
             apellido: user.apellido,
             numeroCamiseta: numeroCamiseta,

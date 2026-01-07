@@ -99,6 +99,12 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  static const String _deleteProfessorMutation = r'''
+    mutation DeleteProfessor($id: ID!) {
+      deleteProfessor(id: $id)
+    }
+  ''';
+
   @override
   Future<List<User>> getUsers() async {
     final result = await _query(
@@ -171,6 +177,8 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     final input = _mapUserToUpdateInput(user);
+    print('📤 Update input: $input');
+
     final result = await _mutate(
       MutationOptions(
         document: gql(_updatePersonMutation()),
@@ -178,24 +186,41 @@ class UserRepository implements UserRepositoryInterface {
       ),
     );
 
+    print('📥 Update result hasException: ${result.hasException}');
     if (result.hasException) {
+      print('❌ Update exception: ${result.exception.toString()}');
       throw Exception(result.exception.toString());
     }
 
+    print('📦 Update result data: ${result.data}');
     final data = result.data?['updatePerson'] as Map<String, dynamic>?;
     if (data == null) {
+      print('⚠️ updatePerson data is null');
       throw Exception('Respuesta inválida de updatePerson');
     }
+    print('✅ Update successful, mapping to User');
     return _mapPersonToUser(data);
   }
 
   @override
   Future<void> deleteUser(String id) async {
+    // Primero obtener el usuario para determinar su rol
+    final user = await getUserById(id);
+    if (user == null) {
+      throw Exception('Usuario no encontrado');
+    }
+
+    // Determinar qué mutation usar según el rol principal
+    String mutation;
+    if (user.tipos.contains(UserType.profesor)) {
+      mutation = _deleteProfessorMutation;
+    } else {
+      // Por defecto usar deletePlayer (jugadores y admins)
+      mutation = _deletePlayerMutation;
+    }
+
     final result = await _mutate(
-      MutationOptions(
-        document: gql(_deletePlayerMutation),
-        variables: {'id': id},
-      ),
+      MutationOptions(document: gql(mutation), variables: {'id': id}),
     );
 
     if (result.hasException) {
@@ -252,6 +277,7 @@ class UserRepository implements UserRepositoryInterface {
 
     return User(
       id: person['id'] as String?,
+      playerId: player?['id'] as String?, // ID del jugador
       dni: (person['dni'] as String?) ?? '',
       nombre: (person['name'] as String?) ?? '',
       apellido: (person['surname'] as String?) ?? '',
@@ -291,9 +317,10 @@ class UserRepository implements UserRepositoryInterface {
     if (user.telefono.isNotEmpty) {
       input['phone'] = user.telefono;
     }
-    if (user.genero != Gender.otro) {
-      input['gender'] = _mapGenderToApi(user.genero);
-    }
+
+    // Siempre incluir gender (requerido por el backend)
+    input['gender'] = _mapGenderToApi(user.genero);
+
     final birthDate = _formatBirthDate(user.fechaNacimiento);
     if (birthDate.isNotEmpty) {
       input['birthDate'] = birthDate;
@@ -327,17 +354,20 @@ class UserRepository implements UserRepositoryInterface {
     if (user.telefono.isNotEmpty) {
       input['phone'] = user.telefono;
     }
-    if (user.genero != Gender.otro) {
-      input['gender'] = _mapGenderToApi(user.genero);
-    }
+
+    // Siempre incluir gender (requerido por el backend)
+    input['gender'] = _mapGenderToApi(user.genero);
+
     final birthDate = _formatBirthDate(user.fechaNacimiento);
     if (birthDate.isNotEmpty) {
       input['birthDate'] = birthDate;
     }
 
-    final jersey = int.tryParse(user.numeroCamiseta ?? '');
-    if (jersey != null) {
-      input['jerseyNumber'] = jersey;
+    // Si el usuario es jugador, incluir jerseyNumber y leagueId
+    if (user.tipos.contains(UserType.jugador)) {
+      final jersey = int.tryParse(user.numeroCamiseta ?? '');
+      input['jerseyNumber'] = jersey ?? 0;
+      input['leagueId'] = 0; // TODO: obtener del usuario cuando esté disponible
     }
 
     return input;
