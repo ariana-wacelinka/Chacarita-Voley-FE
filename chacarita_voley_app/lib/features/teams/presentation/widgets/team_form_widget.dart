@@ -116,14 +116,6 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      if (_selectedEntrenadores.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Debe seleccionar al menos un entrenador'),
-          ),
-        );
-        return;
-      }
       final team = Team(
         id: widget.team?.id ?? DateTime.now().toString(),
         nombre: _nombreController.text,
@@ -131,7 +123,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ? 'N/A'
             : _abreviacionController.text,
         tipo: _selectedTipo,
-        entrenador: _selectedEntrenadores.first,
+        entrenador: _selectedEntrenadores.isNotEmpty
+            ? _selectedEntrenadores.first
+            : '',
         integrantes: _integrantes,
       );
       widget.onSubmit(team);
@@ -266,13 +260,19 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                     ),
                     style: const TextStyle(fontSize: 14),
                     maxLength: 4,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'La abreviación es obligatoria';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Entrenador *',
+                        'Entrenador',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
