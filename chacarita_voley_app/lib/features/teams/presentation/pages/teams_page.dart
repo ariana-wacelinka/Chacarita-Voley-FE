@@ -23,6 +23,8 @@ class _TeamsPageState extends State<TeamsPage> {
   String _searchQuery = '';
   bool _isLoading = true;
 
+  String? _lastLocation;
+
   static const int _teamsPerPage = 12;
   int _currentPage = 0;
 
@@ -31,6 +33,25 @@ class _TeamsPageState extends State<TeamsPage> {
     super.initState();
     _loadTeams();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final location = GoRouterState.of(context).uri.toString();
+
+    if (_lastLocation != null &&
+        _lastLocation != location &&
+        location == '/teams') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadTeams();
+        }
+      });
+    }
+
+    _lastLocation = location;
   }
 
   @override
@@ -487,7 +508,13 @@ class _TeamsPageState extends State<TeamsPage> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/teams/register'),
+        onPressed: () async {
+          final created = await context.push<bool>('/teams/register');
+
+          if (created == true && mounted) {
+            _loadTeams();
+          }
+        },
         backgroundColor: context.tokens.redToRosita,
         child: const Icon(Symbols.group_add, color: Colors.white),
       ),

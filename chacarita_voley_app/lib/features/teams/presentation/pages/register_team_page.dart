@@ -32,39 +32,7 @@ class _RegisterTeamPageState extends State<RegisterTeamPage> {
       await _repository.createTeam(team);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Equipo ${team.nombre} registrado exitosamente',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.tokens.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        context.go('/teams');
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -114,7 +82,7 @@ class _RegisterTeamPageState extends State<RegisterTeamPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.go('/teams'),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Registrar Equipo',
