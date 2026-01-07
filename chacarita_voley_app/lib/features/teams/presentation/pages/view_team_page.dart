@@ -597,7 +597,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                       size: 18,
                                     ),
                                     onSelected: (action) {
-                                      final userId = _resolveUserIdForMember(member);
+                                      final userId = _resolveUserIdForMember(
+                                        member,
+                                      );
 
                                       switch (action) {
                                         case _MemberMenuAction.viewUser:
@@ -606,10 +608,12 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                         case _MemberMenuAction.editUser:
                                           context.push('/users/$userId/edit');
                                           break;
-                                        case _MemberMenuAction.viewCompetitiveData:
+                                        case _MemberMenuAction
+                                            .viewCompetitiveData:
                                           _showCompetitiveDataDialog(member);
                                           break;
-                                        case _MemberMenuAction.editCompetitiveData:
+                                        case _MemberMenuAction
+                                            .editCompetitiveData:
                                           _showEditCompetitiveDataDialog(
                                             memberIndex: index,
                                             member: member,
@@ -621,12 +625,18 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                       if (_team!.tipo == TeamType.competitivo) {
                                         return const [
                                           PopupMenuItem(
-                                            value: _MemberMenuAction.viewCompetitiveData,
-                                            child: Text('Ver datos competitivos'),
+                                            value: _MemberMenuAction
+                                                .viewCompetitiveData,
+                                            child: Text(
+                                              'Ver datos competitivos',
+                                            ),
                                           ),
                                           PopupMenuItem(
-                                            value: _MemberMenuAction.editCompetitiveData,
-                                            child: Text('Modificar datos competitivos'),
+                                            value: _MemberMenuAction
+                                                .editCompetitiveData,
+                                            child: Text(
+                                              'Modificar datos competitivos',
+                                            ),
                                           ),
                                           PopupMenuItem(
                                             value: _MemberMenuAction.viewUser,

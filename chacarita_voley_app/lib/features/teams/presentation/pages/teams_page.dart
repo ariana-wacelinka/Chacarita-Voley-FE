@@ -5,11 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
 
-enum _TeamMenuAction {
-  view,
-  edit,
-  delete,
-}
+enum _TeamMenuAction { view, edit, delete }
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
@@ -326,10 +322,14 @@ class _TeamsPageState extends State<TeamsPage> {
                                                 onSelected: (action) {
                                                   switch (action) {
                                                     case _TeamMenuAction.view:
-                                                      context.push('/teams/view/${team.id}');
+                                                      context.push(
+                                                        '/teams/view/${team.id}',
+                                                      );
                                                       break;
                                                     case _TeamMenuAction.edit:
-                                                      context.push('/teams/edit/${team.id}');
+                                                      context.push(
+                                                        '/teams/edit/${team.id}',
+                                                      );
                                                       break;
                                                     case _TeamMenuAction.delete:
                                                       _showDeleteDialog(team);
@@ -388,7 +388,8 @@ class _TeamsPageState extends State<TeamsPage> {
                                                     ),
                                                   ),
                                                   PopupMenuItem(
-                                                    value: _TeamMenuAction.delete,
+                                                    value:
+                                                        _TeamMenuAction.delete,
                                                     child: Row(
                                                       children: [
                                                         Icon(
