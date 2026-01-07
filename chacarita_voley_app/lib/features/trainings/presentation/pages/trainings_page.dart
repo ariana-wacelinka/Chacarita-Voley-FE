@@ -654,36 +654,35 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       color: context.tokens.card1,
                       elevation: 4,
-                      onSelected: (action) {
-                        switch (action) {
-                          case _TrainingMenuAction.view:
-                            context.push('/trainings/${training.id}');
-                            break;
-                          case _TrainingMenuAction.edit:
-                            context.push('/trainings/${training.id}/edit');
-                            break;
-                          case _TrainingMenuAction.delete:
-                            _showDeleteDialog(context, training);
-                            break;
-                        }
-                      },
                       itemBuilder: (context) => [
                         PopupMenuItem(
-                          value: _TrainingMenuAction.view,
+                          onTap: () {
+                            Future.microtask(() {
+                              context.push('/trainings/${training.id}');
+                            });
+                          },
                           child: Text(
                             'Ver',
                             style: TextStyle(color: context.tokens.text),
                           ),
                         ),
                         PopupMenuItem(
-                          value: _TrainingMenuAction.edit,
+                          onTap: () {
+                            Future.microtask(() {
+                              context.push('/trainings/${training.id}/edit');
+                            });
+                          },
                           child: Text(
                             'Modificar',
                             style: TextStyle(color: context.tokens.text),
                           ),
                         ),
                         PopupMenuItem(
-                          value: _TrainingMenuAction.delete,
+                          onTap: () {
+                            Future.microtask(() {
+                              _showDeleteDialog(context, training);
+                            });
+                          },
                           child: Text(
                             'Eliminar',
                             style: TextStyle(color: context.tokens.redToRosita),

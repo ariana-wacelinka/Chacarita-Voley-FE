@@ -38,18 +38,62 @@ class TrainingModel {
   }
 }
 
+class PersonModel {
+  final String id;
+  final String dni;
+  final String name;
+  final String surname;
+  final String? phone;
+  final String? email;
+  final String? gender;
+  final String? birthDate;
+  final List<String>? roles;
+
+  PersonModel({
+    required this.id,
+    required this.dni,
+    required this.name,
+    required this.surname,
+    this.phone,
+    this.email,
+    this.gender,
+    this.birthDate,
+    this.roles,
+  });
+
+  factory PersonModel.fromJson(Map<String, dynamic> json) {
+    return PersonModel(
+      id: json['id'] as String,
+      dni: json['dni'] as String,
+      name: json['name'] as String,
+      surname: json['surname'] as String,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      gender: json['gender'] as String?,
+      birthDate: json['birthDate'] as String?,
+      roles: (json['roles'] as List<dynamic>?)
+          ?.map((r) => r as String)
+          .toList(),
+    );
+  }
+}
+
 class UserModel {
   final String id;
   final int? jerseyNumber;
   final int? leagueId;
+  final PersonModel? person;
 
-  UserModel({required this.id, this.jerseyNumber, this.leagueId});
+  UserModel({required this.id, this.jerseyNumber, this.leagueId, this.person});
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
       jerseyNumber: json['jerseyNumber'] as int?,
       leagueId: json['leagueId'] as int?,
+      person: json['person'] != null
+          ? PersonModel.fromJson(json['person'] as Map<String, dynamic>)
+          : null,
     );
   }
 

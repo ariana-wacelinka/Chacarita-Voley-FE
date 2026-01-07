@@ -31,9 +31,31 @@ class TeamRepository implements TeamRepositoryInterface {
       id
       jerseyNumber
       leagueId
+      person {
+        id
+        dni
+        name
+        surname
+        phone
+        email
+        gender
+        birthDate
+        roles
+      }
     }
     professors {
       id
+      person {
+        id
+        dni
+        name
+        surname
+        phone
+        email
+        gender
+        birthDate
+        roles
+      }
     }
     trainings {
       dayOfWeek
@@ -101,9 +123,19 @@ class TeamRepository implements TeamRepositoryInterface {
         id
         isCompetitive
         name
-        players { id }
+        abbreviation
+        players {
+          id
+          jerseyNumber
+          leagueId
+          person {
+            dni
+            name
+            surname
+          }
+        }
         professors { id }
-        trainings { dayOfWeek endTime id location startTime trainingType }
+        trainings { id }
       }
     }
   ''';
@@ -114,9 +146,25 @@ class TeamRepository implements TeamRepositoryInterface {
         id
         isCompetitive
         name
-        players { id }
-        professors { id }
-        trainings { dayOfWeek endTime id location startTime trainingType }
+        abbreviation
+        players {
+          id
+          jerseyNumber
+          person {
+            dni
+            name
+            surname
+          }
+        }
+        professors {
+          id
+          person {
+            dni
+            name
+            surname
+          }
+        }
+        trainings { id }
       }
     }
   ''';
@@ -396,9 +444,9 @@ class TeamRepository implements TeamRepositoryInterface {
           .map(
             (player) => TeamMember(
               playerId: player.id,
-              dni: '',
-              nombre: '',
-              apellido: '',
+              dni: player.person?.dni ?? '',
+              nombre: player.person?.name ?? '',
+              apellido: player.person?.surname ?? '',
               numeroCamiseta: player.jerseyNumber?.toString(),
             ),
           )

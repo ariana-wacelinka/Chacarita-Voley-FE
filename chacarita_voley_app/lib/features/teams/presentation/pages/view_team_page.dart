@@ -5,6 +5,13 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
 
+enum _MemberMenuAction {
+  viewUser,
+  editUser,
+  viewCompetitiveData,
+  editCompetitiveData,
+}
+
 class ViewTeamPage extends StatefulWidget {
   final String teamId;
 
@@ -26,6 +33,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   void _showCompetitiveDataDialog(TeamMember member) {
     showDialog<void>(
       context: context,
+      useRootNavigator: true,
       builder: (context) {
         return AlertDialog(
           title: const Text('Datos competitivos'),
@@ -71,6 +79,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
 
     showDialog<void>(
       context: context,
+      useRootNavigator: true,
       builder: (context) {
         return AlertDialog(
           title: const Text('Modificar datos competitivos'),
@@ -581,68 +590,61 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                 if (_team!.tipo == TeamType.competitivo)
                                   DataCell(Text(member.numeroCamiseta ?? '-')),
                                 DataCell(
-                                  PopupMenuButton<String>(
+                                  PopupMenuButton<_MemberMenuAction>(
+                                    useRootNavigator: true,
                                     icon: const Icon(
                                       Symbols.more_vert,
                                       size: 18,
                                     ),
-                                    onSelected: (value) {
-                                      switch (value) {
-                                        case 'ver_datos':
+                                    onSelected: (action) {
+                                      final userId = _resolveUserIdForMember(member);
+
+                                      switch (action) {
+                                        case _MemberMenuAction.viewUser:
+                                          context.push('/users/$userId/view');
+                                          break;
+                                        case _MemberMenuAction.editUser:
+                                          context.push('/users/$userId/edit');
+                                          break;
+                                        case _MemberMenuAction.viewCompetitiveData:
                                           _showCompetitiveDataDialog(member);
                                           break;
-                                        case 'modificar_datos':
+                                        case _MemberMenuAction.editCompetitiveData:
                                           _showEditCompetitiveDataDialog(
                                             memberIndex: index,
                                             member: member,
                                           );
                                           break;
-                                        case 'visualizar':
-                                        case 'ver':
-                                          final userId =
-                                              _resolveUserIdForMember(member);
-                                          context.push('/users/$userId/view');
-                                          break;
-                                        case 'modificar':
-                                        case 'modificar_usuario':
-                                          final userId =
-                                              _resolveUserIdForMember(member);
-                                          context.push('/users/$userId/edit');
-                                          break;
                                       }
                                     },
-                                    itemBuilder: (context) {
+                                    itemBuilder: (_) {
                                       if (_team!.tipo == TeamType.competitivo) {
-                                        return [
-                                          const PopupMenuItem(
-                                            value: 'ver_datos',
-                                            child: Text(
-                                              'Ver datos competitivos',
-                                            ),
+                                        return const [
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.viewCompetitiveData,
+                                            child: Text('Ver datos competitivos'),
                                           ),
-                                          const PopupMenuItem(
-                                            value: 'modificar_datos',
-                                            child: Text(
-                                              'Modificar datos competitivos',
-                                            ),
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.editCompetitiveData,
+                                            child: Text('Modificar datos competitivos'),
                                           ),
-                                          const PopupMenuItem(
-                                            value: 'visualizar',
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.viewUser,
                                             child: Text('Visualizar jugador'),
                                           ),
-                                          const PopupMenuItem(
-                                            value: 'modificar_usuario',
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.editUser,
                                             child: Text('Modificar usuario'),
                                           ),
                                         ];
                                       } else {
-                                        return [
-                                          const PopupMenuItem(
-                                            value: 'ver',
+                                        return const [
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.viewUser,
                                             child: Text('Ver'),
                                           ),
-                                          const PopupMenuItem(
-                                            value: 'modificar',
+                                          PopupMenuItem(
+                                            value: _MemberMenuAction.editUser,
                                             child: Text('Modificar'),
                                           ),
                                         ];

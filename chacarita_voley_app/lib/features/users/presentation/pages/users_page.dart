@@ -350,26 +350,15 @@ class _UsersPageState extends State<UsersPage> {
                                         size: 18,
                                       ),
                                       tooltip: 'Más opciones',
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'view':
-                                            context.go(
-                                              '/users/${user.id}/view',
-                                            );
-                                            break;
-                                          case 'edit':
-                                            context.push(
-                                              '/users/${user.id}/edit',
-                                            );
-                                            break;
-                                          case 'delete':
-                                            _showDeleteDialog(user);
-                                            break;
-                                        }
-                                      },
                                       itemBuilder: (context) => [
                                         PopupMenuItem(
-                                          value: 'view',
+                                          onTap: () {
+                                            Future.microtask(() {
+                                              context.go(
+                                                '/users/${user.id}/view',
+                                              );
+                                            });
+                                          },
                                           child: Row(
                                             children: [
                                               Icon(
@@ -388,7 +377,13 @@ class _UsersPageState extends State<UsersPage> {
                                           ),
                                         ),
                                         PopupMenuItem(
-                                          value: 'edit',
+                                          onTap: () {
+                                            Future.microtask(() {
+                                              context.push(
+                                                '/users/${user.id}/edit',
+                                              );
+                                            });
+                                          },
                                           child: Row(
                                             children: [
                                               Icon(
@@ -407,7 +402,11 @@ class _UsersPageState extends State<UsersPage> {
                                           ),
                                         ),
                                         PopupMenuItem(
-                                          value: 'delete',
+                                          onTap: () {
+                                            Future.microtask(() {
+                                              _showDeleteDialog(user);
+                                            });
+                                          },
                                           child: Row(
                                             children: [
                                               Icon(

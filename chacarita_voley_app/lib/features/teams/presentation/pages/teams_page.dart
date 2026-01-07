@@ -5,6 +5,12 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
 
+enum _TeamMenuAction {
+  view,
+  edit,
+  delete,
+}
+
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});
 
@@ -100,6 +106,7 @@ class _TeamsPageState extends State<TeamsPage> {
   void _showDeleteDialog(Team team) {
     showDialog(
       context: context,
+      useRootNavigator: true,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
         content: Text(
@@ -304,7 +311,8 @@ class _TeamsPageState extends State<TeamsPage> {
                                             alignment: Alignment.centerRight,
                                             child: Transform.translate(
                                               offset: const Offset(4, 0),
-                                              child: PopupMenuButton<String>(
+                                              child: PopupMenuButton<_TeamMenuAction>(
+                                                useRootNavigator: true,
                                                 padding: EdgeInsets.zero,
                                                 icon: Icon(
                                                   Symbols.more_vert,
@@ -315,26 +323,22 @@ class _TeamsPageState extends State<TeamsPage> {
                                                   size: 18,
                                                 ),
                                                 tooltip: 'Más opciones',
-                                                onSelected: (value) {
-                                                  switch (value) {
-                                                    case 'view':
-                                                      context.push(
-                                                        '/teams/view/${team.id}',
-                                                      );
+                                                onSelected: (action) {
+                                                  switch (action) {
+                                                    case _TeamMenuAction.view:
+                                                      context.push('/teams/view/${team.id}');
                                                       break;
-                                                    case 'edit':
-                                                      context.push(
-                                                        '/teams/edit/${team.id}',
-                                                      );
+                                                    case _TeamMenuAction.edit:
+                                                      context.push('/teams/edit/${team.id}');
                                                       break;
-                                                    case 'delete':
+                                                    case _TeamMenuAction.delete:
                                                       _showDeleteDialog(team);
                                                       break;
                                                   }
                                                 },
-                                                itemBuilder: (context) => [
+                                                itemBuilder: (_) => [
                                                   PopupMenuItem(
-                                                    value: 'view',
+                                                    value: _TeamMenuAction.view,
                                                     child: Row(
                                                       children: [
                                                         Icon(
@@ -359,7 +363,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                                     ),
                                                   ),
                                                   PopupMenuItem(
-                                                    value: 'edit',
+                                                    value: _TeamMenuAction.edit,
                                                     child: Row(
                                                       children: [
                                                         Icon(
@@ -384,7 +388,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                                     ),
                                                   ),
                                                   PopupMenuItem(
-                                                    value: 'delete',
+                                                    value: _TeamMenuAction.delete,
                                                     child: Row(
                                                       children: [
                                                         Icon(
