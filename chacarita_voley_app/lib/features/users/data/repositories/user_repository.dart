@@ -283,6 +283,17 @@ class UserRepository implements UserRepositoryInterface {
         ? ((teams.first as Map<String, dynamic>)['name'] as String? ?? '')
         : '';
 
+    final equipos = teams
+        .map(
+          (t) => TeamInfo(
+            id: (t as Map<String, dynamic>)['id'] as String? ?? '',
+            name: t['name'] as String? ?? '',
+            abbreviation: t['abbreviation'] as String? ?? '',
+            isCompetitive: t['isCompetitive'] as bool? ?? false,
+          ),
+        )
+        .toList();
+
     final birthDate = person['birthDate'] as String?;
     final parsedBirthDate = birthDate != null && birthDate.isNotEmpty
         ? DateTime.tryParse(birthDate)
@@ -290,7 +301,7 @@ class UserRepository implements UserRepositoryInterface {
 
     return User(
       id: person['id'] as String?,
-      playerId: player?['id'] as String?, // ID del jugador
+      playerId: player?['id'] as String?,
       dni: (person['dni'] as String?) ?? '',
       nombre: (person['name'] as String?) ?? '',
       apellido: (person['surname'] as String?) ?? '',
@@ -300,6 +311,7 @@ class UserRepository implements UserRepositoryInterface {
       telefono: (person['phone'] as String?) ?? '',
       numeroCamiseta: jerseyNumber?.toString(),
       equipo: equipo,
+      equipos: equipos,
       tipos: tipos,
       estadoCuota: EstadoCuota.alDia,
     );

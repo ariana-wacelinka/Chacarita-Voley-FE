@@ -1,8 +1,22 @@
 import 'gender.dart';
 
+class TeamInfo {
+  final String id;
+  final String name;
+  final String abbreviation;
+  final bool isCompetitive;
+
+  TeamInfo({
+    required this.id,
+    required this.name,
+    required this.abbreviation,
+    required this.isCompetitive,
+  });
+}
+
 class User {
   final String? id;
-  final String? playerId; // ID del player (si es jugador)
+  final String? playerId;
   final String dni;
   final String nombre;
   final String apellido;
@@ -12,6 +26,7 @@ class User {
   final String telefono;
   final String? numeroCamiseta;
   final String equipo;
+  final List<TeamInfo> equipos;
   final Set<UserType> tipos;
   final EstadoCuota estadoCuota;
 
@@ -27,6 +42,7 @@ class User {
     required this.telefono,
     this.numeroCamiseta,
     required this.equipo,
+    this.equipos = const [],
     required this.tipos,
     required this.estadoCuota,
   });
@@ -46,6 +62,18 @@ class User {
       telefono: json['telefono'],
       numeroCamiseta: json['numeroCamiseta'],
       equipo: json['equipo'],
+      equipos:
+          (json['equipos'] as List<dynamic>?)
+              ?.map(
+                (e) => TeamInfo(
+                  id: e['id'] as String,
+                  name: e['name'] as String,
+                  abbreviation: e['abbreviation'] as String,
+                  isCompetitive: e['isCompetitive'] as bool,
+                ),
+              )
+              .toList() ??
+          [],
       tipos: (json['tipos'] as List<dynamic>)
           .map((e) => UserType.values.firstWhere((type) => type.name == e))
           .toSet(),
@@ -67,6 +95,16 @@ class User {
       'telefono': telefono,
       'numeroCamiseta': numeroCamiseta,
       'equipo': equipo,
+      'equipos': equipos
+          .map(
+            (e) => {
+              'id': e.id,
+              'name': e.name,
+              'abbreviation': e.abbreviation,
+              'isCompetitive': e.isCompetitive,
+            },
+          )
+          .toList(),
       'tipos': tipos.map((e) => e.name).toList(),
       'estadoCuota': estadoCuota.name,
     };

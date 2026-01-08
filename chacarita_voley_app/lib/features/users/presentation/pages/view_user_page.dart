@@ -474,13 +474,25 @@ class _ViewUserPageState extends State<ViewUserPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Column(
-            children: [
-              _buildTeamItem(context, 'Recreativo 1'),
-              const SizedBox(height: 8),
-              _buildTeamItem(context, 'Recreativo 3'),
-            ],
-          ),
+          if (_user?.equipos.isEmpty ?? true)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No pertenece a ningún equipo',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            )
+          else
+            Column(
+              children: (_user?.equipos ?? [])
+                  .map(
+                    (team) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildTeamItem(context, team.name),
+                    ),
+                  )
+                  .toList(),
+            ),
         ],
       ),
     );

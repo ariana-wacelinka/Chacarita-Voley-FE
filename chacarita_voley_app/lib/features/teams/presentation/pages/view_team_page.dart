@@ -25,6 +25,7 @@ class ViewTeamPage extends StatefulWidget {
 
 class _ViewTeamPageState extends State<ViewTeamPage> {
   late final TeamRepository _repository;
+  late final UserRepository _userRepository;
   Team? _team;
   bool _isLoading = true;
 
@@ -122,11 +123,40 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
             ),
             FilledButton(
               key: const Key('competitive-save-button'),
-              onPressed: () {
+              onPressed: () async {
                 final value = controller.text.trim();
+                print(
+                  '🔢 Saving jersey number: $value for player ${member.playerId}',
+                );
+
                 final updated = member.copyWith(
                   numeroCamiseta: value.isEmpty ? null : value,
                 );
+
+                if (member.playerId != null && value.isNotEmpty) {
+                  try {
+                    print(
+                      '🚀 Calling updatePerson with playerId: ${member.playerId}, jerseyNumber: ${int.tryParse(value)}',
+                    );
+                    await _userRepository.updatePerson(member.playerId!, {
+                      'jerseyNumber': int.tryParse(value) ?? 0,
+                    });
+                    print('✅ Jersey number updated successfully');
+                  } catch (e) {
+                    print('❌ Error updating jersey number: $e');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Error al actualizar número de camiseta: $e',
+                          ),
+                          backgroundColor: context.tokens.redToRosita,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                }
 
                 setState(() {
                   final updatedMembers = List<TeamMember>.from(
@@ -136,7 +166,15 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                   _team = _team!.copyWith(integrantes: updatedMembers);
                 });
 
-                Navigator.of(context).pop();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Número de camiseta actualizado'),
+                      backgroundColor: context.tokens.green,
+                    ),
+                  );
+                }
               },
               child: const Text('Guardar'),
             ),
@@ -150,6 +188,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   void initState() {
     super.initState();
     _repository = TeamRepository();
+    _userRepository = UserRepository();
     _loadTeam();
   }
 

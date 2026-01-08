@@ -116,6 +116,23 @@ class _EditTeamPageState extends State<EditTeamPage> {
       if (playersToAdd.isNotEmpty) {
         print('🚀 Calling addPlayersToTeam with: ${team.id}, $playersToAdd');
         await _repository.addPlayersToTeam(team.id, playersToAdd);
+
+        for (final playerId in playersToAdd) {
+          final newMember = team.integrantes.firstWhere(
+            (m) => m.playerId == playerId,
+            orElse: () => TeamMember(dni: '', nombre: '', apellido: ''),
+          );
+
+          if (newMember.numeroCamiseta != null &&
+              newMember.numeroCamiseta!.isNotEmpty) {
+            print(
+              '🔢 Setting jersey number for new player $playerId: ${newMember.numeroCamiseta}',
+            );
+            await _userRepository.updatePerson(playerId, {
+              'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
+            });
+          }
+        }
       }
 
       if (playersToRemove.isNotEmpty) {
@@ -134,6 +151,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
       for (final newMember in team.integrantes) {
         if (newMember.playerId == null) continue;
+        if (playersToAdd.contains(newMember.playerId)) continue;
 
         final originalMember = _team!.integrantes.firstWhere(
           (m) => m.playerId == newMember.playerId,
@@ -141,9 +159,10 @@ class _EditTeamPageState extends State<EditTeamPage> {
         );
 
         if (originalMember.numeroCamiseta != newMember.numeroCamiseta &&
-            newMember.numeroCamiseta != null) {
+            newMember.numeroCamiseta != null &&
+            newMember.numeroCamiseta!.isNotEmpty) {
           print(
-            '🔢 Updating jersey number for player ${newMember.playerId}: '
+            '🔢 Updating jersey number for existing player ${newMember.playerId}: '
             '${originalMember.numeroCamiseta} → ${newMember.numeroCamiseta}',
           );
           await _userRepository.updatePerson(newMember.playerId!, {
