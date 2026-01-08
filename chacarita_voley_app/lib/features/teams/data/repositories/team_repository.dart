@@ -118,7 +118,7 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   static const String _addPlayersToTeamMutation = r'''
-    mutation AddPlayersToTeam($teamId: ID!, $playersIds: String!) {
+    mutation AddPlayersToTeam($teamId: ID!, $playersIds: [ID]!) {
       addPlayersToTeam(teamId: $teamId, playersIds: $playersIds) {
         id
         isCompetitive
@@ -141,7 +141,7 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   static const String _addProfessorsToTeamMutation = r'''
-    mutation AddProfessorsToTeam($teamId: ID!, $professorsIds: String!) {
+    mutation AddProfessorsToTeam($teamId: ID!, $professorsIds: [ID]!) {
       addProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
         id
         isCompetitive
@@ -170,7 +170,7 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   static const String _removePlayersFromTeamMutation = r'''
-    mutation RemovePlayersFromTeam($teamId: ID!, $playerIds: String!) {
+    mutation RemovePlayersFromTeam($teamId: ID!, $playerIds: [ID]!) {
       removePlayersToTeam(teamId: $teamId, playerIds: $playerIds) {
         id
         isCompetitive
@@ -183,7 +183,7 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   static const String _removeProfessorsFromTeamMutation = r'''
-    mutation RemoveProfessorsFromTeam($teamId: ID!, $professorsIds: String!) {
+    mutation RemoveProfessorsFromTeam($teamId: ID!, $professorsIds: [ID]!) {
       removeProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
         id
         isCompetitive
@@ -366,11 +366,40 @@ class TeamRepository implements TeamRepositoryInterface {
     }
   }
 
+  @override
+  Future<void> addPlayersToTeam(String teamId, List<String> playerIds) async {
+    await _addPlayersToTeam(teamId, playerIds);
+  }
+
+  @override
+  Future<void> addProfessorsToTeam(
+    String teamId,
+    List<String> professorIds,
+  ) async {
+    await _addProfessorsToTeam(teamId, professorIds);
+  }
+
+  @override
+  Future<void> removePlayersFromTeam(
+    String teamId,
+    List<String> playerIds,
+  ) async {
+    await _removePlayersFromTeam(teamId, playerIds);
+  }
+
+  @override
+  Future<void> removeProfessorsFromTeam(
+    String teamId,
+    List<String> professorIds,
+  ) async {
+    await _removeProfessorsFromTeam(teamId, professorIds);
+  }
+
   Future<void> _addPlayersToTeam(String teamId, List<String> playerIds) async {
     final result = await _mutate(
       MutationOptions(
         document: gql(_addPlayersToTeamMutation),
-        variables: {'teamId': teamId, 'playersIds': playerIds.join(',')},
+        variables: {'teamId': teamId, 'playersIds': playerIds},
       ),
     );
 
@@ -386,7 +415,7 @@ class TeamRepository implements TeamRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql(_addProfessorsToTeamMutation),
-        variables: {'teamId': teamId, 'professorsIds': professorIds.join(',')},
+        variables: {'teamId': teamId, 'professorsIds': professorIds},
       ),
     );
 
@@ -402,7 +431,7 @@ class TeamRepository implements TeamRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql(_removePlayersFromTeamMutation),
-        variables: {'teamId': teamId, 'playerIds': playerIds.join(',')},
+        variables: {'teamId': teamId, 'playerIds': playerIds},
       ),
     );
 
@@ -418,7 +447,7 @@ class TeamRepository implements TeamRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql(_removeProfessorsFromTeamMutation),
-        variables: {'teamId': teamId, 'professorsIds': professorIds.join(',')},
+        variables: {'teamId': teamId, 'professorsIds': professorIds},
       ),
     );
 

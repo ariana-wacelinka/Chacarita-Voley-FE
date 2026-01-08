@@ -83,11 +83,14 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _addMember(User user, String? numeroCamiseta) {
     if (!_integrantes.any((m) => m.dni == user.dni)) {
+      print(
+        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}, id: ${user.id}',
+      );
       setState(() {
         _integrantes.add(
           TeamMember(
-            playerId: user.playerId, // ID del jugador para mutaciones
-            dni: user.dni, // DNI para mostrar
+            playerId: user.playerId ?? user.id, // Usar id si playerId es null
+            dni: user.dni,
             nombre: user.nombre,
             apellido: user.apellido,
             numeroCamiseta: numeroCamiseta,
@@ -107,6 +110,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     setState(() {
       final member = _integrantes[index];
       _integrantes[index] = TeamMember(
+        playerId: member.playerId, // Preservar playerId
         dni: member.dni,
         nombre: member.nombre,
         apellido: member.apellido,

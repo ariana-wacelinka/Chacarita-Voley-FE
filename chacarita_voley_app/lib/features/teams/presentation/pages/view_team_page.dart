@@ -4,6 +4,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
+import '../../../users/data/repositories/user_repository.dart';
+import '../../../users/domain/entities/user.dart';
 
 enum _MemberMenuAction {
   viewUser,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../users/data/repositories/user_repository.dart';
 import '../../domain/entities/team.dart';
 import '../../data/repositories/team_repository.dart';
 import '../widgets/team_form_widget.dart';
@@ -17,6 +18,7 @@ class EditTeamPage extends StatefulWidget {
 
 class _EditTeamPageState extends State<EditTeamPage> {
   late final TeamRepository _repository;
+  late final UserRepository _userRepository;
   bool _isLoading = true;
   Team? _team;
 
@@ -24,6 +26,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
   void initState() {
     super.initState();
     _repository = TeamRepository();
+    _userRepository = UserRepository();
     _loadTeam();
   }
 
@@ -71,12 +74,83 @@ class _EditTeamPageState extends State<EditTeamPage> {
   }
 
   Future<void> _handleUpdateTeam(Team team) async {
+    if (_team == null) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       await _repository.updateTeam(team);
+
+      print('📋 Original team members:');
+      for (final m in _team!.integrantes) {
+        print('  - ${m.nombreCompleto}: playerId=${m.playerId}, dni=${m.dni}');
+      }
+
+      print('📋 New team members:');
+      for (final m in team.integrantes) {
+        print('  - ${m.nombreCompleto}: playerId=${m.playerId}, dni=${m.dni}');
+      }
+
+      final originalPlayerIds = _team!.integrantes
+          .where((m) => m.playerId != null)
+          .map((m) => m.playerId!)
+          .toSet();
+      final newPlayerIds = team.integrantes
+          .where((m) => m.playerId != null)
+          .map((m) => m.playerId!)
+          .toSet();
+
+      print('🔍 Original Players: $originalPlayerIds');
+      print('🔍 New Players: $newPlayerIds');
+
+      final playersToAdd = newPlayerIds.difference(originalPlayerIds).toList();
+      final playersToRemove = originalPlayerIds
+          .difference(newPlayerIds)
+          .toList();
+
+      print('➕ Players to add: $playersToAdd');
+      print('➖ Players to remove: $playersToRemove');
+
+      if (playersToAdd.isNotEmpty) {
+        print('🚀 Calling addPlayersToTeam with: ${team.id}, $playersToAdd');
+        await _repository.addPlayersToTeam(team.id, playersToAdd);
+      }
+
+      if (playersToRemove.isNotEmpty) {
+        await _repository.removePlayersFromTeam(team.id, playersToRemove);
+      }
+
+      print('🔍 Original entrenador: ${_team!.entrenador}');
+      print('🔍 New entrenador: ${team.entrenador}');
+
+      if (_team!.entrenador != team.entrenador && team.entrenador.isNotEmpty) {
+        print(
+          '🚀 Calling addProfessorsToTeam with: ${team.id}, [${team.entrenador}]',
+        );
+        await _repository.addProfessorsToTeam(team.id, [team.entrenador]);
+      }
+
+      for (final newMember in team.integrantes) {
+        if (newMember.playerId == null) continue;
+
+        final originalMember = _team!.integrantes.firstWhere(
+          (m) => m.playerId == newMember.playerId,
+          orElse: () => newMember,
+        );
+
+        if (originalMember.numeroCamiseta != newMember.numeroCamiseta &&
+            newMember.numeroCamiseta != null) {
+          print(
+            '🔢 Updating jersey number for player ${newMember.playerId}: '
+            '${originalMember.numeroCamiseta} → ${newMember.numeroCamiseta}',
+          );
+          await _userRepository.updatePerson(newMember.playerId!, {
+            'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
+          });
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,10 +185,10 @@ class _EditTeamPageState extends State<EditTeamPage> {
           ),
         );
 
-        // Navegar de vuelta a la vista del equipo con los datos actualizados
         context.go('/teams/view/${team.id}');
       }
     } catch (e) {
+      print('❌ Error updating team: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -122,10 +196,10 @@ class _EditTeamPageState extends State<EditTeamPage> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Error al actualizar equipo',
-                    style: TextStyle(
+                    'Error al actualizar equipo: $e',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

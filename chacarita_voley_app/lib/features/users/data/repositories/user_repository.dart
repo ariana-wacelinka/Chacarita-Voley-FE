@@ -202,6 +202,19 @@ class UserRepository implements UserRepositoryInterface {
     return _mapPersonToUser(data);
   }
 
+  Future<void> updatePerson(String personId, Map<String, dynamic> input) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_updatePersonMutation()),
+        variables: {'id': personId, 'input': input},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
   @override
   Future<void> deleteUser(String id) async {
     // Primero obtener el usuario para determinar su rol
