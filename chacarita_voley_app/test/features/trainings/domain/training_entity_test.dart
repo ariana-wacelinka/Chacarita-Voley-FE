@@ -10,7 +10,7 @@ void main() {
         teamName: 'Equipo A',
         professorId: '4',
         professorName: 'Profesor 1',
-        date: DateTime(2025, 6, 16),
+        dayOfWeek: DayOfWeek.monday,
         startTime: '18:00',
         endTime: '19:00',
         location: 'Gimnasio Principal',
@@ -18,7 +18,7 @@ void main() {
         status: TrainingStatus.proximo,
       );
 
-      expect(training.dateFormatted, 'Lunes, 16 De Junio');
+      expect(training.dateFormatted, 'Lunes');
     });
 
     test('copyWith creates modified copy', () {
@@ -28,7 +28,7 @@ void main() {
         teamName: 'Equipo A',
         professorId: '4',
         professorName: 'Profesor 1',
-        date: DateTime(2025, 6, 16),
+        dayOfWeek: DayOfWeek.tuesday,
         startTime: '18:00',
         endTime: '19:00',
         location: 'Gimnasio Principal',

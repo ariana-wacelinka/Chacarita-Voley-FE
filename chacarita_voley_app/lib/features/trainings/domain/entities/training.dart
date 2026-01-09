@@ -1,8 +1,11 @@
 enum TrainingType {
-  fisico,
-  tecnico,
-  tactico,
-  partido;
+  fisico('PHYSICAL'),
+  tecnico('BALL_SKILLS'),
+  tactico('TACTICAL'),
+  partido('MATCH');
+
+  final String backendValue;
+  const TrainingType(this.backendValue);
 
   String get displayName {
     switch (this) {
@@ -14,6 +17,69 @@ enum TrainingType {
         return 'Táctico';
       case TrainingType.partido:
         return 'Partido';
+    }
+  }
+
+  static TrainingType fromBackend(String value) {
+    switch (value) {
+      case 'PHYSICAL':
+        return TrainingType.fisico;
+      case 'BALL_SKILLS':
+        return TrainingType.tecnico;
+      case 'TACTICAL':
+        return TrainingType.tactico;
+      case 'MATCH':
+        return TrainingType.partido;
+      default:
+        return TrainingType.fisico;
+    }
+  }
+}
+
+enum DayOfWeek {
+  monday('MONDAY'),
+  tuesday('TUESDAY'),
+  wednesday('WEDNESDAY'),
+  thursday('THURSDAY'),
+  friday('FRIDAY'),
+  saturday('SATURDAY');
+
+  final String backendValue;
+  const DayOfWeek(this.backendValue);
+
+  String get displayName {
+    switch (this) {
+      case DayOfWeek.monday:
+        return 'Lunes';
+      case DayOfWeek.tuesday:
+        return 'Martes';
+      case DayOfWeek.wednesday:
+        return 'Miércoles';
+      case DayOfWeek.thursday:
+        return 'Jueves';
+      case DayOfWeek.friday:
+        return 'Viernes';
+      case DayOfWeek.saturday:
+        return 'Sábado';
+    }
+  }
+
+  static DayOfWeek fromBackend(String value) {
+    switch (value) {
+      case 'MONDAY':
+        return DayOfWeek.monday;
+      case 'TUESDAY':
+        return DayOfWeek.tuesday;
+      case 'WEDNESDAY':
+        return DayOfWeek.wednesday;
+      case 'THURSDAY':
+        return DayOfWeek.thursday;
+      case 'FRIDAY':
+        return DayOfWeek.friday;
+      case 'SATURDAY':
+        return DayOfWeek.saturday;
+      default:
+        return DayOfWeek.monday;
     }
   }
 }
@@ -61,11 +127,11 @@ class PlayerAttendance {
 
 class Training {
   final String id;
-  final String teamId;
-  final String teamName;
-  final String professorId;
-  final String professorName;
-  final DateTime date;
+  final String? teamId;
+  final String? teamName;
+  final String? professorId;
+  final String? professorName;
+  final DayOfWeek? dayOfWeek;
   final String startTime;
   final String endTime;
   final String location;
@@ -75,11 +141,11 @@ class Training {
 
   Training({
     required this.id,
-    required this.teamId,
-    required this.teamName,
-    required this.professorId,
-    required this.professorName,
-    required this.date,
+    this.teamId,
+    this.teamName,
+    this.professorId,
+    this.professorName,
+    this.dayOfWeek,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -93,33 +159,7 @@ class Training {
   int get absentCount => attendances.where((a) => !a.isPresent).length;
 
   String get dateFormatted {
-    final weekdays = [
-      '',
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo',
-    ];
-    final months = [
-      '',
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
-
-    return '${weekdays[date.weekday]}, ${date.day} De ${months[date.month]}';
+    return dayOfWeek?.displayName ?? 'Sin día asignado';
   }
 
   Training copyWith({
@@ -128,7 +168,7 @@ class Training {
     String? teamName,
     String? professorId,
     String? professorName,
-    DateTime? date,
+    DayOfWeek? dayOfWeek,
     String? startTime,
     String? endTime,
     String? location,
@@ -142,7 +182,7 @@ class Training {
       teamName: teamName ?? this.teamName,
       professorId: professorId ?? this.professorId,
       professorName: professorName ?? this.professorName,
-      date: date ?? this.date,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,

@@ -53,8 +53,6 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
 
       if (training != null) {
         _originalTraining = training;
-        _startDateController.text = _formatDate(training.date);
-        _endDateController.text = _formatDate(training.date);
         _startTimeController.text = training.startTime;
         _endTimeController.text = training.endTime;
         _locationController.text = training.location;
@@ -76,7 +74,6 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
     if (_originalTraining == null) return;
 
     final updated = _originalTraining!.copyWith(
-      date: _parseDate(_startDateController.text.trim()),
       startTime: _startTimeController.text.trim(),
       endTime: _endTimeController.text.trim(),
       location: _locationController.text.trim(),
@@ -148,24 +145,6 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
         ),
       );
     }
-  }
-
-  DateTime _parseDate(String text) {
-    final parts = text.split('/');
-    if (parts.length == 3) {
-      final day = int.tryParse(parts[0]) ?? 1;
-      final month = int.tryParse(parts[1]) ?? 1;
-      final year = int.tryParse(parts[2]) ?? DateTime.now().year;
-      return DateTime(year, month, day);
-    }
-    return DateTime.now();
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day/$month/$year';
   }
 
   @override

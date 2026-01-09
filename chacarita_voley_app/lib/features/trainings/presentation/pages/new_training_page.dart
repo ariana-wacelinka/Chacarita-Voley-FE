@@ -180,15 +180,13 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
       return;
     }
 
-    final date = _parseDate(_startDateController.text.trim());
-
     final training = Training(
       id: '',
       teamId: teamId,
       teamName: teamName,
       professorId: '4',
       professorName: 'Profesor 1',
-      date: date,
+      dayOfWeek: DayOfWeek.monday,
       startTime: _startTimeController.text.trim(),
       endTime: _endTimeController.text.trim(),
       location: _locationController.text.trim(),
@@ -269,17 +267,6 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
         ),
       );
     }
-  }
-
-  DateTime _parseDate(String text) {
-    final parts = text.split('/');
-    if (parts.length == 3) {
-      final day = int.tryParse(parts[0]) ?? 1;
-      final month = int.tryParse(parts[1]) ?? 1;
-      final year = int.tryParse(parts[2]) ?? DateTime.now().year;
-      return DateTime(year, month, day);
-    }
-    return DateTime.now();
   }
 
   @override
