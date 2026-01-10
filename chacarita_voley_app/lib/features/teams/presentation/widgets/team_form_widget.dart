@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -24,14 +25,17 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   TeamType _selectedTipo = TeamType.recreativo;
   List<String> _selectedEntrenadores = [];
-  List<User> _users = [];
+  List<User> _playersSearchResults = [];
+  List<User> _professorsSearchResults = [];
   List<TeamMember> _integrantes = [];
   String _searchQuery = '';
+  bool _isSearching = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _loadInitialProfessors();
     if (widget.team != null) {
       _nombreController.text = widget.team!.nombre;
       _abreviacionController.text = widget.team!.abreviacion;
@@ -40,19 +44,19 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     }
   }
 
-  void _loadUsers() async {
-    final users = await _userRepository.getUsers();
-    if (!mounted) return;
-    setState(() {
-      _users = users;
+  Future<void> _loadInitialProfessors() async {
+    try {
+      final professors = await _userRepository.getUsers(role: 'PROFESSOR');
+      if (!mounted) return;
+      setState(() {
+        _professorsSearchResults = professors;
+      });
 
-      // Cargar entrenadores después de tener la lista de usuarios
       if (widget.team != null && widget.team!.entrenador.isNotEmpty) {
-        // Buscar el ID del entrenador por nombre
-        final entrenador = _users.firstWhere(
-          (u) => '${u.nombre} ${u.apellido}' == widget.team!.entrenador,
-          orElse: () => _users.isNotEmpty
-              ? _users.first
+        final entrenador = professors.firstWhere(
+          (u) => u.nombre == widget.team!.entrenador,
+          orElse: () => professors.isNotEmpty
+              ? professors.first
               : User(
                   id: 'temp',
                   nombre: 'Sin',
@@ -71,11 +75,50 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
           _selectedEntrenadores = [entrenador.id!];
         }
       }
+    } catch (e) {
+      // Error silencioso, ya se mostrará en la UI si es necesario
+    }
+  }
+
+  void _searchPlayers(String query) {
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      setState(() {
+        _playersSearchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final results = await _userRepository.getUsers(
+          role: 'PLAYER',
+          searchQuery: query,
+        );
+        if (!mounted) return;
+        setState(() {
+          _playersSearchResults = results;
+          _isSearching = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _playersSearchResults = [];
+          _isSearching = false;
+        });
+      }
     });
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _nombreController.dispose();
     _abreviacionController.dispose();
     super.dispose();
@@ -298,22 +341,23 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: _selectedEntrenadores.map((id) {
-                                  final user = _users.firstWhere(
-                                    (u) => u.id == id,
-                                    orElse: () => User(
-                                      id: id,
-                                      nombre: 'Usuario',
-                                      apellido: 'Desconocido',
-                                      dni: '',
-                                      email: '',
-                                      telefono: '',
-                                      fechaNacimiento: DateTime.now(),
-                                      genero: Gender.masculino,
-                                      equipo: '',
-                                      tipos: {UserType.jugador},
-                                      estadoCuota: EstadoCuota.alDia,
-                                    ),
-                                  );
+                                  final user = _professorsSearchResults
+                                      .firstWhere(
+                                        (u) => u.id == id,
+                                        orElse: () => User(
+                                          id: id,
+                                          nombre: 'Usuario',
+                                          apellido: 'Desconocido',
+                                          dni: '',
+                                          email: '',
+                                          telefono: '',
+                                          fechaNacimiento: DateTime.now(),
+                                          genero: Gender.masculino,
+                                          equipo: '',
+                                          tipos: {UserType.profesor},
+                                          estadoCuota: EstadoCuota.alDia,
+                                        ),
+                                      );
                                   return Chip(
                                     label: Text(
                                       '${user.nombre} ${user.apellido}',
@@ -420,67 +464,74 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                       setState(() {
                         _searchQuery = value;
                       });
+                      _searchPlayers(value);
                     },
                   ),
                   const SizedBox(height: 12),
                   if (_searchQuery.isNotEmpty)
                     SizedBox(
                       height: 65,
-                      child: ListView(
-                        children: (() {
-                          final filteredUsers = _users.where((user) {
-                            if (user.id == null) return false;
-                            if (_integrantes.any((m) => m.dni == user.dni)) {
-                              return false;
-                            }
-                            final fullName = '${user.nombre} ${user.apellido}'
-                                .toLowerCase();
-                            final dni = user.dni.toLowerCase();
-                            final query = _searchQuery.toLowerCase();
-                            return fullName.contains(query) ||
-                                dni.contains(query);
-                          }).toList();
-
-                          if (filteredUsers.isEmpty) {
-                            return [
-                              const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(
-                                  child: Text(
-                                    'No hay usuarios disponibles',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                      child: _isSearching
+                          ? const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
                               ),
-                            ];
-                          }
+                            )
+                          : ListView(
+                              children: (() {
+                                final filteredUsers = _playersSearchResults
+                                    .where(
+                                      (user) => !_integrantes.any(
+                                        (m) => m.dni == user.dni,
+                                      ),
+                                    )
+                                    .toList();
 
-                          return filteredUsers.map((user) {
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 0,
-                              ),
-                              title: Text(
-                                '${user.nombre} ${user.apellido}',
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                              subtitle: Text(
-                                'DNI: ${user.dni}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                              trailing: const Icon(
-                                Symbols.add_circle,
-                                size: 20,
-                              ),
-                              onTap: () => _showAddMemberDialog(context, user),
-                            );
-                          }).toList();
-                        })(),
-                      ),
+                                if (filteredUsers.isEmpty) {
+                                  return [
+                                    const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Center(
+                                        child: Text(
+                                          'No hay jugadores disponibles',
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ];
+                                }
+
+                                return filteredUsers.map((user) {
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 0,
+                                    ),
+                                    title: Text(
+                                      '${user.nombre} ${user.apellido}',
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    subtitle: Text(
+                                      'DNI: ${user.dni}',
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                    trailing: const Icon(
+                                      Symbols.add_circle,
+                                      size: 20,
+                                    ),
+                                    onTap: () =>
+                                        _showAddMemberDialog(context, user),
+                                  );
+                                }).toList();
+                              })(),
+                            ),
                     ),
                   if (_integrantes.isEmpty)
                     const Padding(
@@ -607,28 +658,56 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   }
 
   void _showSelectEntrenadoresDialog(BuildContext context) {
-    String searchQuery = '';
+    List<User> searchResults = _professorsSearchResults;
+    bool isSearching = false;
+    Timer? dialogDebounceTimer;
+
+    void searchProfessors(String query, StateSetter setDialogState) {
+      dialogDebounceTimer?.cancel();
+
+      if (query.isEmpty) {
+        setDialogState(() {
+          searchResults = _professorsSearchResults;
+          isSearching = false;
+        });
+        return;
+      }
+
+      setDialogState(() {
+        isSearching = true;
+      });
+
+      dialogDebounceTimer = Timer(const Duration(milliseconds: 500), () async {
+        try {
+          final results = await _userRepository.getUsers(
+            role: 'PROFESSOR',
+            searchQuery: query,
+          );
+          setDialogState(() {
+            searchResults = results;
+            isSearching = false;
+          });
+        } catch (e) {
+          setDialogState(() {
+            searchResults = [];
+            isSearching = false;
+          });
+        }
+      });
+    }
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final availableUsers = _users
+            final filteredUsers = searchResults
                 .where(
                   (user) =>
                       user.id != null &&
                       !_selectedEntrenadores.contains(user.id),
                 )
                 .toList();
-
-            final filteredUsers = availableUsers.where((user) {
-              if (searchQuery.isEmpty) return true;
-              final fullName = '${user.nombre} ${user.apellido}'.toLowerCase();
-              final dni = user.dni.toLowerCase();
-              final query = searchQuery.toLowerCase();
-              return fullName.contains(query) || dni.contains(query);
-            }).toList();
 
             return AlertDialog(
               title: const Text('Seleccionar entrenador'),
@@ -643,15 +722,15 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                         prefixIcon: Icon(Symbols.search, size: 18),
                       ),
                       onChanged: (value) {
-                        setDialogState(() {
-                          searchQuery = value;
-                        });
+                        searchProfessors(value, setDialogState);
                       },
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 300,
-                      child: filteredUsers.isEmpty
+                      child: isSearching
+                          ? const Center(child: CircularProgressIndicator())
+                          : filteredUsers.isEmpty
                           ? const Center(
                               child: Text('No hay usuarios disponibles'),
                             )
@@ -674,6 +753,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                       _selectedEntrenadores.add(user.id!);
                                     });
                                     Navigator.of(context).pop();
+                                    dialogDebounceTimer?.cancel();
                                   },
                                 );
                               },

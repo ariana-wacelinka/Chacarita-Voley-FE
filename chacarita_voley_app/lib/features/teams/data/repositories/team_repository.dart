@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
@@ -13,13 +14,13 @@ class TeamRepository implements TeamRepositoryInterface {
   Future<QueryResult> _query(QueryOptions options) {
     final override = _clientOverride;
     if (override != null) return override.query(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.query(options));
+    return GraphQLClientFactory.client.query(options);
   }
 
   Future<QueryResult> _mutate(MutationOptions options) {
     final override = _clientOverride;
     if (override != null) return override.mutate(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.mutate(options));
+    return GraphQLClientFactory.client.mutate(options);
   }
 
   static const String _teamFields = r'''
@@ -69,8 +70,8 @@ class TeamRepository implements TeamRepositoryInterface {
 
   String _getAllTeamsQuery() =>
       '''
-    query GetAllTeams(\$page: Int!, \$size: Int!) {
-      getAllTeams(page: \$page, size: \$size) {
+    query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String) {
+      getAllTeams(page: \$page, size: \$size, filters: {name: \$name}) {
         content {
           $_teamFields
         }
@@ -196,21 +197,41 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   @override
-  Future<List<Team>> getTeams() async {
+  Future<List<Team>> getTeams({
+    String? searchQuery,
+    int? page,
+    int? size,
+  }) async {
+    final variables = <String, dynamic>{
+      'page': page ?? 0,
+      'size': size ?? 100,
+      'name': searchQuery ?? '',
+    };
+
+    debugPrint('📤 getTeams called');
+    debugPrint('📤 Variables: $variables');
+
     final result = await _query(
       QueryOptions(
         document: gql(_getAllTeamsQuery()),
-        variables: {'page': 0, 'size': 100},
+        variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
 
+    debugPrint('📥 Raw GraphQL result: ${result.data}');
+
     if (result.hasException) {
+      debugPrint('❌ GraphQL exception: ${result.exception}');
+      debugPrint('❌ GraphQL errors: ${result.exception?.graphqlErrors}');
+      debugPrint('❌ Link exception: ${result.exception?.linkException}');
       throw Exception(result.exception.toString());
     }
 
     final content =
         (result.data?['getAllTeams']?['content'] as List<dynamic>?) ?? const [];
+
+    debugPrint('📥 Teams count: ${content.length}');
 
     return content
         .whereType<Map<String, dynamic>>()
@@ -467,7 +488,7 @@ class TeamRepository implements TeamRepositoryInterface {
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
       entrenador: (model.professors != null && model.professors!.isNotEmpty)
-          ? model.professors!.first.id
+          ? (model.professors!.first.person?.name ?? '')
           : '',
       integrantes: (model.players ?? [])
           .map(

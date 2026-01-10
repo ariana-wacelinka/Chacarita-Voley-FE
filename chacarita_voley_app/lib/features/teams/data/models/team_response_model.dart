@@ -4,7 +4,7 @@ class TrainingModel {
   final String startTime;
   final String endTime;
   final String trainingType;
-  final String location;
+  final String? location;
 
   TrainingModel({
     required this.id,
@@ -12,7 +12,7 @@ class TrainingModel {
     required this.startTime,
     required this.endTime,
     required this.trainingType,
-    required this.location,
+    this.location,
   });
 
   factory TrainingModel.fromJson(Map<String, dynamic> json) {
@@ -22,7 +22,7 @@ class TrainingModel {
       startTime: json['startTime'] as String,
       endTime: json['endTime'] as String,
       trainingType: json['trainingType'] as String,
-      location: json['location'] as String,
+      location: json['location'] as String?,
     );
   }
 
@@ -33,7 +33,7 @@ class TrainingModel {
       'startTime': startTime,
       'endTime': endTime,
       'trainingType': trainingType,
-      'location': location,
+      if (location != null) 'location': location,
     };
   }
 }
