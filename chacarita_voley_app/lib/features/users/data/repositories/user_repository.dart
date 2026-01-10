@@ -13,13 +13,13 @@ class UserRepository implements UserRepositoryInterface {
   Future<QueryResult> _query(QueryOptions options) {
     final override = _clientOverride;
     if (override != null) return override.query(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.query(options));
+    return GraphQLClientFactory.client.query(options);
   }
 
   Future<QueryResult> _mutate(MutationOptions options) {
     final override = _clientOverride;
     if (override != null) return override.mutate(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.mutate(options));
+    return GraphQLClientFactory.client.mutate(options);
   }
 
   static const String _personFields = r'''
@@ -32,27 +32,20 @@ class UserRepository implements UserRepositoryInterface {
     roles
     surname
     birthDate
-    admin {
-      id
-    }
     player {
       id
       leagueId
       jerseyNumber
-      teams { id isCompetitive name }
+      teams { id isCompetitive name abbreviation }
       dues { id }
       assistances { id }
-    }
-    professor {
-      id
-      teams { id isCompetitive name }
     }
   ''';
 
   String _getAllPersonsQuery() =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!) {
-      getAllPersons(page: \$page, size: \$size, filters: {}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname}) {
         content {
           $_personFields
         }
@@ -106,22 +99,48 @@ class UserRepository implements UserRepositoryInterface {
   ''';
 
   @override
-  Future<List<User>> getUsers() async {
+  Future<List<User>> getUsers({
+    String? role,
+    String? searchQuery,
+    int? page,
+    int? size,
+  }) async {
+    print('🔥🔥🔥 UserRepository.getUsers EJECUTADO 🔥🔥🔥');
+    print(
+      '📍 Parámetros: role=$role, searchQuery=$searchQuery, page=$page, size=$size',
+    );
+
+    final variables = <String, dynamic>{
+      'page': page ?? 0,
+      'size': size ?? 100,
+      'dni': searchQuery ?? '',
+      'name': searchQuery ?? '',
+      'surname': searchQuery ?? '',
+    };
+
+    print('📤 Variables GraphQL: $variables');
+
     final result = await _query(
       QueryOptions(
         document: gql(_getAllPersonsQuery()),
-        variables: {'page': 0, 'size': 2000},
+        variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
 
+    print('📥 Result hasException: ${result.hasException}');
+    print('📦 Result data: ${result.data}');
+
     if (result.hasException) {
+      print('❌ GraphQL Exception: ${result.exception.toString()}');
       throw Exception(result.exception.toString());
     }
 
     final content =
         (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
         const [];
+
+    print('✅ Content length: ${content.length}');
 
     return content
         .whereType<Map<String, dynamic>>()
@@ -280,7 +299,8 @@ class UserRepository implements UserRepositoryInterface {
     final jerseyNumber = player?['jerseyNumber'];
     final teams = (player?['teams'] as List<dynamic>?) ?? const [];
     final equipo = teams.isNotEmpty
-        ? ((teams.first as Map<String, dynamic>)['name'] as String? ?? '')
+        ? ((teams.first as Map<String, dynamic>)['abbreviation'] as String? ??
+              '')
         : '';
 
     final equipos = teams

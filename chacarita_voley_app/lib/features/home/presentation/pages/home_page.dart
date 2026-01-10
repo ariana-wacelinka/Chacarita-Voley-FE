@@ -79,7 +79,7 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             QuickActionCard(
-              title: 'Gestionar jugadores',
+              title: 'Gestionar usuarios',
               icon: Symbols.group,
               onTap: () => context.go('/users'),
             ),
