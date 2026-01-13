@@ -187,8 +187,9 @@ class TeamRepository implements TeamRepositoryInterface {
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds = team.entrenador.isNotEmpty
-        ? [team.entrenador]
+    final professorIds =
+        team.professorId != null && team.professorId!.isNotEmpty
+        ? [team.professorId!]
         : <String>[];
 
     final request = CreateTeamRequestModel(
@@ -217,27 +218,39 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
-  Future<void> updateTeam(Team team) async {
+  Future<void> updateTeam(Team team, {Team? originalTeam}) async {
     final playerIds = team.integrantes
         .where((m) => m.playerId != null)
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds = team.entrenador.isNotEmpty
-        ? [team.entrenador]
+    final professorIds =
+        team.professorId != null && team.professorId!.isNotEmpty
+        ? [team.professorId!]
         : <String>[];
 
     final request = UpdateTeamRequestModel(
       id: team.id,
-      name: team.nombre,
-      abbreviation: team.abreviacion,
-      isCompetitive: team.tipo == TeamType.competitivo,
+      name: originalTeam != null && team.nombre == originalTeam.nombre
+          ? null
+          : team.nombre,
+      abbreviation:
+          originalTeam != null && team.abreviacion == originalTeam.abreviacion
+          ? null
+          : team.abreviacion,
+      isCompetitive: originalTeam != null && team.tipo == originalTeam.tipo
+          ? null
+          : team.tipo == TeamType.competitivo,
       playerIds: playerIds,
       professorIds: professorIds,
     );
 
     final variables = request.toJson();
     final id = variables.remove('id');
+
+    debugPrint('🔧 UpdateTeam Request:');
+    debugPrint('  ID: $id');
+    debugPrint('  Input: $variables');
 
     final result = await _mutate(
       MutationOptions(
@@ -271,6 +284,10 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   Team _mapTeamResponseToTeam(TeamResponseModel model) {
+    final professor = model.professors != null && model.professors!.isNotEmpty
+        ? model.professors!.first
+        : null;
+
     return Team(
       id: model.id,
       nombre: model.name,
@@ -280,9 +297,11 @@ class TeamRepository implements TeamRepositoryInterface {
               .substring(0, model.name.length > 4 ? 4 : model.name.length)
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
-      entrenador: (model.professors != null && model.professors!.isNotEmpty)
-          ? (model.professors!.first.person?.name ?? '')
+      entrenador: professor != null
+          ? '${professor.person?.name ?? ''} ${professor.person?.surname ?? ''}'
+                .trim()
           : '',
+      professorId: professor?.id,
       integrantes: (model.players ?? [])
           .map(
             (player) => TeamMember(

@@ -42,12 +42,23 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
-  String _getAllPersonsQuery() =>
+  // Query optimizada para búsqueda por role (solo campos necesarios)
+  static const String _personFieldsMinimal = r'''
+    id
+    dni
+    name
+    surname
+    roles
+    player { id }
+    professor { id }
+  ''';
+
+  String _getAllPersonsQuery({bool minimal = false}) =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String) {
-      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
         content {
-          $_personFields
+          ${minimal ? _personFieldsMinimal : _personFields}
         }
         hasNext
         hasPrevious
@@ -121,13 +132,14 @@ class UserRepository implements UserRepositoryInterface {
       'dni': isNumeric ? searchQuery : null,
       'name': isNumeric ? null : searchQuery,
       'surname': isNumeric ? null : searchQuery,
+      'role': role,
     };
 
     print('📤 Variables GraphQL: $variables');
 
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllPersonsQuery()),
+        document: gql(_getAllPersonsQuery(minimal: role != null)),
         variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),

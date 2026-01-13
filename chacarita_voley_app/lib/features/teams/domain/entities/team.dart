@@ -52,6 +52,7 @@ class Team {
   final String abreviacion;
   final TeamType tipo;
   final String entrenador;
+  final String? professorId;
   final List<TeamMember> integrantes;
 
   Team({
@@ -60,6 +61,7 @@ class Team {
     required this.abreviacion,
     required this.tipo,
     required this.entrenador,
+    this.professorId,
     required List<TeamMember> integrantes,
   }) : integrantes = integrantes.isEmpty ? [] : integrantes;
 
@@ -70,6 +72,7 @@ class Team {
     String? abreviacion,
     TeamType? tipo,
     String? entrenador,
+    String? professorId,
     List<TeamMember>? integrantes,
   }) {
     return Team(
@@ -78,6 +81,7 @@ class Team {
       abreviacion: abreviacion ?? this.abreviacion,
       tipo: tipo ?? this.tipo,
       entrenador: entrenador ?? this.entrenador,
+      professorId: professorId ?? this.professorId,
       integrantes: integrantes ?? this.integrantes,
     );
   }

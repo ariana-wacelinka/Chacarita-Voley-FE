@@ -86,7 +86,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
           team.nombre != _team!.nombre ||
           team.abreviacion != _team!.abreviacion ||
           team.tipo != _team!.tipo ||
-          team.entrenador != _team!.entrenador;
+          team.professorId != _team!.professorId;
 
       // Detectar si hubo cambios en integrantes (comparar IDs)
       final originalPlayerIds = _team!.integrantes
@@ -103,7 +103,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
       // Solo actualizar el equipo si hubo cambios en datos básicos o integrantes
       if (hasBasicChanges || hasPlayerChanges) {
-        await _repository.updateTeam(team);
+        await _repository.updateTeam(team, originalTeam: _team);
       }
 
       // Actualizar números de camiseta si es necesario

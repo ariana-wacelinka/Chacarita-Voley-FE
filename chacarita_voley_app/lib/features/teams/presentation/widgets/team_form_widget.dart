@@ -56,10 +56,11 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         _professorsSearchResults = professors;
       });
 
-      if (widget.team != null && widget.team!.entrenador.isNotEmpty) {
-        // team.entrenador es el professorId, buscamos el usuario que lo tenga
+      if (widget.team != null &&
+          widget.team!.professorId != null &&
+          widget.team!.professorId!.isNotEmpty) {
         final entrenador = professors.firstWhere(
-          (u) => u.professorId == widget.team!.entrenador,
+          (u) => u.professorId == widget.team!.professorId,
           orElse: () => professors.isNotEmpty
               ? professors.first
               : User(
@@ -197,13 +198,12 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       final team = Team(
         id: widget.team?.id ?? DateTime.now().toString(),
         nombre: _nombreController.text,
-        abreviacion: _abreviacionController.text.isEmpty
-            ? 'N/A'
-            : _abreviacionController.text,
+        abreviacion: _abreviacionController.text,
         tipo: _selectedTipo,
-        entrenador: _selectedEntrenadores.isNotEmpty
+        entrenador: '',
+        professorId: _selectedEntrenadores.isNotEmpty
             ? _selectedEntrenadores.first
-            : '',
+            : null,
         integrantes: _integrantes,
       );
       widget.onSubmit(team);
@@ -370,12 +370,14 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: _selectedEntrenadores.map((id) {
+                                children: _selectedEntrenadores.map((
+                                  professorId,
+                                ) {
                                   final user = _professorsSearchResults
                                       .firstWhere(
-                                        (u) => u.id == id,
+                                        (u) => u.professorId == professorId,
                                         orElse: () => User(
-                                          id: id,
+                                          id: professorId,
                                           nombre: 'Usuario',
                                           apellido: 'Desconocido',
                                           dni: '',
@@ -404,7 +406,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     ),
                                     onDeleted: () {
                                       setState(() {
-                                        _selectedEntrenadores.remove(id);
+                                        _selectedEntrenadores.remove(
+                                          professorId,
+                                        );
                                       });
                                     },
                                   );
@@ -741,13 +745,11 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final filteredUsers = searchResults
-                .where(
-                  (user) =>
-                      user.id != null &&
-                      !_selectedEntrenadores.contains(user.id),
-                )
-                .toList();
+            final filteredUsers = searchResults.where((user) {
+              final professorId = user.professorId ?? user.id;
+              return professorId != null &&
+                  !_selectedEntrenadores.contains(professorId);
+            }).toList();
 
             return AlertDialog(
               title: const Text(

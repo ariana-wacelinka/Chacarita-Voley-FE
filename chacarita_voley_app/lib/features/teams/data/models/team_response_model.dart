@@ -178,8 +178,8 @@ class CreateTeamRequestModel {
       'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
-      'playerIds': playerIds,
-      'professorIds': professorIds,
+      if (playerIds.isNotEmpty) 'playerIds': playerIds,
+      if (professorIds.isNotEmpty) 'professorIds': professorIds,
     };
   }
 }
@@ -209,9 +209,11 @@ class UpdateTeamRequestModel {
       if (name != null) 'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
-      if (playerIds != null) 'playerIds': playerIds,
-      if (professorIds != null) 'professorIds': professorIds,
-      if (trainingIds != null) 'trainingIds': trainingIds,
+      if (playerIds != null && playerIds!.isNotEmpty) 'playerIds': playerIds,
+      if (professorIds != null && professorIds!.isNotEmpty)
+        'professorIds': professorIds,
+      if (trainingIds != null && trainingIds!.isNotEmpty)
+        'trainingIds': trainingIds,
     };
   }
 }
