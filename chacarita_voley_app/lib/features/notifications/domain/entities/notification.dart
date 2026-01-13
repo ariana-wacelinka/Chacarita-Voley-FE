@@ -46,6 +46,8 @@ class NotificationModel {
   final List<String> recipients;
   final String recipientsText;
   final String startTime;
+  final String? recurrence;
+  final DateTime? specificDate;
 
   NotificationModel({
     required this.id,
@@ -58,5 +60,7 @@ class NotificationModel {
     required this.recipients,
     required this.recipientsText,
     required this.startTime,
+    this.recurrence,
+    this.specificDate,
   });
 }

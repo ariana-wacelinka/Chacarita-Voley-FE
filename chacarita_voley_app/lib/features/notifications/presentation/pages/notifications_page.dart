@@ -328,18 +328,45 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(
-                      Symbols.schedule,
-                      size: 16,
-                      color: context.tokens.text.withOpacity(0.6),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      notification.startTime,
-                      style: TextStyle(
-                        color: context.tokens.text.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Symbols.schedule,
+                              size: 16,
+                              color: context.tokens.text.withOpacity(0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              notification.startTime,
+                              style: TextStyle(
+                                color: context.tokens.text.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (notification.recurrence != null)
+                          Text(
+                            notification.recurrence!,
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                            ),
+                          )
+                        else if (notification.specificDate != null)
+                          Text(
+                            'Fecha: ${notification.specificDate!.day.toString().padLeft(2, '0')}/${notification.specificDate!.month.toString().padLeft(2, '0')}/${notification.specificDate!.year.toString().substring(2)}',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
                     ),
                     const Spacer(),
                     Text(

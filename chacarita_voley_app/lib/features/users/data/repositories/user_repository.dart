@@ -110,12 +110,17 @@ class UserRepository implements UserRepositoryInterface {
       '📍 Parámetros: role=$role, searchQuery=$searchQuery, page=$page, size=$size',
     );
 
+    final isNumeric =
+        searchQuery != null &&
+        searchQuery.isNotEmpty &&
+        RegExp(r'^\d+$').hasMatch(searchQuery);
+
     final variables = <String, dynamic>{
       'page': page ?? 0,
       'size': size ?? 100,
-      'dni': searchQuery ?? '',
-      'name': searchQuery ?? '',
-      'surname': searchQuery ?? '',
+      'dni': isNumeric ? searchQuery : '',
+      'name': isNumeric ? '' : (searchQuery ?? ''),
+      'surname': isNumeric ? '' : (searchQuery ?? ''),
     };
 
     print('📤 Variables GraphQL: $variables');

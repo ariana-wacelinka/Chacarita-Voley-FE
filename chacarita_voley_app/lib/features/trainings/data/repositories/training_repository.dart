@@ -12,13 +12,13 @@ class TrainingRepository implements TrainingRepositoryInterface {
   Future<QueryResult> _query(QueryOptions options) {
     final override = _clientOverride;
     if (override != null) return override.query(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.query(options));
+    return GraphQLClientFactory.client.query(options);
   }
 
   Future<QueryResult> _mutate(MutationOptions options) {
     final override = _clientOverride;
     if (override != null) return override.mutate(options);
-    return GraphQLClientFactory.withFreshClient(run: (c) => c.mutate(options));
+    return GraphQLClientFactory.client.mutate(options);
   }
 
   static const String _trainingFields = r'''

@@ -17,6 +17,7 @@ class NotificationRepository {
         recipients: ['todos'],
         recipientsText: 'Todos los socios',
         startTime: '18:00',
+        recurrence: 'Se repite cada jueves',
       ),
       NotificationModel(
         id: '2',
@@ -28,6 +29,7 @@ class NotificationRepository {
         recipients: ['equipo-1', 'equipo-2', 'equipo-3'],
         recipientsText: 'Equipo Masculino A',
         startTime: '18:00',
+        specificDate: DateTime(2025, 6, 12),
       ),
       NotificationModel(
         id: '3',
@@ -40,6 +42,7 @@ class NotificationRepository {
         recipients: ['equipo-2', 'equipo-3', 'equipo-4', 'equipo-5'],
         recipientsText: 'Equipo Femenino B',
         startTime: '18:00',
+        recurrence: 'Se repite cada lunes',
       ),
       NotificationModel(
         id: '4',
@@ -52,6 +55,7 @@ class NotificationRepository {
         recipients: ['equipo-1', 'equipo-2', 'equipo-3', 'equipo-4'],
         recipientsText: 'Todos los equipos',
         startTime: '18:00',
+        specificDate: DateTime(2025, 7, 15),
       ),
       NotificationModel(
         id: '5',
@@ -63,6 +67,7 @@ class NotificationRepository {
         recipients: ['profesores'],
         recipientsText: 'Todos los profesores',
         startTime: '18:00',
+        recurrence: 'Se repite cada viernes',
       ),
     ];
   }
