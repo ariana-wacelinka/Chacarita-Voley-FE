@@ -17,6 +17,7 @@ class TeamInfo {
 class User {
   final String? id;
   final String? playerId;
+  final String? professorId;
   final String dni;
   final String nombre;
   final String apellido;
@@ -33,6 +34,7 @@ class User {
   User({
     this.id,
     this.playerId,
+    this.professorId,
     required this.dni,
     required this.nombre,
     required this.apellido,

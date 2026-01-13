@@ -98,6 +98,8 @@ class _UserFormWidgetState extends State<UserFormWidget> {
     if (_formKey.currentState!.validate() && _fechaNacimiento != null) {
       final user = User(
         id: widget.initialUser?.id,
+        playerId: widget.initialUser?.playerId,
+        professorId: widget.initialUser?.professorId,
         dni: _dniController.text,
         nombre: _nombreController.text,
         apellido: _apellidoController.text,

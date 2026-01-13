@@ -178,9 +178,8 @@ class CreateTeamRequestModel {
       'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
-      // No enviar playerIds/professorIds si están vacíos
-      if (playerIds.isNotEmpty) 'playerIds': playerIds.join(','),
-      if (professorIds.isNotEmpty) 'professorIds': professorIds.join(','),
+      'playerIds': playerIds,
+      'professorIds': professorIds,
     };
   }
 }
@@ -190,6 +189,8 @@ class UpdateTeamRequestModel {
   final String? name;
   final String? abbreviation;
   final bool? isCompetitive;
+  final List<String>? playerIds;
+  final List<String>? professorIds;
   final List<String>? trainingIds;
 
   UpdateTeamRequestModel({
@@ -197,6 +198,8 @@ class UpdateTeamRequestModel {
     this.name,
     this.abbreviation,
     this.isCompetitive,
+    this.playerIds,
+    this.professorIds,
     this.trainingIds,
   });
 
@@ -206,7 +209,9 @@ class UpdateTeamRequestModel {
       if (name != null) 'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
-      if (trainingIds != null) 'trainingIds': trainingIds!.join(','),
+      if (playerIds != null) 'playerIds': playerIds,
+      if (professorIds != null) 'professorIds': professorIds,
+      if (trainingIds != null) 'trainingIds': trainingIds,
     };
   }
 }

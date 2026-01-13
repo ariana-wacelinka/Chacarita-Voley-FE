@@ -118,9 +118,9 @@ class UserRepository implements UserRepositoryInterface {
     final variables = <String, dynamic>{
       'page': page ?? 0,
       'size': size ?? 100,
-      'dni': isNumeric ? searchQuery : '',
-      'name': isNumeric ? '' : (searchQuery ?? ''),
-      'surname': isNumeric ? '' : (searchQuery ?? ''),
+      'dni': isNumeric ? searchQuery : null,
+      'name': isNumeric ? null : searchQuery,
+      'surname': isNumeric ? null : searchQuery,
     };
 
     print('📤 Variables GraphQL: $variables');
@@ -324,9 +324,12 @@ class UserRepository implements UserRepositoryInterface {
         ? DateTime.tryParse(birthDate)
         : null;
 
+    final professor = person['professor'] as Map<String, dynamic>?;
+
     return User(
       id: person['id'] as String?,
       playerId: player?['id'] as String?,
+      professorId: professor?['id'] as String?,
       dni: (person['dni'] as String?) ?? '',
       nombre: (person['name'] as String?) ?? '',
       apellido: (person['surname'] as String?) ?? '',

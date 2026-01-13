@@ -81,18 +81,14 @@ class _EditTeamPageState extends State<EditTeamPage> {
     });
 
     try {
-      await _repository.updateTeam(team);
+      // Detectar si hubo cambios en datos básicos del equipo
+      final hasBasicChanges =
+          team.nombre != _team!.nombre ||
+          team.abreviacion != _team!.abreviacion ||
+          team.tipo != _team!.tipo ||
+          team.entrenador != _team!.entrenador;
 
-      print('📋 Original team members:');
-      for (final m in _team!.integrantes) {
-        print('  - ${m.nombreCompleto}: playerId=${m.playerId}, dni=${m.dni}');
-      }
-
-      print('📋 New team members:');
-      for (final m in team.integrantes) {
-        print('  - ${m.nombreCompleto}: playerId=${m.playerId}, dni=${m.dni}');
-      }
-
+      // Detectar si hubo cambios en integrantes (comparar IDs)
       final originalPlayerIds = _team!.integrantes
           .where((m) => m.playerId != null)
           .map((m) => m.playerId!)
@@ -101,90 +97,73 @@ class _EditTeamPageState extends State<EditTeamPage> {
           .where((m) => m.playerId != null)
           .map((m) => m.playerId!)
           .toSet();
+      final hasPlayerChanges =
+          !originalPlayerIds.containsAll(newPlayerIds) ||
+          !newPlayerIds.containsAll(originalPlayerIds);
 
-      print('🔍 Original Players: $originalPlayerIds');
-      print('🔍 New Players: $newPlayerIds');
+      // Solo actualizar el equipo si hubo cambios en datos básicos o integrantes
+      if (hasBasicChanges || hasPlayerChanges) {
+        await _repository.updateTeam(team);
+      }
 
-      final playersToAdd = newPlayerIds.difference(originalPlayerIds).toList();
-      final playersToRemove = originalPlayerIds
-          .difference(newPlayerIds)
-          .toList();
+      // Actualizar números de camiseta si es necesario
+      int updatedCount = 0;
+      int errorCount = 0;
 
-      print('➕ Players to add: $playersToAdd');
-      print('➖ Players to remove: $playersToRemove');
+      for (final newMember in team.integrantes) {
+        if (newMember.playerId == null) continue;
 
-      if (playersToAdd.isNotEmpty) {
-        print('🚀 Calling addPlayersToTeam with: ${team.id}, $playersToAdd');
-        await _repository.addPlayersToTeam(team.id, playersToAdd);
+        final originalMember = _team!.integrantes.firstWhere(
+          (m) => m.playerId == newMember.playerId,
+          orElse: () => TeamMember(dni: '', nombre: '', apellido: ''),
+        );
 
-        for (final playerId in playersToAdd) {
-          final newMember = team.integrantes.firstWhere(
-            (m) => m.playerId == playerId,
-            orElse: () => TeamMember(dni: '', nombre: '', apellido: ''),
-          );
-
-          if (newMember.numeroCamiseta != null &&
-              newMember.numeroCamiseta!.isNotEmpty) {
+        // Si el número de camiseta cambió o es un jugador nuevo con número
+        if (newMember.numeroCamiseta != null &&
+            newMember.numeroCamiseta!.isNotEmpty &&
+            originalMember.numeroCamiseta != newMember.numeroCamiseta) {
+          try {
             print(
-              '🔢 Setting jersey number for new player $playerId: ${newMember.numeroCamiseta}',
+              '🔢 Updating jersey number for player ${newMember.playerId}: '
+              '${originalMember.numeroCamiseta ?? "none"} → ${newMember.numeroCamiseta}',
             );
-            await _userRepository.updatePerson(playerId, {
+            await _userRepository.updatePerson(newMember.playerId!, {
               'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
             });
+            updatedCount++;
+          } catch (e) {
+            print('❌ Error updating jersey for ${newMember.playerId}: $e');
+            errorCount++;
           }
         }
       }
 
-      if (playersToRemove.isNotEmpty) {
-        await _repository.removePlayersFromTeam(team.id, playersToRemove);
-      }
-
-      print('🔍 Original entrenador: ${_team!.entrenador}');
-      print('🔍 New entrenador: ${team.entrenador}');
-
-      if (_team!.entrenador != team.entrenador && team.entrenador.isNotEmpty) {
-        print(
-          '🚀 Calling addProfessorsToTeam with: ${team.id}, [${team.entrenador}]',
-        );
-        await _repository.addProfessorsToTeam(team.id, [team.entrenador]);
-      }
-
-      for (final newMember in team.integrantes) {
-        if (newMember.playerId == null) continue;
-        if (playersToAdd.contains(newMember.playerId)) continue;
-
-        final originalMember = _team!.integrantes.firstWhere(
-          (m) => m.playerId == newMember.playerId,
-          orElse: () => newMember,
-        );
-
-        if (originalMember.numeroCamiseta != newMember.numeroCamiseta &&
-            newMember.numeroCamiseta != null &&
-            newMember.numeroCamiseta!.isNotEmpty) {
-          print(
-            '🔢 Updating jersey number for existing player ${newMember.playerId}: '
-            '${originalMember.numeroCamiseta} → ${newMember.numeroCamiseta}',
-          );
-          await _userRepository.updatePerson(newMember.playerId!, {
-            'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
-          });
-        }
-      }
-
       if (mounted) {
+        String message = 'Equipo ${team.nombre} actualizado exitosamente';
+        if (updatedCount > 0) {
+          message = updatedCount == 1
+              ? 'Número de camiseta actualizado'
+              : '$updatedCount números de camiseta actualizados';
+        }
+        if (errorCount > 0) {
+          message += ' ($errorCount error${errorCount > 1 ? 'es' : ''})';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(
-                  Icons.check_circle_outline,
+                Icon(
+                  errorCount > 0
+                      ? Icons.warning_amber
+                      : Icons.check_circle_outline,
                   color: Colors.white,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Equipo ${team.nombre} actualizado exitosamente',
+                    message,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -194,7 +173,9 @@ class _EditTeamPageState extends State<EditTeamPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.green,
+            backgroundColor: errorCount > 0
+                ? Colors.orange
+                : context.tokens.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

@@ -46,15 +46,20 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   Future<void> _loadInitialProfessors() async {
     try {
-      final professors = await _userRepository.getUsers(role: 'PROFESSOR');
+      final professors = await _userRepository.getUsers(
+        role: 'PROFESSOR',
+        page: 0,
+        size: 20,
+      );
       if (!mounted) return;
       setState(() {
         _professorsSearchResults = professors;
       });
 
       if (widget.team != null && widget.team!.entrenador.isNotEmpty) {
+        // team.entrenador es el professorId, buscamos el usuario que lo tenga
         final entrenador = professors.firstWhere(
-          (u) => u.nombre == widget.team!.entrenador,
+          (u) => u.professorId == widget.team!.entrenador,
           orElse: () => professors.isNotEmpty
               ? professors.first
               : User(
@@ -71,8 +76,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                   estadoCuota: EstadoCuota.alDia,
                 ),
         );
-        if (entrenador.id != null) {
-          _selectedEntrenadores = [entrenador.id!];
+        if (entrenador.professorId != null) {
+          _selectedEntrenadores = [entrenador.professorId!];
         }
       }
     } catch (e) {
@@ -80,14 +85,35 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     }
   }
 
-  void _searchPlayers(String query) {
-    _debounceTimer?.cancel();
-
-    if (query.isEmpty) {
+  Future<void> _loadInitialPlayers() async {
+    setState(() {
+      _isSearching = true;
+    });
+    try {
+      final players = await _userRepository.getUsers(
+        role: 'PLAYER',
+        page: 0,
+        size: 20,
+      );
+      if (!mounted) return;
+      setState(() {
+        _playersSearchResults = players;
+        _isSearching = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
         _playersSearchResults = [];
         _isSearching = false;
       });
+    }
+  }
+
+  void _searchPlayers(String query) {
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      _loadInitialPlayers();
       return;
     }
 
@@ -100,6 +126,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         final results = await _userRepository.getUsers(
           role: 'PLAYER',
           searchQuery: query,
+          page: 0,
+          size: 20,
         );
         if (!mounted) return;
         setState(() {
@@ -126,13 +154,15 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _addMember(User user, String? numeroCamiseta) {
     if (!_integrantes.any((m) => m.dni == user.dni)) {
+      // Para jugadores, playerId es el ID del player
+      // Para profesores, no se agrega a integrantes (se maneja aparte en selectedEntrenadores)
       print(
-        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}, id: ${user.id}',
+        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}',
       );
       setState(() {
         _integrantes.add(
           TeamMember(
-            playerId: user.playerId ?? user.id, // Usar id si playerId es null
+            playerId: user.playerId, // Solo para jugadores
             dni: user.dni,
             nombre: user.nombre,
             apellido: user.apellido,
@@ -452,87 +482,97 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                   const SizedBox(height: 12),
                   TextField(
                     decoration: const InputDecoration(
-                      hintText: 'Buscar por nombre o DNI...',
-                      prefixIcon: Icon(Symbols.search, size: 20),
+                      hintText: 'Buscar...',
+                      hintStyle: TextStyle(fontSize: 13),
+                      prefixIcon: Icon(Symbols.search, size: 18),
+                      isDense: true,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 12,
+                        vertical: 8,
                       ),
                     ),
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 13),
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value;
                       });
                       _searchPlayers(value);
                     },
+                    onTap: () {
+                      if (_playersSearchResults.isEmpty &&
+                          _searchQuery.isEmpty) {
+                        _loadInitialPlayers();
+                      }
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  if (_searchQuery.isNotEmpty)
-                    SizedBox(
-                      height: 65,
-                      child: _isSearching
-                          ? const Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          : ListView(
-                              children: (() {
-                                final filteredUsers = _playersSearchResults
-                                    .where(
-                                      (user) => !_integrantes.any(
-                                        (m) => m.dni == user.dni,
-                                      ),
-                                    )
-                                    .toList();
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    child: _isSearching
+                        ? const Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : (_playersSearchResults.isEmpty &&
+                              _searchQuery.isEmpty)
+                        ? const SizedBox.shrink()
+                        : ListView(
+                            shrinkWrap: true,
+                            children: (() {
+                              final filteredUsers = _playersSearchResults
+                                  .where(
+                                    (user) => !_integrantes.any(
+                                      (m) => m.dni == user.dni,
+                                    ),
+                                  )
+                                  .toList();
 
-                                if (filteredUsers.isEmpty) {
-                                  return [
-                                    const Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: Center(
-                                        child: Text(
-                                          'No hay jugadores disponibles',
-                                          style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 13,
-                                          ),
+                              if (filteredUsers.isEmpty) {
+                                return [
+                                  const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: Center(
+                                      child: Text(
+                                        'No hay jugadores disponibles',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ),
-                                  ];
-                                }
+                                  ),
+                                ];
+                              }
 
-                                return filteredUsers.map((user) {
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 0,
-                                    ),
-                                    title: Text(
-                                      '${user.nombre} ${user.apellido}',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                    subtitle: Text(
-                                      'DNI: ${user.dni}',
-                                      style: const TextStyle(fontSize: 11),
-                                    ),
-                                    trailing: const Icon(
-                                      Symbols.add_circle,
-                                      size: 20,
-                                    ),
-                                    onTap: () =>
-                                        _showAddMemberDialog(context, user),
-                                  );
-                                }).toList();
-                              })(),
-                            ),
-                    ),
+                              return filteredUsers.map((user) {
+                                return ListTile(
+                                  dense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 0,
+                                  ),
+                                  title: Text(
+                                    '${user.nombre} ${user.apellido}',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  subtitle: Text(
+                                    'DNI: ${user.dni}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  trailing: const Icon(
+                                    Symbols.add_circle,
+                                    size: 20,
+                                  ),
+                                  onTap: () =>
+                                      _showAddMemberDialog(context, user),
+                                );
+                              }).toList();
+                            })(),
+                          ),
+                  ),
                   if (_integrantes.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(16),
@@ -710,35 +750,66 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                 .toList();
 
             return AlertDialog(
-              title: const Text('Seleccionar entrenador'),
+              title: const Text(
+                'Seleccionar entrenador',
+                style: TextStyle(fontSize: 16),
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               content: SizedBox(
-                width: 400,
+                width: double.maxFinite,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       decoration: const InputDecoration(
-                        hintText: 'Buscar por nombre o DNI...',
+                        hintText: 'Buscar...',
+                        hintStyle: TextStyle(fontSize: 13),
                         prefixIcon: Icon(Symbols.search, size: 18),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
+                      style: const TextStyle(fontSize: 13),
                       onChanged: (value) {
                         searchProfessors(value, setDialogState);
                       },
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 300,
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 250),
                       child: isSearching
-                          ? const Center(child: CircularProgressIndicator())
+                          ? const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
                           : filteredUsers.isEmpty
                           ? const Center(
-                              child: Text('No hay usuarios disponibles'),
+                              child: Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text(
+                                  'No hay profesores disponibles',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
                             )
                           : ListView.builder(
+                              shrinkWrap: true,
                               itemCount: filteredUsers.length,
                               itemBuilder: (context, index) {
                                 final user = filteredUsers[index];
                                 return ListTile(
+                                  dense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 0,
+                                  ),
                                   title: Text(
                                     '${user.nombre} ${user.apellido}',
                                     style: const TextStyle(fontSize: 13),
@@ -747,10 +818,18 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     'DNI: ${user.dni}',
                                     style: const TextStyle(fontSize: 11),
                                   ),
-                                  trailing: const Icon(Symbols.add_circle),
+                                  trailing: const Icon(
+                                    Symbols.add_circle,
+                                    size: 20,
+                                  ),
                                   onTap: () {
                                     setState(() {
-                                      _selectedEntrenadores.add(user.id!);
+                                      // Usar professorId si está disponible, sino id
+                                      final professorId =
+                                          user.professorId ?? user.id;
+                                      if (professorId != null) {
+                                        _selectedEntrenadores.add(professorId);
+                                      }
                                     });
                                     Navigator.of(context).pop();
                                     dialogDebounceTimer?.cancel();
@@ -765,7 +844,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cerrar'),
+                  child: const Text('Cerrar', style: TextStyle(fontSize: 13)),
                 ),
               ],
             );

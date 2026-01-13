@@ -118,84 +118,6 @@ class TeamRepository implements TeamRepositoryInterface {
     }
   ''';
 
-  static const String _addPlayersToTeamMutation = r'''
-    mutation AddPlayersToTeam($teamId: ID!, $playersIds: [ID]!) {
-      addPlayersToTeam(teamId: $teamId, playersIds: $playersIds) {
-        id
-        isCompetitive
-        name
-        abbreviation
-        players {
-          id
-          jerseyNumber
-          leagueId
-          person {
-            dni
-            name
-            surname
-          }
-        }
-        professors { id }
-        trainings { id }
-      }
-    }
-  ''';
-
-  static const String _addProfessorsToTeamMutation = r'''
-    mutation AddProfessorsToTeam($teamId: ID!, $professorsIds: [ID]!) {
-      addProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
-        id
-        isCompetitive
-        name
-        abbreviation
-        players {
-          id
-          jerseyNumber
-          person {
-            dni
-            name
-            surname
-          }
-        }
-        professors {
-          id
-          person {
-            dni
-            name
-            surname
-          }
-        }
-        trainings { id }
-      }
-    }
-  ''';
-
-  static const String _removePlayersFromTeamMutation = r'''
-    mutation RemovePlayersFromTeam($teamId: ID!, $playerIds: [ID]!) {
-      removePlayersToTeam(teamId: $teamId, playerIds: $playerIds) {
-        id
-        isCompetitive
-        name
-        players { id }
-        professors { id }
-        trainings { dayOfWeek endTime id location startTime trainingType }
-      }
-    }
-  ''';
-
-  static const String _removeProfessorsFromTeamMutation = r'''
-    mutation RemoveProfessorsFromTeam($teamId: ID!, $professorsIds: [ID]!) {
-      removeProfessorsToTeam(teamId: $teamId, professorsIds: $professorsIds) {
-        id
-        isCompetitive
-        name
-        players { id }
-        professors { id }
-        trainings { dayOfWeek endTime id location startTime trainingType }
-      }
-    }
-  ''';
-
   @override
   Future<List<Team>> getTeams({
     String? searchQuery,
@@ -260,12 +182,21 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<void> createTeam(Team team) async {
+    final playerIds = team.integrantes
+        .where((m) => m.playerId != null)
+        .map((m) => m.playerId!)
+        .toList();
+
+    final professorIds = team.entrenador.isNotEmpty
+        ? [team.entrenador]
+        : <String>[];
+
     final request = CreateTeamRequestModel(
       name: team.nombre,
       abbreviation: team.abreviacion,
       isCompetitive: team.tipo == TeamType.competitivo,
-      playerIds: [],
-      professorIds: [],
+      playerIds: playerIds,
+      professorIds: professorIds,
     );
 
     final result = await _mutate(
@@ -283,29 +214,26 @@ class TeamRepository implements TeamRepositoryInterface {
     if (data == null) {
       throw Exception('Respuesta inválida de createTeam');
     }
-
-    final createdTeam = TeamResponseModel.fromJson(data);
-
-    final playerIds = team.integrantes
-        .where((m) => m.playerId != null)
-        .map((m) => m.playerId!)
-        .toList();
-    if (playerIds.isNotEmpty) {
-      await _addPlayersToTeam(createdTeam.id, playerIds);
-    }
-
-    if (team.entrenador.isNotEmpty) {
-      await _addProfessorsToTeam(createdTeam.id, [team.entrenador]);
-    }
   }
 
   @override
   Future<void> updateTeam(Team team) async {
+    final playerIds = team.integrantes
+        .where((m) => m.playerId != null)
+        .map((m) => m.playerId!)
+        .toList();
+
+    final professorIds = team.entrenador.isNotEmpty
+        ? [team.entrenador]
+        : <String>[];
+
     final request = UpdateTeamRequestModel(
       id: team.id,
       name: team.nombre,
       abbreviation: team.abreviacion,
       isCompetitive: team.tipo == TeamType.competitivo,
+      playerIds: playerIds,
+      professorIds: professorIds,
     );
 
     final variables = request.toJson();
@@ -320,51 +248,6 @@ class TeamRepository implements TeamRepositoryInterface {
 
     if (result.hasException) {
       throw Exception(result.exception.toString());
-    }
-
-    final currentTeam = await getTeamById(team.id);
-    if (currentTeam != null) {
-      final currentPlayerIds = currentTeam.integrantes
-          .where((m) => m.playerId != null)
-          .map((m) => m.playerId!)
-          .toSet();
-      final newPlayerIds = team.integrantes
-          .where((m) => m.playerId != null)
-          .map((m) => m.playerId!)
-          .toSet();
-
-      final currentProfessorIds = currentTeam.entrenador.isNotEmpty
-          ? {currentTeam.entrenador}
-          : <String>{};
-      final newProfessorIds = team.entrenador.isNotEmpty
-          ? {team.entrenador}
-          : <String>{};
-
-      final playersToAdd = newPlayerIds.difference(currentPlayerIds).toList();
-      if (playersToAdd.isNotEmpty) {
-        await _addPlayersToTeam(team.id, playersToAdd);
-      }
-
-      final playersToRemove = currentPlayerIds
-          .difference(newPlayerIds)
-          .toList();
-      if (playersToRemove.isNotEmpty) {
-        await _removePlayersFromTeam(team.id, playersToRemove);
-      }
-
-      final professorsToAdd = newProfessorIds
-          .difference(currentProfessorIds)
-          .toList();
-      if (professorsToAdd.isNotEmpty) {
-        await _addProfessorsToTeam(team.id, professorsToAdd);
-      }
-
-      final professorsToRemove = currentProfessorIds
-          .difference(newProfessorIds)
-          .toList();
-      if (professorsToRemove.isNotEmpty) {
-        await _removeProfessorsFromTeam(team.id, professorsToRemove);
-      }
     }
   }
 
@@ -384,96 +267,6 @@ class TeamRepository implements TeamRepositoryInterface {
     final deleted = result.data?['deleteTeam'] as bool?;
     if (deleted != true) {
       throw Exception('No se pudo eliminar el equipo');
-    }
-  }
-
-  @override
-  Future<void> addPlayersToTeam(String teamId, List<String> playerIds) async {
-    await _addPlayersToTeam(teamId, playerIds);
-  }
-
-  @override
-  Future<void> addProfessorsToTeam(
-    String teamId,
-    List<String> professorIds,
-  ) async {
-    await _addProfessorsToTeam(teamId, professorIds);
-  }
-
-  @override
-  Future<void> removePlayersFromTeam(
-    String teamId,
-    List<String> playerIds,
-  ) async {
-    await _removePlayersFromTeam(teamId, playerIds);
-  }
-
-  @override
-  Future<void> removeProfessorsFromTeam(
-    String teamId,
-    List<String> professorIds,
-  ) async {
-    await _removeProfessorsFromTeam(teamId, professorIds);
-  }
-
-  Future<void> _addPlayersToTeam(String teamId, List<String> playerIds) async {
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_addPlayersToTeamMutation),
-        variables: {'teamId': teamId, 'playersIds': playerIds},
-      ),
-    );
-
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
-    }
-  }
-
-  Future<void> _addProfessorsToTeam(
-    String teamId,
-    List<String> professorIds,
-  ) async {
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_addProfessorsToTeamMutation),
-        variables: {'teamId': teamId, 'professorsIds': professorIds},
-      ),
-    );
-
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
-    }
-  }
-
-  Future<void> _removePlayersFromTeam(
-    String teamId,
-    List<String> playerIds,
-  ) async {
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_removePlayersFromTeamMutation),
-        variables: {'teamId': teamId, 'playerIds': playerIds},
-      ),
-    );
-
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
-    }
-  }
-
-  Future<void> _removeProfessorsFromTeam(
-    String teamId,
-    List<String> professorIds,
-  ) async {
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_removeProfessorsFromTeamMutation),
-        variables: {'teamId': teamId, 'professorsIds': professorIds},
-      ),
-    );
-
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
     }
   }
 
