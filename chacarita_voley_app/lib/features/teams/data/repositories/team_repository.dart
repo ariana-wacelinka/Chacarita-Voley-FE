@@ -164,6 +164,29 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
+  Future<int> getTotalTeams({String? searchQuery}) async {
+    final variables = <String, dynamic>{
+      'page': 0,
+      'size': 1,
+      'name': searchQuery ?? '',
+    };
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllTeamsQuery(minimal: true)),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    return (result.data?['getAllTeams']?['totalElements'] as int?) ?? 0;
+  }
+
+  @override
   Future<Team?> getTeamById(String id) async {
     final result = await _query(
       QueryOptions(

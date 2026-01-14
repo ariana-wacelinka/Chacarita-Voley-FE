@@ -19,6 +19,7 @@ class _UsersPageState extends State<UsersPage> {
   final _repository = UserRepository();
 
   Future<List<User>>? _usersFuture;
+  Future<int>? _totalElementsFuture;
   String _searchQuery = '';
   Timer? _debounceTimer;
 
@@ -29,6 +30,7 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     _usersFuture = _repository.getUsers(page: 0, size: _usersPerPage);
+    _totalElementsFuture = _repository.getTotalUsers();
   }
 
   @override
@@ -461,12 +463,24 @@ class _UsersPageState extends State<UsersPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              '${users.isEmpty ? 0 : _currentPage * _usersPerPage + 1}-${(_currentPage * _usersPerPage) + users.length}',
-                              style: TextStyle(
-                                color: context.tokens.text,
-                                fontSize: 14,
-                              ),
+                            FutureBuilder<int>(
+                              future: _totalElementsFuture,
+                              builder: (context, snapshot) {
+                                final total = snapshot.data ?? 0;
+                                final start = users.isEmpty
+                                    ? 0
+                                    : _currentPage * _usersPerPage + 1;
+                                final end =
+                                    (_currentPage * _usersPerPage) +
+                                    users.length;
+                                return Text(
+                                  '$start-$end de $total',
+                                  style: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(width: 8),
                             IconButton(

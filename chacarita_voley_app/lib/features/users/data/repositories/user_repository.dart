@@ -154,6 +154,36 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   @override
+  Future<int> getTotalUsers({String? role, String? searchQuery}) async {
+    final isNumeric =
+        searchQuery != null &&
+        searchQuery.isNotEmpty &&
+        RegExp(r'^\d+$').hasMatch(searchQuery);
+
+    final variables = <String, dynamic>{
+      'page': 0,
+      'size': 1,
+      'dni': isNumeric ? searchQuery : null,
+      'name': isNumeric ? null : searchQuery,
+      'surname': isNumeric ? null : searchQuery,
+    };
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsQuery()),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    return (result.data?['getAllPersons']?['totalElements'] as int?) ?? 0;
+  }
+
+  @override
   Future<User?> getUserById(String id) async {
     final result = await _query(
       QueryOptions(

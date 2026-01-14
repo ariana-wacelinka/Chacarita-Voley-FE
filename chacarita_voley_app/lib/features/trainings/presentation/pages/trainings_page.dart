@@ -577,7 +577,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Página ${_currentPage + 1} de $_totalPages',
+            '${_allTrainings.isEmpty ? 0 : _currentPage * _itemsPerPage + 1}-${(_currentPage * _itemsPerPage) + _trainings.length} de ${_allTrainings.length}',
             style: TextStyle(color: context.tokens.text, fontSize: 14),
           ),
           const SizedBox(width: 8),

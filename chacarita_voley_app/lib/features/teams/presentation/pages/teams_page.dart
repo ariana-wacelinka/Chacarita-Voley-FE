@@ -20,6 +20,7 @@ class _TeamsPageState extends State<TeamsPage> {
   final _repository = TeamRepository();
 
   Future<List<Team>>? _teamsFuture;
+  Future<int>? _totalElementsFuture;
   String _searchQuery = '';
   Timer? _debounceTimer;
 
@@ -32,6 +33,7 @@ class _TeamsPageState extends State<TeamsPage> {
   void initState() {
     super.initState();
     _teamsFuture = _repository.getTeams(page: 0, size: _teamsPerPage);
+    _totalElementsFuture = _repository.getTotalTeams();
   }
 
   @override
@@ -496,12 +498,24 @@ class _TeamsPageState extends State<TeamsPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              '${teams.isEmpty ? 0 : _currentPage * _teamsPerPage + 1}-${(_currentPage * _teamsPerPage) + teams.length}',
-                              style: TextStyle(
-                                color: context.tokens.text,
-                                fontSize: 14,
-                              ),
+                            FutureBuilder<int>(
+                              future: _totalElementsFuture,
+                              builder: (context, snapshot) {
+                                final total = snapshot.data ?? 0;
+                                final start = teams.isEmpty
+                                    ? 0
+                                    : _currentPage * _teamsPerPage + 1;
+                                final end =
+                                    (_currentPage * _teamsPerPage) +
+                                    teams.length;
+                                return Text(
+                                  '$start-$end de $total',
+                                  style: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(width: 8),
                             IconButton(
