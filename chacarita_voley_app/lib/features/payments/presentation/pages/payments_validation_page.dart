@@ -13,7 +13,7 @@ class PaymentsValidationPage extends StatefulWidget {
 }
 
 class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
-  // Data dummy (replace with API/DB)
+  // Data dummy (replace with real data later)
   late final List<Payment> initialPayments = [
     Payment(
       userName: 'Juan Perez',
@@ -41,279 +41,224 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     ),
   ];
 
-  // Filter (DateTime, TimeOfDay)
-  String _dniFilter = '';
-  DateTime? _dateFilter;
-  TimeOfDay? _timeFilter;
+  // Filter
+  // String _dniFilter = '';
+  // DateTime? _startDate;
+  // DateTime? _endDate;
+  // TimeOfDay? _startTime;
+  // TimeOfDay? _endTime;
+  // final Set<String> _selectedFilters = {};
 
-  DateTime? _startDate;
-  DateTime? _endDate;
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
-  final Set<String> _selectedFilters =
-      {}; // For multiple filter selection (Validated, etc)
-
-  // Formatt
+  // Format
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
-  final DateFormat _timeFormat = DateFormat('HH:mm');
+
+  // final DateFormat _timeFormat = DateFormat('HH:mm');
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    // Filtered Payments
-    final filteredPayments = initialPayments.where((p) {
-      bool matchesDni = _dniFilter.isEmpty || p.dni.contains(_dniFilter);
-      bool matchesDate = _dateFilter == null || p.sentDate.day == _dateFilter;
-      bool matchesTime =
-          _timeFilter == null || p.paymentDate.hour == _timeFilter;
-      return matchesDni && matchesDate && matchesTime;
-    }).toList();
 
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: tokens.background,
-            // Background white
-            border: Border.all(color: tokens.strokeToNoStroke),
-            // Gray light border
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    color: tokens.gray,
-                    size: 24.0,
-                  ),
-                  const SizedBox(width: 8.0),
-                  Text(
-                    'Resumen de Validaciones',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.text,
+    return Scaffold(
+      backgroundColor: tokens.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Resumen
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: tokens.card1,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: tokens.stroke),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          color: tokens.gray,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Resumen de Validaciones',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: tokens.text,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildSummaryItem(
-                    number: '70',
-                    label: 'Aprobados',
-                    numberColor: tokens.green,
-                    labelColor: tokens.gray,
-                  ),
-                  _buildSummaryItem(
-                    number: '30',
-                    label: 'Rechazados',
-                    numberColor: tokens.redToRosita,
-                    labelColor: tokens.gray,
-                  ),
-                  _buildSummaryItem(
-                    number: '70',
-                    label: 'Pendientes',
-                    numberColor: tokens.pending,
-                    labelColor: tokens.gray,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Divider(
-            color: tokens.strokeToNoStroke,
-            thickness: 1.0,
-            height: 1.0,
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: tokens.background,
-            border: Border.all(color: tokens.strokeToNoStroke),
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.filter_alt_outlined, // Icon Funnel
-                    color: tokens.gray,
-                    size: 24.0,
-                  ),
-                  const SizedBox(width: 8.0),
-                  Text(
-                    'Filtro',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.text,
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildSummaryItem(
+                          '70',
+                          'Aprobados',
+                          tokens.green,
+                          tokens.gray,
+                        ),
+                        _buildSummaryItem(
+                          '30',
+                          'Rechazados',
+                          tokens.redToRosita,
+                          tokens.gray,
+                        ),
+                        _buildSummaryItem(
+                          '70',
+                          'Pendientes',
+                          tokens.pending,
+                          tokens.gray,
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDateField(
-                      label: 'Fecha de inicio *',
-                      date: _startDate,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _startDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (date != null) setState(() => _startDate = date);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    child: _buildDateField(
-                      label: 'Fecha de fin *',
-                      date: _endDate,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _endDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (date != null) setState(() => _endDate = date);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTimeField(
-                      label: 'Hora de inicio *',
-                      time: _startTime,
-                      onTap: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: _startTime ?? TimeOfDay.now(),
-                        );
-                        if (time != null) setState(() => _startTime = time);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    child: _buildTimeField(
-                      label: 'Hora de fin *',
-                      time: _endTime,
-                      onTap: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: _endTime ?? TimeOfDay.now(),
-                        );
-                        if (time != null) setState(() => _endTime = time);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24.0),
-              // Button Filter
-              Text(
-                'Filtrar por:',
-                style: TextStyle(fontSize: 14.0, color: tokens.gray),
-              ),
-              const SizedBox(height: 8.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  _buildFilterButton('Validados', tokens.green),
-                  const SizedBox(width: 8.0),
-                  _buildFilterButton('Rechazados', tokens.redToRosita),
-                  const SizedBox(width: 8.0),
-                  _buildFilterButton('Pendientes', tokens.pending),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          // Inifity scroll label payment
-          child: PaymentListWidget(initialPayments: initialPayments),
-        ),
+            ),
 
-        // Pagination (simple,"1-7 de 87")
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GFIconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {}, // Logic to next page
-                type: GFButtonType.transparent,
+            const SizedBox(height: 24),
+
+            // Filter
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: tokens.card1,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: tokens.stroke),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.filter_alt_outlined,
+                          color: tokens.gray,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Filtro',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: tokens.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Fechas (ejemplo estático por ahora)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDateField(
+                            'Fecha de inicio *',
+                            DateTime.now(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildDateField(
+                            'Fecha de fin *',
+                            DateTime.now().add(const Duration(days: 30)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTimeField(
+                            'Hora de inicio *',
+                            TimeOfDay.now(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildTimeField(
+                            'Hora de fin *',
+                            TimeOfDay.now(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'Filtrar por:',
+                      style: TextStyle(fontSize: 14, color: tokens.gray),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        _buildFilterButton('Validados', tokens.green),
+                        const SizedBox(width: 8),
+                        _buildFilterButton('Rechazados', tokens.redToRosita),
+                        const SizedBox(width: 8),
+                        _buildFilterButton('Pendientes', tokens.pending),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              Text('1-7 de 87', style: TextStyle(color: tokens.text)),
-              GFIconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: () {}, // logic to next page
-                type: GFButtonType.transparent,
-              ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Expanded(
+              // Inifity scroll label payment
+              child: PaymentListWidget(initialPayments: initialPayments),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildSummaryItem({
-    required String number,
-    required String label,
-    required Color numberColor,
-    required Color labelColor,
-  }) {
+  // ────────────────────────────────────────────────
+  // Widget private
+  // ────────────────────────────────────────────────
+
+  Widget _buildSummaryItem(
+    String number,
+    String label,
+    Color numberColor,
+    Color labelColor,
+  ) {
     return Column(
       children: [
         Text(
           number,
           style: TextStyle(
-            fontSize: 32.0,
+            fontSize: 32,
             fontWeight: FontWeight.bold,
             color: numberColor,
           ),
         ),
-        Text(label, style: TextStyle(fontSize: 14.0, color: labelColor)),
+        Text(label, style: TextStyle(fontSize: 14, color: labelColor)),
       ],
     );
   }
 
-  // Widget para campo de fecha
-  Widget _buildDateField({
-    required String label,
-    required DateTime? date,
-    required VoidCallback onTap,
-  }) {
+  // Widget for date field
+  Widget _buildDateField(String label, DateTime date) {
     final tokens = context.tokens;
-
-    bool hasAsterisk = label.endsWith(' *');
-    String textPart = hasAsterisk
+    final hasAsterisk = label.endsWith(' *');
+    final textPart = hasAsterisk
         ? label.substring(0, label.length - 2).trim()
         : label;
 
@@ -322,65 +267,41 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       children: [
         Row(
           children: [
-            Text(
-              textPart,
-              style: TextStyle(
-                fontSize: 14.0,
-                color: tokens
-                    .text, // Texto en negro (asumiendo tokens.text es negro)
-              ),
-            ),
+            Text(textPart, style: TextStyle(fontSize: 14, color: tokens.text)),
             if (hasAsterisk)
               Text(
                 ' *',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  color: tokens.redToRosita, // Solo asterisco rojo
-                ),
+                style: TextStyle(fontSize: 14, color: tokens.redToRosita),
               ),
           ],
         ),
-        const SizedBox(height: 4.0),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12.0,
-              vertical: 8.0,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(color: tokens.stroke),
-              borderRadius: BorderRadius.circular(8.0),
-              color: tokens.permanentWhite,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  date != null ? _dateFormat.format(date) : 'DD/MM/AAAA',
-                  style: TextStyle(
-                    color: date != null ? tokens.text : tokens.placeholder,
-                  ),
-                ),
-                Icon(Icons.calendar_today_outlined, color: tokens.gray),
-              ],
-            ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: tokens.stroke),
+            borderRadius: BorderRadius.circular(8),
+            color: tokens.permanentWhite,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _dateFormat.format(date),
+                style: TextStyle(color: tokens.text),
+              ),
+              Icon(Icons.calendar_today_outlined, color: tokens.gray),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // Widget para campo de hora
-  Widget _buildTimeField({
-    required String label,
-    required TimeOfDay? time,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildTimeField(String label, TimeOfDay time) {
     final tokens = context.tokens;
-
-    bool hasAsterisk = label.endsWith(' *');
-    String textPart = hasAsterisk
+    final hasAsterisk = label.endsWith(' *');
+    final textPart = hasAsterisk
         ? label.substring(0, label.length - 2).trim()
         : label;
 
@@ -389,146 +310,48 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       children: [
         Row(
           children: [
-            Text(
-              textPart,
-              style: TextStyle(
-                fontSize: 14.0,
-                color: tokens
-                    .text, // Texto en negro (asumiendo tokens.text es negro)
-              ),
-            ),
+            Text(textPart, style: TextStyle(fontSize: 14, color: tokens.text)),
             if (hasAsterisk)
               Text(
                 ' *',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  color: tokens.redToRosita, // Solo asterisco rojo
-                ),
+                style: TextStyle(fontSize: 14, color: tokens.redToRosita),
               ),
           ],
         ),
-        const SizedBox(height: 4.0),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12.0,
-              vertical: 8.0,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(color: tokens.stroke),
-              borderRadius: BorderRadius.circular(8.0),
-              color: tokens.permanentWhite,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  time != null
-                      ? _timeFormat.format(
-                          DateTime(0, 0, 0, time.hour, time.minute),
-                        )
-                      : 'HH:MM',
-                  style: TextStyle(
-                    color: time != null ? tokens.text : tokens.placeholder,
-                  ),
-                ),
-                Icon(Icons.access_time_outlined, color: tokens.gray),
-              ],
-            ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: tokens.stroke),
+            borderRadius: BorderRadius.circular(8),
+            color: tokens.permanentWhite,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                style: TextStyle(color: tokens.text),
+              ),
+              Icon(Icons.access_time_outlined, color: tokens.gray),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // Botón de filtro (usando GFButton para estilo)
   Widget _buildFilterButton(String label, Color color) {
-    final isSelected = _selectedFilters.contains(label);
+    // Por ahora sin estado seleccionado (puedes agregar lógica después)
     return GFButton(
       onPressed: () {
-        setState(() {
-          if (isSelected) {
-            _selectedFilters.remove(label);
-          } else {
-            _selectedFilters.add(label);
-          }
-        });
+        // Implementar toggle cuando lo necesites
       },
       text: label,
       shape: GFButtonShape.pills,
-      type: isSelected ? GFButtonType.solid : GFButtonType.outline,
-      color: isSelected ? color : context.tokens.stroke,
-      borderSide: BorderSide(color: context.tokens.stroke),
-      textStyle: TextStyle(
-        color: isSelected ? context.tokens.permanentWhite : context.tokens.text,
-      ),
-    );
-  }
-}
-
-// Widget reutilizable para cada card de validación de pago (usando GFCard, GFListTile, GFBadge, GFButton)
-class PaymentValidationCard extends StatelessWidget {
-  final Payment payment;
-
-  const PaymentValidationCard({super.key, required this.payment});
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    Color statusColor;
-    GFButtonType buttonType;
-    switch (payment.status) {
-      case 'Pendiente':
-        statusColor = tokens.pending;
-        buttonType = GFButtonType.outline;
-        break;
-      case 'Vencida':
-        statusColor = tokens.redToRosita;
-        buttonType = GFButtonType.solid;
-        break;
-      default:
-        statusColor = tokens.green;
-        buttonType = GFButtonType.transparent;
-    }
-
-    return GFCard(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      boxFit: BoxFit.cover,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      content: GFListTile(
-        title: Text(
-          payment.userName,
-          style: TextStyle(fontWeight: FontWeight.bold, color: tokens.text),
-        ),
-        subTitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Fecha: ${payment.paymentDate.day}/${payment.paymentDate.month}/${payment.paymentDate.year}',
-            ),
-            Text(
-              'Hora: ${payment.paymentDate.hour}:${payment.paymentDate.minute}',
-            ),
-            Text('Monto: \$${payment.amount.toStringAsFixed(2)}'),
-          ],
-        ),
-        description: GFBadge(
-          text: payment.status,
-          color: statusColor,
-          shape: GFBadgeShape.pills,
-        ),
-        icon: GFButton(
-          onPressed: () {
-            // Lógica para validar (navega a detalle o modal)
-          },
-          text: 'Validar',
-          color: tokens.redToRosita,
-          shape: GFButtonShape.standard,
-          type: buttonType,
-        ),
-      ),
+      type: GFButtonType.outline,
+      color: color,
+      textStyle: TextStyle(color: context.tokens.text),
     );
   }
 }

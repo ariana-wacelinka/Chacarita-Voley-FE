@@ -1,11 +1,10 @@
 import 'package:chacarita_voley_app/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart'; // to GFCard y GFButton
+import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/payment.dart';
 
-// Widget list payment with scroll infinity
 class PaymentListWidget extends StatefulWidget {
   final List<Payment> initialPayments;
 
@@ -35,11 +34,11 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     super.dispose();
   }
 
-  // replace with API)
+  // replace with API
   Future<void> _loadMorePayments() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate delay
+    await Future.delayed(const Duration(seconds: 1));
     setState(() {
       _currentPage++;
       _payments.addAll(_generateDummyPayments(_itemsPerPage));
@@ -77,14 +76,18 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
 
     return ListView.builder(
       controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      // aire arriba/abajo de la lista
       itemCount: _payments.length + (_payments.length >= _itemsPerPage ? 1 : 0),
-      // +1 for button if there is more
       itemBuilder: (context, index) {
         if (index >= _payments.length) {
           return _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
               : Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   child: GFButton(
                     onPressed: _loadMorePayments,
                     text: 'Cargar más',
@@ -96,197 +99,298 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
         }
 
         final payment = _payments[index];
-        Color statusColor;
-        IconData statusIcon;
-        bool showModify = payment.status == 'Aprobado';
 
-        switch (payment.status) {
-          case 'Pendiente':
-            statusColor = tokens.pending;
-            statusIcon = Icons.circle_outlined;
-            break;
-          case 'Aprobado':
-            statusColor = tokens.green;
-            statusIcon = Icons.check_circle_outline;
-            break;
-          case 'Rechazado':
-            statusColor = tokens.redToRosita;
-            statusIcon = Icons.cancel_outlined;
-            break;
-          default:
-            statusColor = tokens.gray;
-            statusIcon = Icons.help_outline;
-        }
-
-        return GFCard(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          boxFit: BoxFit.cover,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 2,
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: GFCard(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+            color: tokens.card1,
+            border: Border.all(color: tokens.stroke, width: 1),
+            margin: EdgeInsets.zero,
+            content: Padding(
+              padding: const EdgeInsets.all(0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                // evita que crezca innecesariamente
                 children: [
+                  // ── Fila superior: Nombre + Badge + Iconos ──
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        payment.userName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: tokens.text,
-                          fontSize: 20,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                payment.userName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: tokens.text,
+                                  fontSize:
+                                      18, // ← bajado de 20 para más seguridad
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(
+                                  payment.status,
+                                  AppTheme(),
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _getStatusIcon(payment.status),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    payment.status,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-
-                      const SizedBox(width: 12.0, height: 10.0),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        padding: EdgeInsets.all(0.5),
-                        child: Text(
-                          payment.status,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: context.tokens.permanentWhite,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.visibility_outlined,
-                          color: tokens.gray,
-                        ),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.description_outlined,
-                          color: tokens.gray,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Text('DNI: ${payment.dni}', style: TextStyle(color: tokens.gray)),
-              const SizedBox(height: 1.0),
-              Divider(
-                color: tokens.strokeToNoStroke,
-                thickness: 2.0,
-                height: 10.0,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Fecha de Pago',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: tokens.gray,
-                        ),
-                      ),
-                      Text(
-                        dateFormat.format(payment.paymentDate),
-                        style: TextStyle(color: tokens.text),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Enviado',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: tokens.gray,
-                        ),
-                      ),
-                      Text(
-                        dateFormat.format(payment.sentDate),
-                        style: TextStyle(color: tokens.text),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Monto',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: tokens.gray,
-                        ),
-                      ),
-                      Text(
-                        '\$${payment.amount.toStringAsFixed(2)}',
-                        style: TextStyle(color: tokens.text),
-                      ),
-                    ],
-                  ),
-                  if (showModify)
-                    GFButton(
-                      onPressed: () {},
-                      text: 'Modificar',
-                      shape: GFButtonShape.pills,
-                      icon: Icon(Icons.edit, color: tokens.gray),
-                      color: tokens.background,
-                      textStyle: TextStyle(color: tokens.text),
-                      borderSide: BorderSide(color: tokens.gray),
-                    ),
-                  if (!showModify)
-                    SizedBox(
-                      height: 50,
-                      child: Row(
+                      const SizedBox(width: 4),
+                      Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GFIconButton(
-                            onPressed: () {
-                              // Aceptar
-                            },
-                            icon: const Icon(Icons.check, color: Colors.white),
-                            color: tokens.green,
-                            shape: GFIconButtonShape.standard,
-                            // Forma redondeada
+                          IconButton(
+                            icon: Icon(
+                              Icons.visibility_outlined,
+                              color: tokens.gray,
+                              size: 24,
+                            ),
+                            onPressed: () {},
                             padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
-                          GFIconButton(
-                            onPressed: () {
-                              // Rechazar
-                            },
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            color: tokens.redToRosita,
-                            shape: GFIconButtonShape.standard,
+                          IconButton(
+                            icon: Icon(
+                              Icons.description_outlined,
+                              color: tokens.gray,
+                              size: 24,
+                            ),
+                            onPressed: () {},
                             padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
-                    ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'DNI: ${payment.dni}',
+                    style: TextStyle(color: tokens.gray, fontSize: 14),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Divider(color: tokens.stroke, thickness: 1),
+
+                  const SizedBox(height: 12),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildDateColumn(
+                        'Fecha de Pago',
+                        dateFormat.format(payment.paymentDate),
+                        AppTheme(),
+                      ),
+                      _buildDateColumn(
+                        'Enviado',
+                        dateFormat.format(payment.sentDate),
+                        AppTheme(),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Monto + Acciones ──
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildDateColumn(
+                        'Monto',
+                        '\$${payment.amount.toStringAsFixed(2)}',
+                        AppTheme(),
+                      ),
+                      _buildActionButtons(payment.status, AppTheme()),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Icon _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'aprobado':
+        return const Icon(
+          Icons.check_circle_outline,
+          color: Colors.white,
+          size: 16, // Ajusta el tamaño según necesites
+        );
+      case 'pendiente':
+        return const Icon(
+          Icons.access_time_outlined,
+          color: Colors.white,
+          size: 16,
+        );
+      case 'rechazado':
+        return const Icon(Icons.cancel_outlined, color: Colors.white, size: 16);
+      default:
+        return const Icon(
+          Icons.help_outline_outlined,
+          color: Colors.white,
+          size: 16,
+        );
+    }
+  }
+
+  Color _getStatusColor(String status, AppTheme tokens) {
+    final tokens = context.tokens;
+    switch (status.toLowerCase()) {
+      case 'aprobado':
+        return tokens.green;
+      case 'pendiente':
+        return tokens.pending ?? Colors.orange;
+      case 'rechazado':
+        return tokens.redToRosita;
+      default:
+        return tokens.gray;
+    }
+  }
+
+  Widget _buildDateColumn(String label, String value, AppTheme tokens) {
+    final tokens = context.tokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: tokens.gray,
+            fontSize: 13,
+          ),
+        ),
+        Text(value, style: TextStyle(color: tokens.text, fontSize: 14)),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(String status, AppTheme tokens) {
+    final tokens = context.tokens;
+    if (status == 'Aprobado') {
+      return OutlinedButton.icon(
+        onPressed: () {
+          // lógica de modificar
+        },
+        icon: const Icon(Icons.edit, size: 18),
+        label: const Text('Modificar', style: TextStyle(fontSize: 13)),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          minimumSize: const Size(0, 36),
+          side: BorderSide(color: tokens.gray),
+        ),
+      );
+    }
+
+    // Pendiente o Rechazado → Aceptar / Rechazar
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 12), // espacio antes del botón combinado
+        _buildAcceptRejectButton(
+          onAccept: () {
+            // Lógica para aprobar / aceptar el pago
+            // Ej: actualizar estado a 'aprobado', llamar API, etc.
+          },
+          onReject: () {
+            // Lógica para rechazar
+            // Ej: actualizar a 'rechazado', mostrar dialog de confirmación, etc.
+          },
+          tokens: AppTheme(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAcceptRejectButton({
+    required VoidCallback onAccept,
+    required VoidCallback onReject,
+    required AppTheme tokens, // o tus colores
+  }) {
+    final tokens = context.tokens;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      // pill shape, ajusta según necesites
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: const BoxDecoration(
+            // fondo por defecto si quieres (opcional)
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Mitad izquierda: Aceptar (verde)
+              InkWell(
+                onTap: onAccept,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  color: tokens.green, // o Colors.green
+                  child: const Icon(Icons.check, color: Colors.white, size: 20),
+                ),
+              ),
+              // Mitad derecha: Rechazar (rojo)
+              InkWell(
+                onTap: onReject,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  color: tokens.redToRosita, // o Colors.red
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
