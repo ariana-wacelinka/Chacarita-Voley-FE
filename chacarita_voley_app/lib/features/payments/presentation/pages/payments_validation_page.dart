@@ -3,7 +3,7 @@ import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../data/models/payment.dart';
-import '../../domain/entities/payment_list_widget.dart';
+import '../widgets/payment_list_widget.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
   const PaymentsValidationPage({super.key});

@@ -4,6 +4,7 @@ import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/payment.dart';
+import '../pages/edit_payments_page.dart';
 
 class PaymentListWidget extends StatefulWidget {
   final List<Payment> initialPayments;
@@ -313,7 +314,17 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     if (status == 'Aprobado') {
       return OutlinedButton.icon(
         onPressed: () {
-          // lógica de modificar
+          // Navegación a la pantalla de edición
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => EditPaymentsPage(
+                // Aquí pasa los datos que necesites editar, por ejemplo:
+                // payment: el objeto Payment actual de la lista o del item
+                // Ejemplo si tienes acceso a un Payment:
+                // payment: currentPayment,
+              ),
+            ),
+          );
         },
         icon: const Icon(Icons.edit, size: 18),
         label: const Text('Modificar', style: TextStyle(fontSize: 13)),
