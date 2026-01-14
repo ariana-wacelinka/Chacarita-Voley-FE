@@ -185,6 +185,8 @@ class _EditTeamPageState extends State<EditTeamPage> {
           ),
         );
 
+        // Pequeño delay para que el backend procese antes de redirigir
+        await Future.delayed(const Duration(milliseconds: 100));
         context.go('/teams/view/${team.id}');
       }
     } catch (e) {

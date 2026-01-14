@@ -9,8 +9,6 @@ class GraphQLClientFactory {
   static String? _token;
 
   static void init({required String baseUrl, String? token}) {
-    if (_initialized) return;
-
     _baseUrl = baseUrl;
     _token = token;
 
@@ -18,7 +16,12 @@ class GraphQLClientFactory {
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 15);
 
-    final httpLink = HttpLink(baseUrl, httpClient: IOClient(httpClient));
+    final ioClient = IOClient(httpClient);
+    final httpLink = HttpLink(
+      baseUrl,
+      httpClient: ioClient,
+      defaultHeaders: {'Connection': 'keep-alive', 'Keep-Alive': 'timeout=30'},
+    );
 
     Link link = httpLink;
 
@@ -30,6 +33,10 @@ class GraphQLClientFactory {
     client = GraphQLClient(
       cache: GraphQLCache(store: InMemoryStore()),
       link: link,
+      defaultPolicies: DefaultPolicies(
+        query: Policies(fetch: FetchPolicy.networkOnly),
+        watchQuery: Policies(fetch: FetchPolicy.cacheAndNetwork),
+      ),
     );
 
     _initialized = true;
@@ -54,8 +61,16 @@ class GraphQLClientFactory {
       throw StateError('GraphQLClientFactory.init must be called first');
     }
 
-    final ioClient = IOClient(HttpClient());
-    final httpLink = HttpLink(_baseUrl, httpClient: ioClient);
+    final httpClient = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 30)
+      ..idleTimeout = const Duration(seconds: 15);
+
+    final ioClient = IOClient(httpClient);
+    final httpLink = HttpLink(
+      _baseUrl,
+      httpClient: ioClient,
+      defaultHeaders: {'Connection': 'keep-alive', 'Keep-Alive': 'timeout=30'},
+    );
 
     Link link = httpLink;
     final token = _token;

@@ -23,6 +23,14 @@ class TeamRepository implements TeamRepositoryInterface {
     return GraphQLClientFactory.client.mutate(options);
   }
 
+  // 🧪 QUERY MÍNIMA PARA DIAGNÓSTICO - Solo campos básicos
+  static const String _teamFieldsMinimal = r'''
+    id
+    name
+    abbreviation
+    isCompetitive
+  ''';
+
   static const String _teamFields = r'''
     id
     abbreviation
@@ -37,11 +45,6 @@ class TeamRepository implements TeamRepositoryInterface {
         dni
         name
         surname
-        phone
-        email
-        gender
-        birthDate
-        roles
       }
     }
     professors {
@@ -51,29 +54,24 @@ class TeamRepository implements TeamRepositoryInterface {
         dni
         name
         surname
-        phone
-        email
-        gender
-        birthDate
-        roles
       }
     }
     trainings {
-      dayOfWeek
-      endTime
       id
-      location
+      dayOfWeek
       startTime
+      endTime
+      location
       trainingType
     }
   ''';
 
-  String _getAllTeamsQuery() =>
+  String _getAllTeamsQuery({bool minimal = true}) =>
       '''
     query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String) {
       getAllTeams(page: \$page, size: \$size, filters: {name: \$name}) {
         content {
-          $_teamFields
+          ${minimal ? _teamFieldsMinimal : _teamFields}
         }
         hasNext
         hasPrevious
@@ -133,9 +131,13 @@ class TeamRepository implements TeamRepositoryInterface {
     debugPrint('📤 getTeams called');
     debugPrint('📤 Variables: $variables');
 
+    final queryString = _getAllTeamsQuery();
+    debugPrint('📤 Query:\n$queryString');
+
+    // 🧪 DIAGNÓSTICO: Probando query mínima primero
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllTeamsQuery()),
+        document: gql(_getAllTeamsQuery(minimal: true)),
         variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
