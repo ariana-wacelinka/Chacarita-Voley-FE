@@ -23,12 +23,23 @@ class TeamRepository implements TeamRepositoryInterface {
     return GraphQLClientFactory.client.mutate(options);
   }
 
-  // 🧪 QUERY MÍNIMA PARA DIAGNÓSTICO - Solo campos básicos
+  // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
+  // Incluye: nombre, entrenador (professors.person), cantidad jugadores (players.id)
   static const String _teamFieldsMinimal = r'''
     id
     name
     abbreviation
     isCompetitive
+    players {
+      id
+    }
+    professors {
+      id
+      person {
+        name
+        surname
+      }
+    }
   ''';
 
   static const String _teamFields = r'''
@@ -131,10 +142,6 @@ class TeamRepository implements TeamRepositoryInterface {
     debugPrint('📤 getTeams called');
     debugPrint('📤 Variables: $variables');
 
-    final queryString = _getAllTeamsQuery();
-    debugPrint('📤 Query:\n$queryString');
-
-    // 🧪 DIAGNÓSTICO: Probando query mínima primero
     final result = await _query(
       QueryOptions(
         document: gql(_getAllTeamsQuery(minimal: true)),
@@ -306,12 +313,14 @@ class TeamRepository implements TeamRepositoryInterface {
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
       entrenador: (model.professors != null && model.professors!.isNotEmpty)
-          ? (model.professors!.first.person?.name ?? '')
+          ? '${model.professors!.first.person?.name ?? ''} ${model.professors!.first.person?.surname ?? ''}'
+                .trim()
           : '',
       integrantes: (model.players ?? [])
           .map(
             (player) => TeamMember(
               playerId: player.id,
+              // En query mínima, person puede ser null
               dni: player.person?.dni ?? '',
               nombre: player.person?.name ?? '',
               apellido: player.person?.surname ?? '',
