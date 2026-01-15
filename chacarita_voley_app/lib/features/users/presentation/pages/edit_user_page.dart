@@ -92,7 +92,7 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         );
 
-        context.pop();
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {

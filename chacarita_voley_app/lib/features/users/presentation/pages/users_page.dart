@@ -345,10 +345,35 @@ class _UsersPageState extends State<UsersPage> {
                                             ),
                                             PopupMenuItem(
                                               onTap: () {
-                                                Future.microtask(() {
-                                                  context.push(
-                                                    '/users/${user.id}/edit',
-                                                  );
+                                                Future.microtask(() async {
+                                                  final updated = await context
+                                                      .push(
+                                                        '/users/${user.id}/edit',
+                                                      );
+                                                  if (updated == true &&
+                                                      mounted) {
+                                                    setState(() {
+                                                      _usersFuture = _repository
+                                                          .getUsers(
+                                                            searchQuery:
+                                                                _searchQuery
+                                                                    .isEmpty
+                                                                ? null
+                                                                : _searchQuery,
+                                                            page: _currentPage,
+                                                            size: _usersPerPage,
+                                                          );
+                                                      _totalElementsFuture =
+                                                          _repository
+                                                              .getTotalUsers(
+                                                                searchQuery:
+                                                                    _searchQuery
+                                                                        .isEmpty
+                                                                    ? null
+                                                                    : _searchQuery,
+                                                              );
+                                                    });
+                                                  }
                                                 });
                                               },
                                               child: Row(
