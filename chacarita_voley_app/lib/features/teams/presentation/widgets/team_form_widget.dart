@@ -30,6 +30,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   List<TeamMember> _integrantes = [];
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _professorsLoaded = false;
   Timer? _debounceTimer;
 
   @override
@@ -52,13 +53,10 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         size: 100,
       );
       if (!mounted) return;
-      setState(() {
-        _professorsSearchResults = professors;
-      });
 
+      // Preparar profesores seleccionados ANTES del setState
+      final selectedProfessors = <User>[];
       if (widget.team != null && widget.team!.professorIds.isNotEmpty) {
-        // Cargar todos los profesores del equipo
-        final selectedProfessors = <User>[];
         for (final profId in widget.team!.professorIds) {
           final profesor = professors.firstWhere(
             (u) => u.professorId == profId,
@@ -81,10 +79,21 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             selectedProfessors.add(profesor);
           }
         }
-        _selectedEntrenadores = selectedProfessors;
       }
+
+      // CRÍTICO: Actualizar AMBOS estados en UN SOLO setState
+      setState(() {
+        _professorsSearchResults = professors;
+        _selectedEntrenadores = selectedProfessors;
+        _professorsLoaded = true;
+      });
     } catch (e) {
       // Error silencioso, ya se mostrará en la UI si es necesario
+      if (mounted) {
+        setState(() {
+          _professorsLoaded = true; // Marcar como cargado incluso en error
+        });
+      }
     }
   }
 
@@ -366,7 +375,26 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      if (_selectedEntrenadores.isNotEmpty)
+                      if (!_professorsLoaded)
+                        // Skeleton mientras cargan los profesores
+                        Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (_selectedEntrenadores.isNotEmpty)
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
@@ -419,8 +447,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                               ),
                             ],
                           ),
-                        ),
-                      if (_selectedEntrenadores.isEmpty)
+                        )
+                      else
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
