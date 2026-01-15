@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/team.dart';
+import '../../domain/entities/team_list_item.dart';
 import '../../data/repositories/team_repository.dart';
 
 enum _TeamMenuAction { view, edit, delete }
@@ -19,7 +19,7 @@ class _TeamsPageState extends State<TeamsPage> {
   final TextEditingController _searchController = TextEditingController();
   final _repository = TeamRepository();
 
-  Future<List<Team>>? _teamsFuture;
+  Future<List<TeamListItem>>? _teamsFuture;
   Future<int>? _totalElementsFuture;
   String _searchQuery = '';
   Timer? _debounceTimer;
@@ -32,7 +32,7 @@ class _TeamsPageState extends State<TeamsPage> {
   @override
   void initState() {
     super.initState();
-    _teamsFuture = _repository.getTeams(page: 0, size: _teamsPerPage);
+    _teamsFuture = _repository.getTeamsListItems(page: 0, size: _teamsPerPage);
     _totalElementsFuture = _repository.getTotalTeams();
   }
 
@@ -48,7 +48,10 @@ class _TeamsPageState extends State<TeamsPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            _teamsFuture = _repository.getTeams(page: 0, size: _teamsPerPage);
+            _teamsFuture = _repository.getTeamsListItems(
+              page: 0,
+              size: _teamsPerPage,
+            );
           });
         }
       });
@@ -75,7 +78,7 @@ class _TeamsPageState extends State<TeamsPage> {
       setState(() {
         _searchQuery = value;
         _currentPage = 0;
-        _teamsFuture = _repository.getTeams(
+        _teamsFuture = _repository.getTeamsListItems(
           searchQuery: value.isEmpty ? null : value,
           page: 0,
           size: _teamsPerPage,
@@ -87,7 +90,7 @@ class _TeamsPageState extends State<TeamsPage> {
   void _nextPage() {
     setState(() {
       _currentPage++;
-      _teamsFuture = _repository.getTeams(
+      _teamsFuture = _repository.getTeamsListItems(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         page: _currentPage,
         size: _teamsPerPage,
@@ -99,7 +102,7 @@ class _TeamsPageState extends State<TeamsPage> {
     if (_currentPage > 0) {
       setState(() {
         _currentPage--;
-        _teamsFuture = _repository.getTeams(
+        _teamsFuture = _repository.getTeamsListItems(
           searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
           page: _currentPage,
           size: _teamsPerPage,
@@ -108,14 +111,14 @@ class _TeamsPageState extends State<TeamsPage> {
     }
   }
 
-  void _showDeleteDialog(Team team) {
+  void _showDeleteDialog(String teamId, String teamName) {
     showDialog(
       context: context,
       useRootNavigator: true,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
         content: Text(
-          '¿Estás seguro de que deseas eliminar el equipo "${team.nombre}"?',
+          '¿Estás seguro de que deseas eliminar el equipo "$teamName"?',
           style: TextStyle(color: context.tokens.text),
         ),
         actions: [
@@ -128,11 +131,11 @@ class _TeamsPageState extends State<TeamsPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await _repository.deleteTeam(team.id);
+              await _repository.deleteTeam(teamId);
               if (context.mounted) {
                 Navigator.pop(context);
                 setState(() {
-                  _teamsFuture = _repository.getTeams(
+                  _teamsFuture = _repository.getTeamsListItems(
                     searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                     page: _currentPage,
                     size: _teamsPerPage,
@@ -150,7 +153,7 @@ class _TeamsPageState extends State<TeamsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${team.nombre} fue eliminado exitosamente',
+                            '$teamName fue eliminado exitosamente',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -230,7 +233,7 @@ class _TeamsPageState extends State<TeamsPage> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<List<Team>>(
+              child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,
                 builder: (context, snapshot) {
                   debugPrint(
@@ -342,7 +345,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                              '${team.jugadoresActuales}/20',
+                                              '${team.cantidadJugadores}/20',
                                               style: TextStyle(
                                                 color: context.tokens.text,
                                                 fontWeight: FontWeight.w600,
@@ -386,7 +389,10 @@ class _TeamsPageState extends State<TeamsPage> {
                                                     );
                                                     break;
                                                   case _TeamMenuAction.delete:
-                                                    _showDeleteDialog(team);
+                                                    _showDeleteDialog(
+                                                      team.id,
+                                                      team.nombre,
+                                                    );
                                                     break;
                                                 }
                                               },
@@ -552,7 +558,7 @@ class _TeamsPageState extends State<TeamsPage> {
 
           if (created == true && mounted) {
             setState(() {
-              _teamsFuture = _repository.getTeams(
+              _teamsFuture = _repository.getTeamsListItems(
                 searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                 page: _currentPage,
                 size: _teamsPerPage,

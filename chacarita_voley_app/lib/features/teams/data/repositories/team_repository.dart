@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
+import '../../domain/entities/team_type.dart';
+import '../../domain/entities/team_list_item.dart';
+import '../../domain/entities/team_detail.dart';
 import '../../domain/repositories/team_repository_interface.dart';
 import '../models/team_response_model.dart';
 
@@ -128,6 +131,47 @@ class TeamRepository implements TeamRepositoryInterface {
   ''';
 
   @override
+  Future<List<TeamListItem>> getTeamsListItems({
+    String? searchQuery,
+    int? page,
+    int? size,
+  }) async {
+    final variables = <String, dynamic>{
+      'page': page ?? 0,
+      'size': size ?? 100,
+      'name': searchQuery ?? '',
+    };
+
+    debugPrint('📤 getTeamsListItems called');
+    debugPrint('📤 Variables: $variables');
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllTeamsQuery(minimal: true)),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    debugPrint('📥 Raw GraphQL result: ${result.data}');
+
+    if (result.hasException) {
+      debugPrint('❌ GraphQL exception: ${result.exception}');
+      throw Exception(result.exception.toString());
+    }
+
+    final content =
+        (result.data?['getAllTeams']?['content'] as List<dynamic>?) ?? const [];
+
+    debugPrint('📥 Teams count: ${content.length}');
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map((data) => _mapToTeamListItem(TeamResponseModel.fromJson(data)))
+        .toList();
+  }
+
+  @override
   Future<List<Team>> getTeams({
     String? searchQuery,
     int? page,
@@ -191,6 +235,25 @@ class TeamRepository implements TeamRepositoryInterface {
     }
 
     return (result.data?['getAllTeams']?['totalElements'] as int?) ?? 0;
+  }
+
+  @override
+  Future<TeamDetail?> getTeamDetailById(String id) async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getTeamByIdQuery()),
+        variables: {'id': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final data = result.data?['getTeamById'] as Map<String, dynamic>?;
+    if (data == null) return null;
+    return _mapToTeamDetail(TeamResponseModel.fromJson(data));
   }
 
   @override
@@ -331,6 +394,72 @@ class TeamRepository implements TeamRepositoryInterface {
               nombre: player.person?.name ?? '',
               apellido: player.person?.surname ?? '',
               numeroCamiseta: player.jerseyNumber?.toString(),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  TeamListItem _mapToTeamListItem(TeamResponseModel model) {
+    final professors = model.professors ?? [];
+
+    return TeamListItem(
+      id: model.id,
+      nombre: model.name,
+      abreviacion:
+          model.abbreviation ??
+          model.name
+              .substring(0, model.name.length > 4 ? 4 : model.name.length)
+              .toUpperCase(),
+      tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
+      cantidadJugadores: (model.players ?? []).length,
+      entrenadores: professors
+          .map(
+            (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),
+          )
+          .where((name) => name.isNotEmpty)
+          .toList(),
+    );
+  }
+
+  TeamDetail _mapToTeamDetail(TeamResponseModel model) {
+    final professors = model.professors ?? [];
+
+    return TeamDetail(
+      id: model.id,
+      nombre: model.name,
+      abreviacion:
+          model.abbreviation ??
+          model.name
+              .substring(0, model.name.length > 4 ? 4 : model.name.length)
+              .toUpperCase(),
+      tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
+      professorIds: professors.map((p) => p.id).toList(),
+      entrenadores: professors
+          .map(
+            (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),
+          )
+          .toList(),
+      integrantes: (model.players ?? [])
+          .map(
+            (player) => TeamMember(
+              playerId: player.id,
+              dni: player.person?.dni ?? '',
+              nombre: player.person?.name ?? '',
+              apellido: player.person?.surname ?? '',
+              numeroCamiseta: player.jerseyNumber?.toString(),
+            ),
+          )
+          .toList(),
+      entrenamientos: (model.trainings ?? [])
+          .map(
+            (training) => Training(
+              id: training.id,
+              dayOfWeek: training.dayOfWeek,
+              startTime: training.startTime,
+              endTime: training.endTime,
+              location: training.location,
+              trainingType: training.trainingType,
             ),
           )
           .toList(),

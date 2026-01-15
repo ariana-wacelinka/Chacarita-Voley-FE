@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../domain/entities/team.dart';
+import '../../domain/entities/team_detail.dart';
 import '../../data/repositories/team_repository.dart';
 import '../widgets/team_form_widget.dart';
 
@@ -20,7 +21,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
   late final TeamRepository _repository;
   late final UserRepository _userRepository;
   bool _isLoading = true;
-  Team? _team;
+  TeamDetail? _teamDetail;
 
   @override
   void initState() {
@@ -32,10 +33,10 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
   Future<void> _loadTeam() async {
     try {
-      final team = await _repository.getTeamById(widget.teamId);
+      final teamDetail = await _repository.getTeamDetailById(widget.teamId);
       if (mounted) {
         setState(() {
-          _team = team;
+          _teamDetail = teamDetail;
           _isLoading = false;
         });
       }
@@ -74,7 +75,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
   }
 
   Future<void> _handleUpdateTeam(Team team) async {
-    if (_team == null) return;
+    if (_teamDetail == null) return;
 
     setState(() {
       _isLoading = true;
@@ -82,7 +83,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
     try {
       // Detectar si hubo cambios en profesores (comparar listas)
-      final originalProfessorIds = _team!.professorIds.toSet();
+      final originalProfessorIds = _teamDetail!.professorIds.toSet();
       final newProfessorIds = team.professorIds.toSet();
       final hasProfessorChanges =
           !originalProfessorIds.containsAll(newProfessorIds) ||
@@ -90,24 +91,26 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
       // Detectar si hubo cambios en datos básicos del equipo
       final hasBasicChanges =
-          team.nombre != _team!.nombre ||
-          team.abreviacion != _team!.abreviacion ||
-          team.tipo != _team!.tipo ||
+          team.nombre != _teamDetail!.nombre ||
+          team.abreviacion != _teamDetail!.abreviacion ||
+          team.tipo != _teamDetail!.tipo ||
           hasProfessorChanges;
 
-      debugPrint('🔍 EditTeam: nombre: ${team.nombre} vs ${_team!.nombre}');
       debugPrint(
-        '🔍 EditTeam: abreviacion: "${team.abreviacion}" vs "${_team!.abreviacion}"',
+        '🔍 EditTeam: nombre: ${team.nombre} vs ${_teamDetail!.nombre}',
       );
-      debugPrint('🔍 EditTeam: tipo: ${team.tipo} vs ${_team!.tipo}');
       debugPrint(
-        '🔍 EditTeam: professorIds: ${team.professorIds} vs ${_team!.professorIds}',
+        '🔍 EditTeam: abreviacion: "${team.abreviacion}" vs "${_teamDetail!.abreviacion}"',
+      );
+      debugPrint('🔍 EditTeam: tipo: ${team.tipo} vs ${_teamDetail!.tipo}');
+      debugPrint(
+        '🔍 EditTeam: professorIds: ${team.professorIds} vs ${_teamDetail!.professorIds}',
       );
       debugPrint('🔍 EditTeam: hasProfessorChanges = $hasProfessorChanges');
       debugPrint('🔍 EditTeam: hasBasicChanges = $hasBasicChanges');
 
       // Detectar si hubo cambios en integrantes (comparar IDs)
-      final originalPlayerIds = _team!.integrantes
+      final originalPlayerIds = _teamDetail!.integrantes
           .where((m) => m.playerId != null)
           .map((m) => m.playerId!)
           .toSet();
@@ -131,7 +134,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
       for (final newMember in team.integrantes) {
         if (newMember.playerId == null) continue;
 
-        final originalMember = _team!.integrantes.firstWhere(
+        final originalMember = _teamDetail!.integrantes.firstWhere(
           (m) => m.playerId == newMember.playerId,
           orElse: () => TeamMember(dni: '', nombre: '', apellido: ''),
         );
@@ -326,11 +329,14 @@ class _EditTeamPageState extends State<EditTeamPage> {
                   ),
                 ),
               )
-            : _team == null
+            : _teamDetail == null
             ? const Center(child: Text('Equipo no encontrado'))
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: TeamFormWidget(team: _team, onSubmit: _handleUpdateTeam),
+                child: TeamFormWidget(
+                  team: _teamDetail,
+                  onSubmit: _handleUpdateTeam,
+                ),
               ),
       ),
     );
