@@ -51,7 +51,8 @@ class Team {
   final String nombre;
   final String abreviacion;
   final TeamType tipo;
-  final String entrenador;
+  final List<String> professorIds; // IDs de profesores (para mutations)
+  final List<String> entrenadores; // Nombres completos (para UI)
   final List<TeamMember> integrantes;
 
   Team({
@@ -59,17 +60,26 @@ class Team {
     required this.nombre,
     required this.abreviacion,
     required this.tipo,
-    required this.entrenador,
+    List<String>? professorIds,
+    List<String>? entrenadores,
     required List<TeamMember> integrantes,
-  }) : integrantes = integrantes.isEmpty ? [] : integrantes;
+  }) : professorIds = professorIds ?? [],
+       entrenadores = entrenadores ?? [],
+       integrantes = integrantes.isEmpty ? [] : integrantes;
 
   int get jugadoresActuales => integrantes.length;
+
+  // Helper para compatibilidad con UI que espera un solo entrenador
+  String get entrenador => entrenadores.isNotEmpty ? entrenadores.first : '';
+  String? get professorId =>
+      professorIds.isNotEmpty ? professorIds.first : null;
 
   Team copyWith({
     String? nombre,
     String? abreviacion,
     TeamType? tipo,
-    String? entrenador,
+    List<String>? professorIds,
+    List<String>? entrenadores,
     List<TeamMember>? integrantes,
   }) {
     return Team(
@@ -77,7 +87,8 @@ class Team {
       nombre: nombre ?? this.nombre,
       abreviacion: abreviacion ?? this.abreviacion,
       tipo: tipo ?? this.tipo,
-      entrenador: entrenador ?? this.entrenador,
+      professorIds: professorIds ?? this.professorIds,
+      entrenadores: entrenadores ?? this.entrenadores,
       integrantes: integrantes ?? this.integrantes,
     );
   }

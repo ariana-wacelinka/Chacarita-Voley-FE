@@ -81,12 +81,30 @@ class _EditTeamPageState extends State<EditTeamPage> {
     });
 
     try {
+      // Detectar si hubo cambios en profesores (comparar listas)
+      final originalProfessorIds = _team!.professorIds.toSet();
+      final newProfessorIds = team.professorIds.toSet();
+      final hasProfessorChanges =
+          !originalProfessorIds.containsAll(newProfessorIds) ||
+          !newProfessorIds.containsAll(originalProfessorIds);
+
       // Detectar si hubo cambios en datos básicos del equipo
       final hasBasicChanges =
           team.nombre != _team!.nombre ||
           team.abreviacion != _team!.abreviacion ||
           team.tipo != _team!.tipo ||
-          team.entrenador != _team!.entrenador;
+          hasProfessorChanges;
+
+      debugPrint('🔍 EditTeam: nombre: ${team.nombre} vs ${_team!.nombre}');
+      debugPrint(
+        '🔍 EditTeam: abreviacion: "${team.abreviacion}" vs "${_team!.abreviacion}"',
+      );
+      debugPrint('🔍 EditTeam: tipo: ${team.tipo} vs ${_team!.tipo}');
+      debugPrint(
+        '🔍 EditTeam: professorIds: ${team.professorIds} vs ${_team!.professorIds}',
+      );
+      debugPrint('🔍 EditTeam: hasProfessorChanges = $hasProfessorChanges');
+      debugPrint('🔍 EditTeam: hasBasicChanges = $hasBasicChanges');
 
       // Detectar si hubo cambios en integrantes (comparar IDs)
       final originalPlayerIds = _team!.integrantes

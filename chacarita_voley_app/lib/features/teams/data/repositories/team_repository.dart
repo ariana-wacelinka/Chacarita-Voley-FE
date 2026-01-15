@@ -219,16 +219,12 @@ class TeamRepository implements TeamRepositoryInterface {
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds = team.entrenador.isNotEmpty
-        ? [team.entrenador]
-        : <String>[];
-
     final request = CreateTeamRequestModel(
       name: team.nombre,
       abbreviation: team.abreviacion,
       isCompetitive: team.tipo == TeamType.competitivo,
       playerIds: playerIds,
-      professorIds: professorIds,
+      professorIds: team.professorIds,
     );
 
     final result = await _mutate(
@@ -255,17 +251,13 @@ class TeamRepository implements TeamRepositoryInterface {
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds = team.entrenador.isNotEmpty
-        ? [team.entrenador]
-        : <String>[];
-
     final request = UpdateTeamRequestModel(
       id: team.id,
       name: team.nombre,
       abbreviation: team.abreviacion,
       isCompetitive: team.tipo == TeamType.competitivo,
-      playerIds: playerIds,
-      professorIds: professorIds,
+      playerIds: playerIds.isNotEmpty ? playerIds : null,
+      professorIds: team.professorIds.isNotEmpty ? team.professorIds : null,
     );
 
     final variables = request.toJson();
@@ -303,6 +295,18 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   Team _mapTeamResponseToTeam(TeamResponseModel model) {
+    final professors = model.professors ?? [];
+
+    if (kDebugMode) {
+      print('🏐 Mapping team: ${model.name}');
+      print('   Professors count: ${professors.length}');
+      for (var prof in professors) {
+        print(
+          '   Professor: ${prof.person?.name} ${prof.person?.surname} (ID: ${prof.id})',
+        );
+      }
+    }
+
     return Team(
       id: model.id,
       nombre: model.name,
@@ -312,10 +316,12 @@ class TeamRepository implements TeamRepositoryInterface {
               .substring(0, model.name.length > 4 ? 4 : model.name.length)
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
-      entrenador: (model.professors != null && model.professors!.isNotEmpty)
-          ? '${model.professors!.first.person?.name ?? ''} ${model.professors!.first.person?.surname ?? ''}'
-                .trim()
-          : '',
+      professorIds: professors.map((p) => p.id).toList(),
+      entrenadores: professors
+          .map(
+            (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),
+          )
+          .toList(),
       integrantes: (model.players ?? [])
           .map(
             (player) => TeamMember(

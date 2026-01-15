@@ -40,12 +40,15 @@ class UserRepository implements UserRepositoryInterface {
       dues { id }
       assistances { id }
     }
+    professor {
+      id
+    }
   ''';
 
   String _getAllPersonsQuery() =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String) {
-      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
         content {
           $_personFields
         }
@@ -121,6 +124,7 @@ class UserRepository implements UserRepositoryInterface {
       'dni': isNumeric ? searchQuery : null,
       'name': isNumeric ? null : searchQuery,
       'surname': isNumeric ? null : searchQuery,
+      'role': role,
     };
 
     print('📤 Variables GraphQL: $variables');
@@ -166,6 +170,7 @@ class UserRepository implements UserRepositoryInterface {
       'dni': isNumeric ? searchQuery : null,
       'name': isNumeric ? null : searchQuery,
       'surname': isNumeric ? null : searchQuery,
+      'role': role,
     };
 
     final result = await _query(
