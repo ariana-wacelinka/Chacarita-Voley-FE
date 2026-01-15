@@ -22,6 +22,17 @@ class UserRepository implements UserRepositoryInterface {
     return GraphQLClientFactory.client.mutate(options);
   }
 
+  // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
+  // NO incluye player, professor, dues, assistances - evita resolvers pesados
+  static const String _personFieldsMinimal = r'''
+    id
+    dni
+    name
+    surname
+    roles
+  ''';
+
+  // Query completa para DETALLE (ver/editar usuario)
   static const String _personFields = r'''
     id
     dni
@@ -40,25 +51,17 @@ class UserRepository implements UserRepositoryInterface {
       dues { id }
       assistances { id }
     }
+    professor {
+      id
+    }
   ''';
 
-  // Query optimizada para búsqueda por role (solo campos necesarios)
-  static const String _personFieldsMinimal = r'''
-    id
-    dni
-    name
-    surname
-    roles
-    player { id }
-    professor { id }
-  ''';
-
-  String _getAllPersonsQuery({bool minimal = false}) =>
+  String _getAllPersonsQuery() =>
       '''
     query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
       getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
         content {
-          ${minimal ? _personFieldsMinimal : _personFields}
+          $_personFieldsMinimal
         }
         hasNext
         hasPrevious
@@ -139,7 +142,7 @@ class UserRepository implements UserRepositoryInterface {
 
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllPersonsQuery(minimal: role != null)),
+        document: gql(_getAllPersonsQuery()),
         variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
@@ -163,6 +166,37 @@ class UserRepository implements UserRepositoryInterface {
         .whereType<Map<String, dynamic>>()
         .map(_mapPersonToUser)
         .toList();
+  }
+
+  @override
+  Future<int> getTotalUsers({String? role, String? searchQuery}) async {
+    final isNumeric =
+        searchQuery != null &&
+        searchQuery.isNotEmpty &&
+        RegExp(r'^\d+$').hasMatch(searchQuery);
+
+    final variables = <String, dynamic>{
+      'page': 0,
+      'size': 1,
+      'dni': isNumeric ? searchQuery : null,
+      'name': isNumeric ? null : searchQuery,
+      'surname': isNumeric ? null : searchQuery,
+      'role': role,
+    };
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsQuery()),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    return (result.data?['getAllPersons']?['totalElements'] as int?) ?? 0;
   }
 
   @override
@@ -278,6 +312,8 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   User _mapPersonToUser(Map<String, dynamic> person) {
+    // Query minimal: NO trae gender, birthDate, email, phone, player, professor
+    // Query full: trae TODO
     final gender = (person['gender'] as String?) ?? 'OTHER';
     final parsedGender = switch (gender) {
       'MALE' => Gender.masculino,
@@ -308,27 +344,28 @@ class UserRepository implements UserRepositoryInterface {
           break;
       }
     }
-    if (tipos.isEmpty) {
-      tipos.add(UserType.jugador);
-    }
 
+    // Solo procesamos player si existe en la respuesta (query full)
     final player = person['player'] as Map<String, dynamic>?;
     final jerseyNumber = player?['jerseyNumber'];
     final teams = (player?['teams'] as List<dynamic>?) ?? const [];
+
     final equipo = teams.isNotEmpty
         ? ((teams.first as Map<String, dynamic>)['abbreviation'] as String? ??
               '')
         : '';
 
     final equipos = teams
-        .map(
-          (t) => TeamInfo(
-            id: (t as Map<String, dynamic>)['id'] as String? ?? '',
-            name: t['name'] as String? ?? '',
-            abbreviation: t['abbreviation'] as String? ?? '',
-            isCompetitive: t['isCompetitive'] as bool? ?? false,
-          ),
-        )
+        .map((t) {
+          final teamMap = t as Map<String, dynamic>;
+          return TeamInfo(
+            id: teamMap['id'] as String? ?? '',
+            name: teamMap['name'] as String? ?? '',
+            abbreviation: teamMap['abbreviation'] as String? ?? '',
+            isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
+          );
+        })
+        .where((team) => team.id.isNotEmpty)
         .toList();
 
     final birthDate = person['birthDate'] as String?;
@@ -337,6 +374,15 @@ class UserRepository implements UserRepositoryInterface {
         : null;
 
     final professor = person['professor'] as Map<String, dynamic>?;
+
+    // Estado de cuota: default alDia (para listados sin player)
+    EstadoCuota estadoCuota = EstadoCuota.alDia;
+    if (player != null) {
+      final dues = (player['dues'] as List<dynamic>?) ?? [];
+      if (dues.isNotEmpty) {
+        estadoCuota = EstadoCuota.alDia;
+      }
+    }
 
     return User(
       id: person['id'] as String?,
@@ -353,7 +399,7 @@ class UserRepository implements UserRepositoryInterface {
       equipo: equipo,
       equipos: equipos,
       tipos: tipos,
-      estadoCuota: EstadoCuota.alDia,
+      estadoCuota: estadoCuota,
     );
   }
 

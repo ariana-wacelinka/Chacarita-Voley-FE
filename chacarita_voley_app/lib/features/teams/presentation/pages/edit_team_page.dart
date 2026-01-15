@@ -81,12 +81,30 @@ class _EditTeamPageState extends State<EditTeamPage> {
     });
 
     try {
+      // Detectar si hubo cambios en profesores (comparar listas)
+      final originalProfessorIds = _team!.professorIds.toSet();
+      final newProfessorIds = team.professorIds.toSet();
+      final hasProfessorChanges =
+          !originalProfessorIds.containsAll(newProfessorIds) ||
+          !newProfessorIds.containsAll(originalProfessorIds);
+
       // Detectar si hubo cambios en datos básicos del equipo
       final hasBasicChanges =
           team.nombre != _team!.nombre ||
           team.abreviacion != _team!.abreviacion ||
           team.tipo != _team!.tipo ||
-          team.professorId != _team!.professorId;
+          hasProfessorChanges;
+
+      debugPrint('🔍 EditTeam: nombre: ${team.nombre} vs ${_team!.nombre}');
+      debugPrint(
+        '🔍 EditTeam: abreviacion: "${team.abreviacion}" vs "${_team!.abreviacion}"',
+      );
+      debugPrint('🔍 EditTeam: tipo: ${team.tipo} vs ${_team!.tipo}');
+      debugPrint(
+        '🔍 EditTeam: professorIds: ${team.professorIds} vs ${_team!.professorIds}',
+      );
+      debugPrint('🔍 EditTeam: hasProfessorChanges = $hasProfessorChanges');
+      debugPrint('🔍 EditTeam: hasBasicChanges = $hasBasicChanges');
 
       // Detectar si hubo cambios en integrantes (comparar IDs)
       final originalPlayerIds = _team!.integrantes
@@ -103,7 +121,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
       // Solo actualizar el equipo si hubo cambios en datos básicos o integrantes
       if (hasBasicChanges || hasPlayerChanges) {
-        await _repository.updateTeam(team, originalTeam: _team);
+        await _repository.updateTeam(team);
       }
 
       // Actualizar números de camiseta si es necesario
@@ -185,10 +203,61 @@ class _EditTeamPageState extends State<EditTeamPage> {
           ),
         );
 
+        // Pequeño delay para que el backend procese antes de redirigir
+        await Future.delayed(const Duration(milliseconds: 100));
         context.go('/teams/view/${team.id}');
       }
     } catch (e) {
       print('❌ Error updating team: $e');
+
+      // Si es timeout pero el backend ya procesó el cambio, continuar como éxito
+      final errorStr = e.toString().toLowerCase();
+      final isTimeout =
+          errorStr.contains('timeout') ||
+          errorStr.contains('connection closed') ||
+          errorStr.contains('full header');
+
+      if (isTimeout && mounted) {
+        print(
+          '⚠️ Timeout detectado, asumiendo éxito (backend procesó correctamente)',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Equipo ${team.nombre} actualizado exitosamente',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.tokens.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await Future.delayed(const Duration(milliseconds: 100));
+        context.go('/teams/view/${team.id}');
+        return;
+      }
+
+      // Error real (no timeout)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

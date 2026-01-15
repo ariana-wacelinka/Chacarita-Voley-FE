@@ -23,6 +23,25 @@ class TeamRepository implements TeamRepositoryInterface {
     return GraphQLClientFactory.client.mutate(options);
   }
 
+  // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
+  // Incluye: nombre, entrenador (professors.person), cantidad jugadores (players.id)
+  static const String _teamFieldsMinimal = r'''
+    id
+    name
+    abbreviation
+    isCompetitive
+    players {
+      id
+    }
+    professors {
+      id
+      person {
+        name
+        surname
+      }
+    }
+  ''';
+
   static const String _teamFields = r'''
     id
     abbreviation
@@ -37,11 +56,6 @@ class TeamRepository implements TeamRepositoryInterface {
         dni
         name
         surname
-        phone
-        email
-        gender
-        birthDate
-        roles
       }
     }
     professors {
@@ -51,29 +65,24 @@ class TeamRepository implements TeamRepositoryInterface {
         dni
         name
         surname
-        phone
-        email
-        gender
-        birthDate
-        roles
       }
     }
     trainings {
-      dayOfWeek
-      endTime
       id
-      location
+      dayOfWeek
       startTime
+      endTime
+      location
       trainingType
     }
   ''';
 
-  String _getAllTeamsQuery() =>
+  String _getAllTeamsQuery({bool minimal = true}) =>
       '''
     query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String) {
       getAllTeams(page: \$page, size: \$size, filters: {name: \$name}) {
         content {
-          $_teamFields
+          ${minimal ? _teamFieldsMinimal : _teamFields}
         }
         hasNext
         hasPrevious
@@ -135,7 +144,7 @@ class TeamRepository implements TeamRepositoryInterface {
 
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllTeamsQuery()),
+        document: gql(_getAllTeamsQuery(minimal: true)),
         variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
@@ -159,6 +168,29 @@ class TeamRepository implements TeamRepositoryInterface {
         .whereType<Map<String, dynamic>>()
         .map((data) => _mapTeamResponseToTeam(TeamResponseModel.fromJson(data)))
         .toList();
+  }
+
+  @override
+  Future<int> getTotalTeams({String? searchQuery}) async {
+    final variables = <String, dynamic>{
+      'page': 0,
+      'size': 1,
+      'name': searchQuery ?? '',
+    };
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllTeamsQuery(minimal: true)),
+        variables: variables,
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    return (result.data?['getAllTeams']?['totalElements'] as int?) ?? 0;
   }
 
   @override
@@ -187,17 +219,12 @@ class TeamRepository implements TeamRepositoryInterface {
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds =
-        team.professorId != null && team.professorId!.isNotEmpty
-        ? [team.professorId!]
-        : <String>[];
-
     final request = CreateTeamRequestModel(
       name: team.nombre,
       abbreviation: team.abreviacion,
       isCompetitive: team.tipo == TeamType.competitivo,
       playerIds: playerIds,
-      professorIds: professorIds,
+      professorIds: team.professorIds,
     );
 
     final result = await _mutate(
@@ -218,39 +245,23 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
-  Future<void> updateTeam(Team team, {Team? originalTeam}) async {
+  Future<void> updateTeam(Team team) async {
     final playerIds = team.integrantes
         .where((m) => m.playerId != null)
         .map((m) => m.playerId!)
         .toList();
 
-    final professorIds =
-        team.professorId != null && team.professorId!.isNotEmpty
-        ? [team.professorId!]
-        : <String>[];
-
     final request = UpdateTeamRequestModel(
       id: team.id,
-      name: originalTeam != null && team.nombre == originalTeam.nombre
-          ? null
-          : team.nombre,
-      abbreviation:
-          originalTeam != null && team.abreviacion == originalTeam.abreviacion
-          ? null
-          : team.abreviacion,
-      isCompetitive: originalTeam != null && team.tipo == originalTeam.tipo
-          ? null
-          : team.tipo == TeamType.competitivo,
-      playerIds: playerIds,
-      professorIds: professorIds,
+      name: team.nombre,
+      abbreviation: team.abreviacion,
+      isCompetitive: team.tipo == TeamType.competitivo,
+      playerIds: playerIds.isNotEmpty ? playerIds : null,
+      professorIds: team.professorIds.isNotEmpty ? team.professorIds : null,
     );
 
     final variables = request.toJson();
     final id = variables.remove('id');
-
-    debugPrint('🔧 UpdateTeam Request:');
-    debugPrint('  ID: $id');
-    debugPrint('  Input: $variables');
 
     final result = await _mutate(
       MutationOptions(
@@ -284,9 +295,17 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   Team _mapTeamResponseToTeam(TeamResponseModel model) {
-    final professor = model.professors != null && model.professors!.isNotEmpty
-        ? model.professors!.first
-        : null;
+    final professors = model.professors ?? [];
+
+    if (kDebugMode) {
+      print('🏐 Mapping team: ${model.name}');
+      print('   Professors count: ${professors.length}');
+      for (var prof in professors) {
+        print(
+          '   Professor: ${prof.person?.name} ${prof.person?.surname} (ID: ${prof.id})',
+        );
+      }
+    }
 
     return Team(
       id: model.id,
@@ -297,15 +316,17 @@ class TeamRepository implements TeamRepositoryInterface {
               .substring(0, model.name.length > 4 ? 4 : model.name.length)
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
-      entrenador: professor != null
-          ? '${professor.person?.name ?? ''} ${professor.person?.surname ?? ''}'
-                .trim()
-          : '',
-      professorId: professor?.id,
+      professorIds: professors.map((p) => p.id).toList(),
+      entrenadores: professors
+          .map(
+            (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),
+          )
+          .toList(),
       integrantes: (model.players ?? [])
           .map(
             (player) => TeamMember(
               playerId: player.id,
+              // En query mínima, person puede ser null
               dni: player.person?.dni ?? '',
               nombre: player.person?.name ?? '',
               apellido: player.person?.surname ?? '',

@@ -39,8 +39,8 @@ class TrainingModel {
 }
 
 class PersonModel {
-  final String id;
-  final String dni;
+  final String? id;
+  final String? dni;
   final String name;
   final String surname;
   final String? phone;
@@ -50,8 +50,8 @@ class PersonModel {
   final List<String>? roles;
 
   PersonModel({
-    required this.id,
-    required this.dni,
+    this.id,
+    this.dni,
     required this.name,
     required this.surname,
     this.phone,
@@ -63,8 +63,8 @@ class PersonModel {
 
   factory PersonModel.fromJson(Map<String, dynamic> json) {
     return PersonModel(
-      id: json['id'] as String,
-      dni: json['dni'] as String,
+      id: json['id'] as String?,
+      dni: json['dni'] as String?,
       name: json['name'] as String,
       surname: json['surname'] as String,
       phone: json['phone'] as String?,

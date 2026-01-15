@@ -24,12 +24,13 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   final _userRepository = UserRepository();
 
   TeamType _selectedTipo = TeamType.recreativo;
-  List<String> _selectedEntrenadores = [];
+  List<User> _selectedEntrenadores = [];
   List<User> _playersSearchResults = [];
   List<User> _professorsSearchResults = [];
   List<TeamMember> _integrantes = [];
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _professorsLoaded = false;
   Timer? _debounceTimer;
 
   @override
@@ -49,40 +50,50 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       final professors = await _userRepository.getUsers(
         role: 'PROFESSOR',
         page: 0,
-        size: 20,
+        size: 100,
       );
       if (!mounted) return;
-      setState(() {
-        _professorsSearchResults = professors;
-      });
 
-      if (widget.team != null &&
-          widget.team!.professorId != null &&
-          widget.team!.professorId!.isNotEmpty) {
-        final entrenador = professors.firstWhere(
-          (u) => u.professorId == widget.team!.professorId,
-          orElse: () => professors.isNotEmpty
-              ? professors.first
-              : User(
-                  id: 'temp',
-                  nombre: 'Sin',
-                  apellido: 'Entrenador',
-                  dni: '',
-                  email: '',
-                  telefono: '',
-                  fechaNacimiento: DateTime.now(),
-                  genero: Gender.masculino,
-                  equipo: '',
-                  tipos: {UserType.profesor},
-                  estadoCuota: EstadoCuota.alDia,
-                ),
-        );
-        if (entrenador.professorId != null) {
-          _selectedEntrenadores = [entrenador.professorId!];
+      // Preparar profesores seleccionados ANTES del setState
+      final selectedProfessors = <User>[];
+      if (widget.team != null && widget.team!.professorIds.isNotEmpty) {
+        for (final profId in widget.team!.professorIds) {
+          final profesor = professors.firstWhere(
+            (u) => u.professorId == profId,
+            orElse: () => User(
+              id: 'temp',
+              nombre: 'Profesor',
+              apellido: 'ID: $profId',
+              dni: '',
+              email: '',
+              telefono: '',
+              fechaNacimiento: DateTime.now(),
+              genero: Gender.masculino,
+              equipo: '',
+              tipos: {UserType.profesor},
+              estadoCuota: EstadoCuota.alDia,
+              professorId: profId,
+            ),
+          );
+          if (profesor.professorId != null) {
+            selectedProfessors.add(profesor);
+          }
         }
       }
+
+      // CRÍTICO: Actualizar AMBOS estados en UN SOLO setState
+      setState(() {
+        _professorsSearchResults = professors;
+        _selectedEntrenadores = selectedProfessors;
+        _professorsLoaded = true;
+      });
     } catch (e) {
       // Error silencioso, ya se mostrará en la UI si es necesario
+      if (mounted) {
+        setState(() {
+          _professorsLoaded = true; // Marcar como cargado incluso en error
+        });
+      }
     }
   }
 
@@ -198,12 +209,18 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       final team = Team(
         id: widget.team?.id ?? DateTime.now().toString(),
         nombre: _nombreController.text,
-        abreviacion: _abreviacionController.text,
+        abreviacion: _abreviacionController.text.isEmpty
+            ? 'N/A'
+            : _abreviacionController.text,
         tipo: _selectedTipo,
-        entrenador: '',
-        professorId: _selectedEntrenadores.isNotEmpty
-            ? _selectedEntrenadores.first
-            : null,
+        professorIds: _selectedEntrenadores
+            .map((u) => u.professorId!)
+            .where((id) => id != null)
+            .cast<String>()
+            .toList(),
+        entrenadores: _selectedEntrenadores
+            .map((u) => u.nombreCompleto)
+            .toList(),
         integrantes: _integrantes,
       );
       widget.onSubmit(team);
@@ -358,7 +375,26 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      if (_selectedEntrenadores.isNotEmpty)
+                      if (!_professorsLoaded)
+                        // Skeleton mientras cargan los profesores
+                        Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (_selectedEntrenadores.isNotEmpty)
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
@@ -370,26 +406,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: _selectedEntrenadores.map((
-                                  professorId,
-                                ) {
-                                  final user = _professorsSearchResults
-                                      .firstWhere(
-                                        (u) => u.professorId == professorId,
-                                        orElse: () => User(
-                                          id: professorId,
-                                          nombre: 'Usuario',
-                                          apellido: 'Desconocido',
-                                          dni: '',
-                                          email: '',
-                                          telefono: '',
-                                          fechaNacimiento: DateTime.now(),
-                                          genero: Gender.masculino,
-                                          equipo: '',
-                                          tipos: {UserType.profesor},
-                                          estadoCuota: EstadoCuota.alDia,
-                                        ),
-                                      );
+                                children: _selectedEntrenadores.map((user) {
                                   return Chip(
                                     label: Text(
                                       '${user.nombre} ${user.apellido}',
@@ -406,8 +423,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     ),
                                     onDeleted: () {
                                       setState(() {
-                                        _selectedEntrenadores.remove(
-                                          professorId,
+                                        _selectedEntrenadores.removeWhere(
+                                          (u) =>
+                                              u.professorId == user.professorId,
                                         );
                                       });
                                     },
@@ -429,8 +447,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                               ),
                             ],
                           ),
-                        ),
-                      if (_selectedEntrenadores.isEmpty)
+                        )
+                      else
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
@@ -745,11 +763,15 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final filteredUsers = searchResults.where((user) {
-              final professorId = user.professorId ?? user.id;
-              return professorId != null &&
-                  !_selectedEntrenadores.contains(professorId);
-            }).toList();
+            final filteredUsers = searchResults
+                .where(
+                  (user) =>
+                      user.professorId != null &&
+                      !_selectedEntrenadores.any(
+                        (selected) => selected.professorId == user.professorId,
+                      ),
+                )
+                .toList();
 
             return AlertDialog(
               title: const Text(
@@ -825,12 +847,13 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     size: 20,
                                   ),
                                   onTap: () {
+                                    if (user.professorId == null) return;
                                     setState(() {
-                                      // Usar professorId si está disponible, sino id
-                                      final professorId =
-                                          user.professorId ?? user.id;
-                                      if (professorId != null) {
-                                        _selectedEntrenadores.add(professorId);
+                                      if (!_selectedEntrenadores.any(
+                                        (u) =>
+                                            u.professorId == user.professorId,
+                                      )) {
+                                        _selectedEntrenadores.add(user);
                                       }
                                     });
                                     Navigator.of(context).pop();

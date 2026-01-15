@@ -526,7 +526,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Entrenador',
+                          _team!.entrenadores.length > 1
+                              ? 'Entrenadores'
+                              : 'Entrenador',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -534,16 +536,42 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          _team!.entrenador.isEmpty
-                              ? 'Sin entrenador'
-                              : _team!.entrenador,
-                          style: TextStyle(
-                            color: context.tokens.text,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        if (_team!.entrenadores.isEmpty)
+                          Text(
+                            'Sin entrenador',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _team!.entrenadores.map((entrenador) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.person,
+                                      size: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      entrenador,
+                                      style: TextStyle(
+                                        color: context.tokens.text,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
                           ),
-                        ),
                       ],
                     ),
                   ],

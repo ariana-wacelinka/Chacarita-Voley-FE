@@ -19,6 +19,7 @@ class _UsersPageState extends State<UsersPage> {
   final _repository = UserRepository();
 
   Future<List<User>>? _usersFuture;
+  Future<int>? _totalElementsFuture;
   String _searchQuery = '';
   Timer? _debounceTimer;
 
@@ -29,6 +30,7 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     _usersFuture = _repository.getUsers(page: 0, size: _usersPerPage);
+    _totalElementsFuture = _repository.getTotalUsers();
   }
 
   @override
@@ -288,7 +290,6 @@ class _UsersPageState extends State<UsersPage> {
                                 columns: const [
                                   DataColumn(label: Text('DNI')),
                                   DataColumn(label: Text('Nombre')),
-                                  DataColumn(label: Text('Equipo')),
                                   DataColumn(label: Text('Cuota')),
                                   DataColumn(label: SizedBox(width: 32)),
                                 ],
@@ -297,34 +298,6 @@ class _UsersPageState extends State<UsersPage> {
                                     cells: [
                                       DataCell(Text(user.dni)),
                                       DataCell(Text(user.nombreCompleto)),
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: context.tokens.card3,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: context
-                                                  .tokens
-                                                  .strokeToNoStroke,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            user.equipo,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: context.tokens.text,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
                                       DataCell(
                                         Center(
                                           child: _buildEstadoCuotaIcon(
@@ -372,10 +345,35 @@ class _UsersPageState extends State<UsersPage> {
                                             ),
                                             PopupMenuItem(
                                               onTap: () {
-                                                Future.microtask(() {
-                                                  context.push(
-                                                    '/users/${user.id}/edit',
-                                                  );
+                                                Future.microtask(() async {
+                                                  final updated = await context
+                                                      .push(
+                                                        '/users/${user.id}/edit',
+                                                      );
+                                                  if (updated == true &&
+                                                      mounted) {
+                                                    setState(() {
+                                                      _usersFuture = _repository
+                                                          .getUsers(
+                                                            searchQuery:
+                                                                _searchQuery
+                                                                    .isEmpty
+                                                                ? null
+                                                                : _searchQuery,
+                                                            page: _currentPage,
+                                                            size: _usersPerPage,
+                                                          );
+                                                      _totalElementsFuture =
+                                                          _repository
+                                                              .getTotalUsers(
+                                                                searchQuery:
+                                                                    _searchQuery
+                                                                        .isEmpty
+                                                                    ? null
+                                                                    : _searchQuery,
+                                                              );
+                                                    });
+                                                  }
                                                 });
                                               },
                                               child: Row(
@@ -461,12 +459,24 @@ class _UsersPageState extends State<UsersPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              '${users.isEmpty ? 0 : _currentPage * _usersPerPage + 1}-${(_currentPage * _usersPerPage) + users.length}',
-                              style: TextStyle(
-                                color: context.tokens.text,
-                                fontSize: 14,
-                              ),
+                            FutureBuilder<int>(
+                              future: _totalElementsFuture,
+                              builder: (context, snapshot) {
+                                final total = snapshot.data ?? 0;
+                                final start = users.isEmpty
+                                    ? 0
+                                    : _currentPage * _usersPerPage + 1;
+                                final end =
+                                    (_currentPage * _usersPerPage) +
+                                    users.length;
+                                return Text(
+                                  '$start-$end de $total',
+                                  style: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(width: 8),
                             IconButton(

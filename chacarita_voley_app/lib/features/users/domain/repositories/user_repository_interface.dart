@@ -7,6 +7,7 @@ abstract class UserRepositoryInterface {
     int? page,
     int? size,
   });
+  Future<int> getTotalUsers({String? role, String? searchQuery});
   Future<User?> getUserById(String id);
   Future<User> createUser(User user);
   Future<User> updateUser(User user);
