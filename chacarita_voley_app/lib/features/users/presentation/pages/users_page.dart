@@ -29,8 +29,12 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    _usersFuture = _repository.getUsers(page: 0, size: _usersPerPage);
-    _totalElementsFuture = _repository.getTotalUsers();
+    _usersFuture = _repository.getUsers(
+      role: 'PLAYER',
+      page: 0,
+      size: _usersPerPage,
+    );
+    _totalElementsFuture = _repository.getTotalUsers(role: 'PLAYER');
   }
 
   @override
@@ -48,6 +52,7 @@ class _UsersPageState extends State<UsersPage> {
         _searchQuery = value;
         _currentPage = 0;
         _usersFuture = _repository.getUsers(
+          role: 'PLAYER',
           searchQuery: value.isEmpty ? null : value,
           page: 0,
           size: _usersPerPage,
@@ -60,6 +65,7 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       _currentPage++;
       _usersFuture = _repository.getUsers(
+        role: 'PLAYER',
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         page: _currentPage,
         size: _usersPerPage,
@@ -72,6 +78,7 @@ class _UsersPageState extends State<UsersPage> {
       setState(() {
         _currentPage--;
         _usersFuture = _repository.getUsers(
+          role: 'PLAYER',
           searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
           page: _currentPage,
           size: _usersPerPage,
@@ -88,6 +95,7 @@ class _UsersPageState extends State<UsersPage> {
         onConfirm: () {
           setState(() {
             _usersFuture = _repository.getUsers(
+              role: 'PLAYER',
               searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
               page: _currentPage,
               size: _usersPerPage,
