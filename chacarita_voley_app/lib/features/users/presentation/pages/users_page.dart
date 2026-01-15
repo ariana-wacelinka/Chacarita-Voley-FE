@@ -29,12 +29,8 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    _usersFuture = _repository.getUsers(
-      role: 'PLAYER',
-      page: 0,
-      size: _usersPerPage,
-    );
-    _totalElementsFuture = _repository.getTotalUsers(role: 'PLAYER');
+    _usersFuture = _repository.getUsers(page: 0, size: _usersPerPage);
+    _totalElementsFuture = _repository.getTotalUsers();
   }
 
   @override
@@ -52,7 +48,6 @@ class _UsersPageState extends State<UsersPage> {
         _searchQuery = value;
         _currentPage = 0;
         _usersFuture = _repository.getUsers(
-          role: 'PLAYER',
           searchQuery: value.isEmpty ? null : value,
           page: 0,
           size: _usersPerPage,
@@ -65,7 +60,6 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       _currentPage++;
       _usersFuture = _repository.getUsers(
-        role: 'PLAYER',
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         page: _currentPage,
         size: _usersPerPage,
@@ -78,7 +72,6 @@ class _UsersPageState extends State<UsersPage> {
       setState(() {
         _currentPage--;
         _usersFuture = _repository.getUsers(
-          role: 'PLAYER',
           searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
           page: _currentPage,
           size: _usersPerPage,
@@ -95,7 +88,6 @@ class _UsersPageState extends State<UsersPage> {
         onConfirm: () {
           setState(() {
             _usersFuture = _repository.getUsers(
-              role: 'PLAYER',
               searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
               page: _currentPage,
               size: _usersPerPage,
@@ -298,7 +290,6 @@ class _UsersPageState extends State<UsersPage> {
                                 columns: const [
                                   DataColumn(label: Text('DNI')),
                                   DataColumn(label: Text('Nombre')),
-                                  DataColumn(label: Text('Equipo')),
                                   DataColumn(label: Text('Cuota')),
                                   DataColumn(label: SizedBox(width: 32)),
                                 ],
@@ -307,34 +298,6 @@ class _UsersPageState extends State<UsersPage> {
                                     cells: [
                                       DataCell(Text(user.dni)),
                                       DataCell(Text(user.nombreCompleto)),
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: context.tokens.card3,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: context
-                                                  .tokens
-                                                  .strokeToNoStroke,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            user.equipo,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: context.tokens.text,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
                                       DataCell(
                                         Center(
                                           child: _buildEstadoCuotaIcon(

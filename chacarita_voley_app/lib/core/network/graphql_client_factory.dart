@@ -20,7 +20,7 @@ class GraphQLClientFactory {
     final httpLink = HttpLink(
       baseUrl,
       httpClient: ioClient,
-      defaultHeaders: {'Connection': 'keep-alive', 'Keep-Alive': 'timeout=30'},
+      defaultHeaders: {'Connection': 'close'},
     );
 
     Link link = httpLink;
