@@ -23,13 +23,19 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
-  // NO incluye player, professor, dues, assistances - evita resolvers pesados
+  // INCLUYE player.id y professor.id para que TeamFormWidget funcione correctamente
   static const String _personFieldsMinimal = r'''
     id
     dni
     name
     surname
     roles
+    player {
+      id
+    }
+    professor {
+      id
+    }
   ''';
 
   // Query completa para DETALLE (ver/editar usuario)

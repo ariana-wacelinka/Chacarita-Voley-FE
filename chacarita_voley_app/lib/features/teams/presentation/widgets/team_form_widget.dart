@@ -97,21 +97,21 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         _professorsSearchResults = professors;
 
         // Merge: mantener lo que el usuario ya agregó + lo precargado del team
-        final Map<String, User> byId = {};
+        final Map<String, User> byProfessorId = {};
 
         // Primero agregar lo que ya está seleccionado (agregado manualmente)
         for (final u in _selectedEntrenadores) {
-          final id = u.id;
-          if (id != null) byId[id] = u;
+          final profId = u.professorId;
+          if (profId != null) byProfessorId[profId] = u;
         }
 
         // Luego agregar/sobrescribir con lo precargado del team
         for (final u in selectedProfessors) {
-          final id = u.id;
-          if (id != null) byId[id] = u;
+          final profId = u.professorId;
+          if (profId != null) byProfessorId[profId] = u;
         }
 
-        _selectedEntrenadores = byId.values.toList();
+        _selectedEntrenadores = byProfessorId.values.toList();
         _professorsLoaded = true;
       });
     } catch (e) {
@@ -192,7 +192,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   }
 
   void _addMember(User user, String? numeroCamiseta) {
-    if (!_integrantes.any((m) => m.dni == user.dni)) {
+    if (!_integrantes.any((m) => m.playerId == user.playerId)) {
       // Para jugadores, playerId es el ID del player
       // Para profesores, no se agrega a integrantes (se maneja aparte en selectedEntrenadores)
       print(
@@ -241,7 +241,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             : _abreviacionController.text,
         tipo: _selectedTipo,
         professorIds: _selectedEntrenadores
-            .map((u) => u.id)
+            .map((u) => u.professorId)
             .whereType<String>()
             .toList(),
         entrenadores: _selectedEntrenadores
@@ -434,7 +434,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                 runSpacing: 8,
                                 children: _selectedEntrenadores.map((user) {
                                   return Chip(
-                                    key: ValueKey(user.id),
+                                    key: ValueKey(user.professorId),
                                     label: Text(
                                       '${user.nombre} ${user.apellido}',
                                       style: const TextStyle(
@@ -452,7 +452,11 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                       setState(() {
                                         _selectedEntrenadores =
                                             _selectedEntrenadores
-                                                .where((u) => u.id != user.id)
+                                                .where(
+                                                  (u) =>
+                                                      u.professorId !=
+                                                      user.professorId,
+                                                )
                                                 .toList();
                                       });
                                     },
@@ -577,9 +581,11 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                             children: (() {
                               final filteredUsers = _playersSearchResults
                                   .where(
-                                    (user) => !_integrantes.any(
-                                      (m) => m.dni == user.dni,
-                                    ),
+                                    (user) =>
+                                        user.playerId != null &&
+                                        !_integrantes.any(
+                                          (m) => m.playerId == user.playerId,
+                                        ),
                                   )
                                   .toList();
 
@@ -799,7 +805,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                   (user) =>
                       user.tipos.contains(UserType.profesor) &&
                       !_selectedEntrenadores.any(
-                        (selected) => selected.id == user.id,
+                        (selected) => selected.professorId == user.professorId,
                       ),
                 )
                 .toList();
@@ -910,7 +916,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
     if (selectedProfesor == null) return;
 
-    if (_selectedEntrenadores.any((e) => e.id == selectedProfesor.id)) {
+    if (_selectedEntrenadores.any(
+      (e) => e.professorId == selectedProfesor.professorId,
+    )) {
       return; // Evitar duplicados
     }
 
