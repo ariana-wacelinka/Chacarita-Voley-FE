@@ -68,13 +68,6 @@ final appRouter = GoRouter(
           path: '/notifications',
           name: 'notifications',
           builder: (_, __) => const NotificationsPage(),
-          routes: [
-            GoRoute(
-              path: 'new',
-              name: 'new-notification',
-              builder: (_, __) => const NewNotificationPage(),
-            ),
-          ],
         ),
         GoRoute(
           path: '/trainings',
@@ -159,6 +152,11 @@ final appRouter = GoRouter(
       name: 'trainings-attendance',
       builder: (_, state) =>
           AttendanceTrainingPage(trainingId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/notifications/new',
+      name: 'new-notification',
+      builder: (_, __) => const NewNotificationPage(),
     ),
     GoRoute(
       path: '/change-password',
