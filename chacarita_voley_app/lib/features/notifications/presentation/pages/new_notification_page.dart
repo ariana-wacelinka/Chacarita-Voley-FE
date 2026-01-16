@@ -156,6 +156,81 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
     }
   }
 
+  Future<void> _createNotification() async {
+    setState(() => _isSaving = true);
+
+    try {
+      // Aquí irá la lógica real de guardado
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Symbols.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Notificación creada exitosamente',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.tokens.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Symbols.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Error al crear la notificación: $e',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.tokens.redToRosita,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
   String _getRecipientsText(String recipients) {
     switch (recipients) {
       case 'todos':
@@ -871,7 +946,110 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   }
 
   List<Widget> _buildStep3() {
-    return [const Text('Paso 3: Revisión - En construcción')];
+    return [
+      Container(
+        decoration: BoxDecoration(
+          color: context.tokens.card1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.tokens.stroke),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Resumen',
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Título
+            Text(
+              'Título:',
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _titleController.text.isEmpty
+                  ? 'Título genérico de mensaje'
+                  : _titleController.text,
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Mensaje
+            Text(
+              'Mensaje:',
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _messageController.text.isEmpty
+                  ? 'Cuerpo genérico de mensaje'
+                  : _messageController.text,
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Tipo de envío
+            Text(
+              'Tipo de envío:',
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_isProgrammed) ...[
+              Text(
+                'Programado para ${_dateController.text} a las ${_timeController.text}',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 14,
+                ),
+              ),
+              if (_repeatNotification && _selectedFrequency != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Se repite ${_selectedFrequency!.toLowerCase()}',
+                  style: TextStyle(
+                    color: context.tokens.text,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ] else ...[
+              Text(
+                'Enviar inmediatamente',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ];
   }
 
   Widget _buildSectionHeader(String icon, String title) {
@@ -967,10 +1145,11 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
               ),
             ),
           if (_currentStep > 0) const SizedBox(width: 12),
-          SizedBox(
-            width: _currentStep == 0 ? 150 : null,
+          Expanded(
             child: FilledButton(
-              onPressed: _currentStep == 2 ? null : _nextStep,
+              onPressed: _isSaving
+                  ? null
+                  : (_currentStep == 2 ? _createNotification : _nextStep),
               style: FilledButton.styleFrom(
                 backgroundColor: context.tokens.redToRosita,
                 padding: const EdgeInsets.symmetric(
@@ -981,14 +1160,23 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                _currentStep == 2 ? 'Enviar' : 'Siguiente',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      _currentStep == 2 ? 'Crear Notificación' : 'Siguiente',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ],
