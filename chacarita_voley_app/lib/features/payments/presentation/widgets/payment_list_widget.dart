@@ -1,10 +1,10 @@
 import 'package:chacarita_voley_app/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/models/payment.dart';
-import '../pages/edit_payments_page.dart';
+import '../../domain/entities/payment.dart';
 
 class PaymentListWidget extends StatefulWidget {
   final List<Payment> initialPayments;
@@ -20,7 +20,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   List<Payment> _payments = [];
   int _currentPage = 0;
   bool _isLoading = false;
-  final int _itemsPerPage = 5;
+  final int _itemsPerPage = 3;
 
   @override
   void initState() {
@@ -53,12 +53,12 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     return List.generate(
       count,
       (index) => Payment(
-        userName: 'Juan Perez',
+        userName: 'Demas',
         dni: '12345678',
         paymentDate: now.subtract(Duration(days: index)),
         sentDate: now.subtract(Duration(days: index - 3)),
         amount: 20.00,
-        status: ['Pendiente', 'Aprobado', 'Rechazado'][index % 3],
+        status: PaymentStatus.values[index % 3],
       ),
     );
   }
@@ -157,7 +157,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                                   _getStatusIcon(payment.status),
                                   const SizedBox(width: 4),
                                   Text(
-                                    payment.status,
+                                    payment.status.displayName,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
@@ -240,7 +240,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                         '\$${payment.amount.toStringAsFixed(2)}',
                         AppTheme(),
                       ),
-                      _buildActionButtons(payment.status, AppTheme()),
+                      _buildActionButtons(payment.status, AppTheme(), payment),
                     ],
                   ),
                 ],
@@ -252,21 +252,21 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     );
   }
 
-  Icon _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'aprobado':
+  Icon _getStatusIcon(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.aprobado:
         return const Icon(
           Icons.check_circle_outline,
           color: Colors.white,
           size: 16, // Ajusta el tamaño según necesites
         );
-      case 'pendiente':
+      case PaymentStatus.pendiente:
         return const Icon(
           Icons.access_time_outlined,
           color: Colors.white,
           size: 16,
         );
-      case 'rechazado':
+      case PaymentStatus.rechazado:
         return const Icon(Icons.cancel_outlined, color: Colors.white, size: 16);
       default:
         return const Icon(
@@ -277,14 +277,14 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     }
   }
 
-  Color _getStatusColor(String status, AppTheme tokens) {
+  Color _getStatusColor(PaymentStatus status, AppTheme tokens) {
     final tokens = context.tokens;
-    switch (status.toLowerCase()) {
-      case 'aprobado':
+    switch (status) {
+      case PaymentStatus.aprobado:
         return tokens.green;
-      case 'pendiente':
+      case PaymentStatus.pendiente:
         return tokens.pending ?? Colors.orange;
-      case 'rechazado':
+      case PaymentStatus.rechazado:
         return tokens.redToRosita;
       default:
         return tokens.gray;
@@ -309,29 +309,22 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     );
   }
 
-  Widget _buildActionButtons(String status, AppTheme tokens) {
+  Widget _buildActionButtons(
+    PaymentStatus status,
+    AppTheme tokens,
+    Payment payment,
+  ) {
     final tokens = context.tokens;
-    if (status == 'Aprobado') {
+    if (status == PaymentStatus.aprobado) {
       return OutlinedButton.icon(
-        onPressed: () {
-          // Navegación a la pantalla de edición
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => EditPaymentsPage(
-                // Aquí pasa los datos que necesites editar, por ejemplo:
-                // payment: el objeto Payment actual de la lista o del item
-                // Ejemplo si tienes acceso a un Payment:
-                // payment: currentPayment,
-              ),
-            ),
-          );
-        },
+        onPressed: () => context.go('/payments/edit/${payment.id}'),
         icon: const Icon(Icons.edit, size: 18),
         label: const Text('Modificar', style: TextStyle(fontSize: 13)),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           minimumSize: const Size(0, 36),
           side: BorderSide(color: tokens.gray),
+          foregroundColor: tokens.gray,
         ),
       );
     }

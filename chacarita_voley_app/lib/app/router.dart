@@ -1,3 +1,4 @@
+import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
 import 'package:go_router/go_router.dart';
 import '../features/payments/presentation/pages/payments_validation_page.dart';
 import 'layout/app_scaffold.dart';
@@ -38,6 +39,14 @@ final appRouter = GoRouter(
           builder: (_, __) => const _Page(text: 'Notificaciones'),
         ),
       ],
+    ),
+
+    //Ruta persnalizada de Payments
+    GoRoute(
+      path: '/payments/edit/:id',
+      name: 'payments-edit',
+      builder: (_, state) =>
+          EditPaymentsPage(paymentId: state.pathParameters['id']!),
     ),
   ],
 );

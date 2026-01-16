@@ -1,8 +1,9 @@
+import 'package:chacarita_voley_app/features/payments/data/repositories/payment_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../data/models/payment.dart';
+import '../../domain/entities/payment.dart';
 import '../widgets/payment_list_widget.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
@@ -16,12 +17,12 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   // Data dummy (replace with real data later)
   late final List<Payment> initialPayments = [
     Payment(
-      userName: 'Juan Perez',
+      userName: 'Marcos Paz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20000.00,
-      status: 'Pendiente',
+      status: PaymentStatus.pendiente,
     ),
     Payment(
       userName: 'Enrique Cruz',
@@ -29,7 +30,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20.00,
-      status: 'Aprobado',
+      status: PaymentStatus.aprobado,
     ),
     Payment(
       userName: 'Mari Gonzales',
@@ -37,9 +38,38 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20.00,
-      status: 'Rechazado',
+      status: PaymentStatus.rechazado,
     ),
   ];
+
+  //USe the repository for dummy
+  late final PaymentRepository _repository;
+  late List<Payment> _payments;
+  bool _isLoading = true;
+
+  void initState() {
+    super.initState();
+    _repository = PaymentRepository();
+    _loadPayments();
+  }
+
+  Future<void> _loadPayments() async {
+    setState(() => _isLoading = true);
+    try {
+      final payments = _repository.getPayments();
+      setState(() {
+        _payments = payments;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error al cargar pagos')));
+      }
+    }
+  }
 
   // Filter
   // String _dniFilter = '';
@@ -221,7 +251,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
             Expanded(
               // Inifity scroll label payment
-              child: PaymentListWidget(initialPayments: initialPayments),
+              child: PaymentListWidget(initialPayments: _payments),
             ),
           ],
         ),
@@ -348,7 +378,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         // Implementar toggle cuando lo necesites
       },
       text: label,
-      shape: GFButtonShape.pills,
+      shape: GFButtonShape.standard,
+
       type: GFButtonType.outline,
       color: color,
       textStyle: TextStyle(color: context.tokens.text),
