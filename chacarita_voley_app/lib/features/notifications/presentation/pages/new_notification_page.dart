@@ -20,6 +20,8 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   final _messageController = TextEditingController();
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
+  final _teamsSearchController = TextEditingController();
+  final _playersSearchController = TextEditingController();
 
   int _currentStep = 0;
   bool _isProgrammed = false;
@@ -31,6 +33,10 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
 
   NotificationType _selectedType = NotificationType.general;
   String _selectedRecipients = 'todos';
+  String _recipientFilter = 'todos';
+
+  Set<String> _selectedTeams = {};
+  Set<String> _selectedPlayers = {};
 
   final List<String> _frequencies = [
     'Diaria',
@@ -39,12 +45,26 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
     'Mensual',
   ];
 
+  final List<Map<String, String>> _mockTeams = [
+    {'id': '1', 'name': 'Chacarita Femenino'},
+    {'id': '2', 'name': 'Chacarita Rojo'},
+    {'id': '3', 'name': 'Chacarita Blanco'},
+  ];
+
+  final List<Map<String, String>> _mockPlayers = [
+    {'id': '1', 'name': 'Juan Perez'},
+    {'id': '2', 'name': 'Jane Doe'},
+    {'id': '3', 'name': 'John Doe'},
+  ];
+
   @override
   void dispose() {
     _titleController.dispose();
     _messageController.dispose();
     _dateController.dispose();
     _timeController.dispose();
+    _teamsSearchController.dispose();
+    _playersSearchController.dispose();
     super.dispose();
   }
 
@@ -608,7 +628,246 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   }
 
   List<Widget> _buildStep2() {
-    return [const Text('Paso 2: Destinatarios - En construcción')];
+    final filteredTeams = _mockTeams
+        .where(
+          (team) => team['name']!.toLowerCase().contains(
+            _teamsSearchController.text.toLowerCase(),
+          ),
+        )
+        .toList();
+
+    final filteredPlayers = _mockPlayers
+        .where(
+          (player) => player['name']!.toLowerCase().contains(
+            _playersSearchController.text.toLowerCase(),
+          ),
+        )
+        .toList();
+
+    return [
+      Text(
+        'Destinatarios:',
+        style: TextStyle(
+          color: context.tokens.text,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _buildFilterChip(
+            label: 'Seleccionar todos',
+            isSelected: _recipientFilter == 'todos',
+            onTap: () => setState(() => _recipientFilter = 'todos'),
+          ),
+          _buildFilterChip(
+            label: 'Cuota vencida',
+            isSelected: _recipientFilter == 'vencida',
+            onTap: () => setState(() => _recipientFilter = 'vencida'),
+          ),
+          _buildFilterChip(
+            label: 'Cuota pendiente',
+            isSelected: _recipientFilter == 'pendiente',
+            onTap: () => setState(() => _recipientFilter = 'pendiente'),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 24),
+      Container(
+        decoration: BoxDecoration(
+          color: context.tokens.card1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.tokens.stroke),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Symbols.group, size: 20, color: context.tokens.text),
+                const SizedBox(width: 8),
+                Text(
+                  'Equipos',
+                  style: TextStyle(
+                    color: context.tokens.text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _teamsSearchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar por nombre...',
+                prefixIcon: const Icon(Symbols.search, size: 20),
+                filled: true,
+                fillColor: context.tokens.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.text.withOpacity(0.2),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.text.withOpacity(0.2),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.redToRosita,
+                    width: 2,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 150,
+              child: ListView.builder(
+                itemCount: filteredTeams.length,
+                itemBuilder: (context, index) {
+                  final team = filteredTeams[index];
+                  final isSelected = _selectedTeams.contains(team['id']);
+                  return CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedTeams.add(team['id']!);
+                        } else {
+                          _selectedTeams.remove(team['id']);
+                        }
+                      });
+                    },
+                    title: Text(
+                      team['name']!,
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 14,
+                      ),
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: context.tokens.redToRosita,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 16),
+      Container(
+        decoration: BoxDecoration(
+          color: context.tokens.card1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.tokens.stroke),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Symbols.person, size: 20, color: context.tokens.text),
+                const SizedBox(width: 8),
+                Text(
+                  'Jugadores',
+                  style: TextStyle(
+                    color: context.tokens.text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _playersSearchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar por nombre o DNI...',
+                prefixIcon: const Icon(Symbols.search, size: 20),
+                filled: true,
+                fillColor: context.tokens.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.text.withOpacity(0.2),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.text.withOpacity(0.2),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: context.tokens.redToRosita,
+                    width: 2,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 150,
+              child: ListView.builder(
+                itemCount: filteredPlayers.length,
+                itemBuilder: (context, index) {
+                  final player = filteredPlayers[index];
+                  final isSelected = _selectedPlayers.contains(player['id']);
+                  return CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedPlayers.add(player['id']!);
+                        } else {
+                          _selectedPlayers.remove(player['id']);
+                        }
+                      });
+                    },
+                    title: Text(
+                      player['name']!,
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 14,
+                      ),
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: context.tokens.redToRosita,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 
   List<Widget> _buildStep3() {
@@ -733,6 +992,46 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? context.tokens.redToRosita : context.tokens.card1,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? context.tokens.redToRosita
+                : context.tokens.stroke,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : context.tokens.text,
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Icon(Symbols.check, size: 16, color: Colors.white),
+            ],
+          ],
+        ),
       ),
     );
   }
