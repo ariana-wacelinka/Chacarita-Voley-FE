@@ -19,6 +19,7 @@ import '../features/trainings/presentation/pages/edit_training_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 import '../features/notifications/presentation/pages/new_notification_page.dart';
 import '../features/notifications/presentation/pages/view_notification_page.dart';
+import '../features/notifications/presentation/pages/edit_notification_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
@@ -164,6 +165,12 @@ final appRouter = GoRouter(
       name: 'notifications-view',
       builder: (_, state) =>
           ViewNotificationPage(notificationId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/notifications/:id/edit',
+      name: 'notifications-edit',
+      builder: (_, state) =>
+          EditNotificationPage(notificationId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/change-password',

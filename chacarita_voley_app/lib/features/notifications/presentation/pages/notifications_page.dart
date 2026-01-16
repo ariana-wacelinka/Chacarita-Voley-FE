@@ -353,6 +353,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             context.push('/notifications/${notification.id}');
                             break;
                           case 'edit':
+                            context.push('/notifications/${notification.id}/edit');
                             break;
                           case 'delete':
                             _showDeleteConfirmation(notification.id);

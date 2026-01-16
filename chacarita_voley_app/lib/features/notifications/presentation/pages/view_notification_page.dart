@@ -483,7 +483,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
-              // TODO: Implementar edición
+              context.push('/notifications/${widget.notificationId}/edit');
             },
             icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
             label: const Text(
