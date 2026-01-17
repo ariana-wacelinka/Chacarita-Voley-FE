@@ -159,8 +159,88 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
     setState(() => _isSaving = true);
 
     try {
-      // Aquí irá la lógica real de guardado
-      await Future.delayed(const Duration(seconds: 2));
+      // Construir la fecha y hora programada si aplica
+      DateTime? scheduledAt;
+      if (_isProgrammed && _scheduledDate != null && _scheduledTime != null) {
+        scheduledAt = DateTime(
+          _scheduledDate!.year,
+          _scheduledDate!.month,
+          _scheduledDate!.day,
+          _scheduledTime!.hour,
+          _scheduledTime!.minute,
+        );
+      }
+
+      // Convertir frecuencia a enum
+      Frequency? frequency;
+      if (_repeatNotification && _selectedFrequency != null) {
+        switch (_selectedFrequency) {
+          case 'Diaria':
+            frequency = Frequency.DAILY;
+            break;
+          case 'Semanal':
+            frequency = Frequency.WEEKLY;
+            break;
+          case 'Mensual':
+            frequency = Frequency.MONTHLY;
+            break;
+        }
+      }
+
+      // Construir destinations según la selección
+      List<NotificationDestination> destinations = [];
+      
+      if (_selectedRecipients == 'todos') {
+        destinations.add(NotificationDestination(
+          id: '1',
+          referenceId: null,
+          type: DestinationType.ALL_PLAYERS,
+        ));
+      } else if (_selectedRecipients == 'profesores') {
+        // Los profesores podrían manejarse como un tipo especial de jugadores
+        // o se podría enviar a ALL_PLAYERS con un filtro
+        destinations.add(NotificationDestination(
+          id: '1',
+          referenceId: null,
+          type: DestinationType.ALL_PLAYERS,
+        ));
+      } else if (_selectedTeams.isNotEmpty) {
+        int index = 1;
+        for (var teamId in _selectedTeams) {
+          destinations.add(NotificationDestination(
+            id: index.toString(),
+            referenceId: teamId,
+            type: DestinationType.TEAM,
+          ));
+          index++;
+        }
+      } else if (_selectedPlayers.isNotEmpty) {
+        int index = 1;
+        for (var playerId in _selectedPlayers) {
+          destinations.add(NotificationDestination(
+            id: index.toString(),
+            referenceId: playerId,
+            type: DestinationType.PLAYER,
+          ));
+          index++;
+        }
+      }
+
+      // Crear la notificación
+      final notification = NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _titleController.text.trim(),
+        message: _messageController.text.trim(),
+        sendMode: _isProgrammed ? SendMode.SCHEDULED : SendMode.NOW,
+        createdAt: DateTime.now(),
+        scheduledAt: scheduledAt,
+        repeatable: _repeatNotification,
+        frequency: frequency,
+        destinations: destinations,
+        deliveries: [],
+      );
+
+      await _repository.createNotification(notification);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

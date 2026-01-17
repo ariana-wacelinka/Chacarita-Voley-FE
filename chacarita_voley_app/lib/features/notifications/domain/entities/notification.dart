@@ -19,12 +19,12 @@ enum NotificationType {
 }
 
 enum SendMode {
-  IMMEDIATE,
+  NOW,
   SCHEDULED;
 
   String get displayName {
     switch (this) {
-      case SendMode.IMMEDIATE:
+      case SendMode.NOW:
         return 'Envío inmediato';
       case SendMode.SCHEDULED:
         return 'Programado';
@@ -34,7 +34,7 @@ enum SendMode {
   static SendMode fromString(String value) {
     return SendMode.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => SendMode.IMMEDIATE,
+      orElse: () => SendMode.NOW,
     );
   }
 }
@@ -42,6 +42,7 @@ enum SendMode {
 enum Frequency {
   DAILY,
   WEEKLY,
+  BIWEEKLY,
   MONTHLY;
 
   String get displayName {
@@ -50,6 +51,8 @@ enum Frequency {
         return 'Diaria';
       case Frequency.WEEKLY:
         return 'Semanal';
+      case Frequency.BIWEEKLY:
+        return 'Quincenal';
       case Frequency.MONTHLY:
         return 'Mensual';
     }
@@ -64,34 +67,31 @@ enum Frequency {
 }
 
 enum DestinationType {
-  ALL,
-  TEAM,
   PLAYER,
-  PROFESSOR,
-  DUES_OVERDUE,
-  DUES_PENDING;
+  TEAM,
+  ALL_PLAYERS,
+  DUES_PENDING,
+  DUES_OVERDUE;
 
   String get displayName {
     switch (this) {
-      case DestinationType.ALL:
-        return 'Todos los socios';
-      case DestinationType.TEAM:
-        return 'Equipo';
       case DestinationType.PLAYER:
         return 'Jugador';
-      case DestinationType.PROFESSOR:
-        return 'Profesor';
-      case DestinationType.DUES_OVERDUE:
-        return 'Cuota vencida';
+      case DestinationType.TEAM:
+        return 'Equipo';
+      case DestinationType.ALL_PLAYERS:
+        return 'Todos los jugadores';
       case DestinationType.DUES_PENDING:
         return 'Cuota pendiente';
+      case DestinationType.DUES_OVERDUE:
+        return 'Cuota vencida';
     }
   }
 
   static DestinationType fromString(String value) {
     return DestinationType.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => DestinationType.ALL,
+      orElse: () => DestinationType.ALL_PLAYERS,
     );
   }
 }
@@ -272,6 +272,8 @@ class NotificationModel {
         return 'Se repite cada día';
       case Frequency.WEEKLY:
         return 'Se repite todas las semanas';
+      case Frequency.BIWEEKLY:
+        return 'Se repite cada 15 días';
       case Frequency.MONTHLY:
         return 'Se repite cada mes';
     }
