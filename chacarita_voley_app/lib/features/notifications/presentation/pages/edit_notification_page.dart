@@ -45,7 +45,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   final List<String> _frequencies = [
     'Diaria',
     'Semanal',
-    'Quincenal',
     'Mensual',
   ];
 
@@ -80,22 +79,22 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
         _notification = notification;
         _titleController.text = notification.title;
         _messageController.text = notification.message;
-        _selectedType = notification.type;
+        _selectedType = NotificationType.general; // Default type
 
         // Cargar datos de programación si existe
-        if (notification.scheduledFor != null) {
+        if (notification.scheduledAt != null) {
           _isProgrammed = true;
-          _scheduledDate = notification.scheduledFor;
-          _scheduledTime = TimeOfDay.fromDateTime(notification.scheduledFor!);
+          _scheduledDate = notification.scheduledAt;
+          _scheduledTime = TimeOfDay.fromDateTime(notification.scheduledAt!);
           _dateController.text =
-              '${notification.scheduledFor!.day.toString().padLeft(2, '0')}/${notification.scheduledFor!.month.toString().padLeft(2, '0')}/${notification.scheduledFor!.year}';
+              '${notification.scheduledAt!.day.toString().padLeft(2, '0')}/${notification.scheduledAt!.month.toString().padLeft(2, '0')}/${notification.scheduledAt!.year}';
           _timeController.text =
-              '${notification.scheduledFor!.hour.toString().padLeft(2, '0')}:${notification.scheduledFor!.minute.toString().padLeft(2, '0')}';
+              '${notification.scheduledAt!.hour.toString().padLeft(2, '0')}:${notification.scheduledAt!.minute.toString().padLeft(2, '0')}';
         }
 
-        if (notification.recurrence != null) {
+        if (notification.repeatable && notification.frequency != null) {
           _repeatNotification = true;
-          _selectedFrequency = notification.recurrence;
+          _selectedFrequency = notification.frequency!.displayName;
         }
 
         _isLoadingNotification = false;

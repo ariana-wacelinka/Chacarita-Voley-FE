@@ -41,7 +41,6 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   final List<String> _frequencies = [
     'Diaria',
     'Semanal',
-    'Quincenal',
     'Mensual',
   ];
 

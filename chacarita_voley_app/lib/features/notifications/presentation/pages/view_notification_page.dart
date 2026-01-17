@@ -340,10 +340,10 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               ),
             ],
           ),
-          if (_notification!.recurrence != null) ...[
+          if (_notification!.getRepeatText().isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              _notification!.recurrence!,
+              _notification!.getRepeatText(),
               style: TextStyle(
                 color: context.tokens.placeholder,
                 fontSize: 13,

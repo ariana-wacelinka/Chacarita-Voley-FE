@@ -298,7 +298,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildNotificationCard(NotificationModel notification) {
-    final recipientCount = notification.recipients.length * 43;
+    final recipientCount = notification.recipientCount;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -443,17 +443,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             ),
                           ],
                         ),
-                        if (notification.recurrence != null)
+                        if (notification.getRepeatText().isNotEmpty)
                           Text(
-                            notification.recurrence!,
+                            notification.getRepeatText(),
                             style: TextStyle(
                               color: context.tokens.placeholder,
                               fontSize: 11,
                             ),
                           )
-                        else if (notification.specificDate != null)
+                        else if (notification.scheduledAt != null)
                           Text(
-                            'Fecha: ${notification.specificDate!.day.toString().padLeft(2, '0')}/${notification.specificDate!.month.toString().padLeft(2, '0')}/${notification.specificDate!.year.toString().substring(2)}',
+                            'Fecha: ${notification.scheduledAt!.day.toString().padLeft(2, '0')}/${notification.scheduledAt!.month.toString().padLeft(2, '0')}/${notification.scheduledAt!.year.toString().substring(2)}',
                             style: TextStyle(
                               color: context.tokens.placeholder,
                               fontSize: 11,

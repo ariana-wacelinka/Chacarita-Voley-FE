@@ -18,20 +18,176 @@ enum NotificationType {
   }
 }
 
-enum NotificationStatus {
-  enviada,
-  programada,
-  borrador;
+enum SendMode {
+  IMMEDIATE,
+  SCHEDULED;
 
   String get displayName {
     switch (this) {
-      case NotificationStatus.enviada:
-        return 'Enviada';
-      case NotificationStatus.programada:
-        return 'Programada';
-      case NotificationStatus.borrador:
-        return 'Borrador';
+      case SendMode.IMMEDIATE:
+        return 'Envío inmediato';
+      case SendMode.SCHEDULED:
+        return 'Programado';
     }
+  }
+
+  static SendMode fromString(String value) {
+    return SendMode.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => SendMode.IMMEDIATE,
+    );
+  }
+}
+
+enum Frequency {
+  DAILY,
+  WEEKLY,
+  MONTHLY;
+
+  String get displayName {
+    switch (this) {
+      case Frequency.DAILY:
+        return 'Diaria';
+      case Frequency.WEEKLY:
+        return 'Semanal';
+      case Frequency.MONTHLY:
+        return 'Mensual';
+    }
+  }
+
+  static Frequency fromString(String value) {
+    return Frequency.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => Frequency.WEEKLY,
+    );
+  }
+}
+
+enum DestinationType {
+  ALL,
+  TEAM,
+  PLAYER,
+  PROFESSOR,
+  DUES_OVERDUE,
+  DUES_PENDING;
+
+  String get displayName {
+    switch (this) {
+      case DestinationType.ALL:
+        return 'Todos los socios';
+      case DestinationType.TEAM:
+        return 'Equipo';
+      case DestinationType.PLAYER:
+        return 'Jugador';
+      case DestinationType.PROFESSOR:
+        return 'Profesor';
+      case DestinationType.DUES_OVERDUE:
+        return 'Cuota vencida';
+      case DestinationType.DUES_PENDING:
+        return 'Cuota pendiente';
+    }
+  }
+
+  static DestinationType fromString(String value) {
+    return DestinationType.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => DestinationType.ALL,
+    );
+  }
+}
+
+enum DeliveryStatus {
+  PENDING,
+  SENT,
+  FAILED,
+  DELIVERED;
+
+  String get displayName {
+    switch (this) {
+      case DeliveryStatus.PENDING:
+        return 'Pendiente';
+      case DeliveryStatus.SENT:
+        return 'Enviado';
+      case DeliveryStatus.FAILED:
+        return 'Fallido';
+      case DeliveryStatus.DELIVERED:
+        return 'Entregado';
+    }
+  }
+
+  static DeliveryStatus fromString(String value) {
+    return DeliveryStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => DeliveryStatus.PENDING,
+    );
+  }
+}
+
+class NotificationDestination {
+  final String id;
+  final String? referenceId;
+  final DestinationType type;
+
+  NotificationDestination({
+    required this.id,
+    this.referenceId,
+    required this.type,
+  });
+
+  factory NotificationDestination.fromJson(Map<String, dynamic> json) {
+    return NotificationDestination(
+      id: json['id'] as String,
+      referenceId: json['referenceId'] as String?,
+      type: DestinationType.fromString(json['type'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'referenceId': referenceId,
+      'type': type.name,
+    };
+  }
+}
+
+class NotificationDelivery {
+  final String id;
+  final String recipientId;
+  final DeliveryStatus status;
+  final DateTime? attemptedAt;
+  final DateTime? sentAt;
+
+  NotificationDelivery({
+    required this.id,
+    required this.recipientId,
+    required this.status,
+    this.attemptedAt,
+    this.sentAt,
+  });
+
+  factory NotificationDelivery.fromJson(Map<String, dynamic> json) {
+    return NotificationDelivery(
+      id: json['id'] as String,
+      recipientId: json['recipientId'] as String,
+      status: DeliveryStatus.fromString(json['status'] as String),
+      attemptedAt: json['attemptedAt'] != null
+          ? DateTime.parse(json['attemptedAt'] as String)
+          : null,
+      sentAt: json['sentAt'] != null
+          ? DateTime.parse(json['sentAt'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'recipientId': recipientId,
+      'status': status.name,
+      'attemptedAt': attemptedAt?.toIso8601String(),
+      'sentAt': sentAt?.toIso8601String(),
+    };
   }
 }
 
@@ -39,28 +195,147 @@ class NotificationModel {
   final String id;
   final String title;
   final String message;
-  final NotificationType type;
-  final NotificationStatus status;
+  final SendMode sendMode;
   final DateTime createdAt;
-  final DateTime? scheduledFor;
-  final List<String> recipients;
-  final String recipientsText;
-  final String startTime;
-  final String? recurrence;
-  final DateTime? specificDate;
+  final DateTime? scheduledAt;
+  final bool repeatable;
+  final Frequency? frequency;
+  final List<NotificationDestination> destinations;
+  final List<NotificationDelivery> deliveries;
 
   NotificationModel({
     required this.id,
     required this.title,
     required this.message,
-    required this.type,
-    required this.status,
+    required this.sendMode,
     required this.createdAt,
-    this.scheduledFor,
-    required this.recipients,
-    required this.recipientsText,
-    required this.startTime,
-    this.recurrence,
-    this.specificDate,
+    this.scheduledAt,
+    required this.repeatable,
+    this.frequency,
+    required this.destinations,
+    required this.deliveries,
   });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      message: json['message'] as String,
+      sendMode: SendMode.fromString(json['sendMode'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : null,
+      repeatable: json['repeatable'] as bool,
+      frequency: json['frequency'] != null
+          ? Frequency.fromString(json['frequency'] as String)
+          : null,
+      destinations: (json['destinations'] as List<dynamic>)
+          .map((d) => NotificationDestination.fromJson(d as Map<String, dynamic>))
+          .toList(),
+      deliveries: (json['deliveries'] as List<dynamic>)
+          .map((d) => NotificationDelivery.fromJson(d as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'sendMode': sendMode.name,
+      'createdAt': createdAt.toIso8601String(),
+      'scheduledAt': scheduledAt?.toIso8601String(),
+      'repeatable': repeatable,
+      'frequency': frequency?.name,
+      'destinations': destinations.map((d) => d.toJson()).toList(),
+      'deliveries': deliveries.map((d) => d.toJson()).toList(),
+    };
+  }
+
+  // Helper methods
+  String get startTime {
+    if (scheduledAt != null) {
+      return '${scheduledAt!.hour.toString().padLeft(2, '0')}:${scheduledAt!.minute.toString().padLeft(2, '0')}';
+    }
+    return '';
+  }
+
+  String getRepeatText() {
+    if (!repeatable || frequency == null) {
+      return '';
+    }
+
+    switch (frequency!) {
+      case Frequency.DAILY:
+        return 'Se repite cada día';
+      case Frequency.WEEKLY:
+        return 'Se repite todas las semanas';
+      case Frequency.MONTHLY:
+        return 'Se repite cada mes';
+    }
+  }
+
+  String get recipientsText {
+    if (destinations.isEmpty) return 'Sin destinatarios';
+    
+    if (destinations.length == 1) {
+      return destinations.first.type.displayName;
+    }
+    
+    return '${destinations.length} grupos de destinatarios';
+  }
+
+  int get recipientCount {
+    // Mock count - en producción esto vendría del backend
+    return destinations.length * 43;
+  }
 }
+
+class NotificationListResponse {
+  final List<NotificationModel> content;
+  final int totalElements;
+  final int totalPages;
+  final int pageNumber;
+  final int pageSize;
+  final bool hasPrevious;
+  final bool hasNext;
+
+  NotificationListResponse({
+    required this.content,
+    required this.totalElements,
+    required this.totalPages,
+    required this.pageNumber,
+    required this.pageSize,
+    required this.hasPrevious,
+    required this.hasNext,
+  });
+
+  factory NotificationListResponse.fromJson(Map<String, dynamic> json) {
+    return NotificationListResponse(
+      content: (json['content'] as List<dynamic>)
+          .map((n) => NotificationModel.fromJson(n as Map<String, dynamic>))
+          .toList(),
+      totalElements: json['totalElements'] as int,
+      totalPages: json['totalPages'] as int,
+      pageNumber: json['pageNumber'] as int,
+      pageSize: json['pageSize'] as int,
+      hasPrevious: json['hasPrevious'] as bool,
+      hasNext: json['hasNext'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'content': content.map((n) => n.toJson()).toList(),
+      'totalElements': totalElements,
+      'totalPages': totalPages,
+      'pageNumber': pageNumber,
+      'pageSize': pageSize,
+      'hasPrevious': hasPrevious,
+      'hasNext': hasNext,
+    };
+  }
+}
+
