@@ -37,8 +37,8 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       // Mock de destinatarios basado en la imagen
       _recipientsList = [
         {'name': 'Juan Perez', 'dni': '12345678'},
-        {'name': 'Pamela Perez', 'dni': '87654321'},
-        {'name': 'Lucio Guerra', 'dni': '23456789'},
+        {'name': 'John Doe', 'dni': '87654321'},
+        {'name': 'Jane Doe', 'dni': '23456789'},
         // ... más destinatarios
       ];
 
@@ -320,7 +320,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Pamela Perez', // Mock del autor
+            'Jane Doe', // Mock del autor
             style: TextStyle(
               color: context.tokens.placeholder,
               fontSize: 14,

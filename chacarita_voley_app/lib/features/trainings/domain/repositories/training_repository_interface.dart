@@ -6,6 +6,8 @@ abstract class TrainingRepositoryInterface {
     DateTime? endDate,
     String? teamId,
     TrainingStatus? status,
+    int page = 0,
+    int size = 10,
   });
 
   Future<Training?> getTrainingById(String id);

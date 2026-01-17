@@ -331,7 +331,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Pamela Perez',
+                            'Jane Doe',
                             style: TextStyle(
                               color: context.tokens.text.withOpacity(0.6),
                               fontSize: 12,

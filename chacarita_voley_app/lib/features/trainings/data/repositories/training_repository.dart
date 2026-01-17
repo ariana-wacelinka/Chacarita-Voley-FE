@@ -64,9 +64,33 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
   String _getAllTrainingsQuery() =>
       '''
-    query GetAllTrainings {
-      getAllTrainings {
-        $_trainingFields
+    query GetAllTrainings(\$page: Int!, \$size: Int!) {
+      getAllTrainings(page: \$page, size: \$size) {
+        totalPages
+        totalElements
+        pageSize
+        pageNumber
+        hasPrevious
+        hasNext
+        content {
+          id
+          dayOfWeek
+          startTime
+          endTime
+          location
+          team {
+            abbreviation
+            professors {
+              person {
+                name
+                surname
+              }
+            }
+            players {
+              id
+            }
+          }
+        }
       }
     }
   ''';
@@ -86,11 +110,17 @@ class TrainingRepository implements TrainingRepositoryInterface {
     DateTime? endDate,
     String? teamId,
     TrainingStatus? status,
+    int page = 0,
+    int size = 10,
   }) async {
     final result = await _query(
       QueryOptions(
         document: gql(_getAllTrainingsQuery()),
-        fetchPolicy: FetchPolicy.networkOnly,
+        variables: {
+          'page': page,
+          'size': size,
+        },
+        fetchPolicy: FetchPolicy.cacheAndNetwork,
       ),
     );
 
@@ -98,10 +128,12 @@ class TrainingRepository implements TrainingRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final trainings =
-        (result.data?['getAllTrainings'] as List<dynamic>?) ?? const [];
+    final trainingsData = result.data?['getAllTrainings'];
+    if (trainingsData == null) return [];
 
-    return trainings
+    final content = (trainingsData['content'] as List<dynamic>?) ?? const [];
+
+    return content
         .whereType<Map<String, dynamic>>()
         .map((data) => _mapTrainingFromBackend(data))
         .toList();
@@ -208,25 +240,42 @@ class TrainingRepository implements TrainingRepositoryInterface {
   }
 
   Training _mapTrainingFromBackend(Map<String, dynamic> data) {
-    final attendancesData = data['attendances'] as List<dynamic>?;
-    final attendances =
-        attendancesData
-            ?.map(
-              (item) => PlayerAttendance(
-                playerId: (item as Map)['playerId'] as String? ?? '',
-                playerName: item['playerName'] as String? ?? '',
-                isPresent: item['isPresent'] as bool? ?? false,
-              ),
-            )
-            .toList() ??
-        <PlayerAttendance>[];
+    // Extraer información del team
+    final teamData = data['team'] as Map<String, dynamic>?;
+    final teamAbbreviation = teamData?['abbreviation'] as String?;
+    
+    // Extraer información de professors
+    final professorsData = (teamData?['professors'] as List<dynamic>?) ?? [];
+    String? professorName;
+    if (professorsData.isNotEmpty) {
+      final firstProfessor = professorsData.first as Map<String, dynamic>;
+      final personData = firstProfessor['person'] as Map<String, dynamic>?;
+      if (personData != null) {
+        final name = personData['name'] as String? ?? '';
+        final surname = personData['surname'] as String? ?? '';
+        professorName = '$name $surname'.trim();
+      }
+    }
+
+    // Extraer información de players 
+    final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
+    final attendances = playersData
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (player) => PlayerAttendance(
+            playerId: player['id'] as String? ?? '',
+            playerName: '', // No tenemos nombre en esta query
+            isPresent: false, // Default para listado
+          ),
+        )
+        .toList();
 
     return Training(
       id: data['id'] as String? ?? '',
-      teamId: data['teamId'] as String?,
-      teamName: data['teamName'] as String?,
-      professorId: data['professorId'] as String?,
-      professorName: data['professorName'] as String?,
+      teamId: teamData?['id'] as String?, // Si está disponible en team
+      teamName: teamAbbreviation,
+      professorId: null, // No disponible en esta estructura
+      professorName: professorName,
       dayOfWeek: data['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(data['dayOfWeek'] as String)
           : null,
