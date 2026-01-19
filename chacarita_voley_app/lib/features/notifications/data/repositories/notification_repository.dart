@@ -175,6 +175,7 @@ class NotificationRepository {
     required String message,
     required SendMode sendMode,
     String? time,
+    String? date,
     Frequency? frequency,
     required List<NotificationDestinationInput> destinations,
   }) async {
@@ -197,12 +198,16 @@ class NotificationRepository {
       input['time'] = time;
     }
 
+    if (date != null && date.isNotEmpty) {
+      input['date'] = date;
+    }
+
     if (frequency != null) {
       input['frequency'] = frequency.name;
     }
 
     final mutation = '''
-      mutation CreateNotification(\$input: NotificationInput!) {
+      mutation CreateNotification(\$input: CreateNotificationInput!) {
         createNotification(input: \$input) {
           id
           title

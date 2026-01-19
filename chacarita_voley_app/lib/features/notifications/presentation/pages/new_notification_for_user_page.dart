@@ -55,7 +55,8 @@ class _NewNotificationForUserPageState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary,
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
             ),
           ),
           child: child!,
@@ -79,7 +80,9 @@ class _NewNotificationForUserPageState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -122,9 +125,14 @@ class _NewNotificationForUserPageState
 
     try {
       String? time;
+      String? date;
       if (_isProgrammed && _scheduledTime != null) {
         time =
             '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}';
+      }
+      if (_isProgrammed && _scheduledDate != null) {
+        date =
+            '${_scheduledDate!.year}-${_scheduledDate!.month.toString().padLeft(2, '0')}-${_scheduledDate!.day.toString().padLeft(2, '0')}';
       }
 
       await _repository.createNotification(
@@ -132,6 +140,7 @@ class _NewNotificationForUserPageState
         message: _messageController.text.trim(),
         sendMode: _isProgrammed ? SendMode.SCHEDULED : SendMode.NOW,
         time: time,
+        date: date,
         frequency: _repeatNotification ? _selectedFrequency : null,
         destinations: [
           NotificationDestinationInput(

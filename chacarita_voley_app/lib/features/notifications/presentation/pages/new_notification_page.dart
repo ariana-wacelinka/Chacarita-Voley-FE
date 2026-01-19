@@ -5,6 +5,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../../teams/data/repositories/team_repository.dart';
+import '../../../teams/domain/entities/team_list_item.dart';
+import '../../../users/data/repositories/user_repository.dart';
+import '../../../users/domain/entities/user.dart';
 
 class NewNotificationPage extends StatefulWidget {
   const NewNotificationPage({super.key});
@@ -16,6 +20,8 @@ class NewNotificationPage extends StatefulWidget {
 class _NewNotificationPageState extends State<NewNotificationPage> {
   final _formKey = GlobalKey<FormState>();
   final _repository = NotificationRepository();
+  final _teamRepository = TeamRepository();
+  final _userRepository = UserRepository();
   final _titleController = TextEditingController();
   final _messageController = TextEditingController();
   final _dateController = TextEditingController();
@@ -31,8 +37,6 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   String? _selectedFrequency;
   bool _isSaving = false;
 
-  NotificationType _selectedType = NotificationType.general;
-  String _selectedRecipients = 'todos';
   String _recipientFilter = 'todos';
 
   Set<String> _selectedTeams = {};
@@ -40,17 +44,51 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
 
   final List<String> _frequencies = ['Diaria', 'Semanal', 'Mensual'];
 
-  final List<Map<String, String>> _mockTeams = [
-    {'id': '1', 'name': 'Chacarita Femenino'},
-    {'id': '2', 'name': 'Chacarita Rojo'},
-    {'id': '3', 'name': 'Chacarita Blanco'},
-  ];
+  List<TeamListItem> _allTeams = [];
+  List<User> _allPlayers = [];
+  bool _isLoadingTeams = false;
+  bool _isLoadingPlayers = false;
 
-  final List<Map<String, String>> _mockPlayers = [
-    {'id': '1', 'name': 'Juan Perez'},
-    {'id': '2', 'name': 'Jane Doe'},
-    {'id': '3', 'name': 'John Doe'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadTeams();
+    _loadPlayers();
+  }
+
+  Future<void> _loadTeams() async {
+    setState(() => _isLoadingTeams = true);
+    try {
+      final teams = await _teamRepository.getTeamsListItems();
+      if (mounted) {
+        setState(() {
+          _allTeams = teams;
+          _isLoadingTeams = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    }
+  }
+
+  Future<void> _loadPlayers() async {
+    setState(() => _isLoadingPlayers = true);
+    try {
+      final users = await _userRepository.getUsers();
+      if (mounted) {
+        setState(() {
+          _allPlayers = users;
+          _isLoadingPlayers = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingPlayers = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -177,29 +215,34 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
 
       // Construir time en formato HH:mm si está programado
       String? time;
+      String? date;
       if (_isProgrammed && _scheduledTime != null) {
         time =
             '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}';
+      }
+      if (_isProgrammed && _scheduledDate != null) {
+        date =
+            '${_scheduledDate!.year}-${_scheduledDate!.month.toString().padLeft(2, '0')}-${_scheduledDate!.day.toString().padLeft(2, '0')}';
       }
 
       // Construir destinations según la selección
       List<NotificationDestinationInput> destinations = [];
 
-      if (_selectedRecipients == 'todos') {
+      if (_recipientFilter == 'todos') {
         destinations.add(
           NotificationDestinationInput(
             type: DestinationType.ALL_PLAYERS,
             referenceId: null,
           ),
         );
-      } else if (_selectedRecipients == 'cuota_pendiente') {
+      } else if (_recipientFilter == 'cuota_pendiente') {
         destinations.add(
           NotificationDestinationInput(
             type: DestinationType.DUES_PENDING,
             referenceId: null,
           ),
         );
-      } else if (_selectedRecipients == 'cuota_vencida') {
+      } else if (_recipientFilter == 'cuota_vencida') {
         destinations.add(
           NotificationDestinationInput(
             type: DestinationType.DUES_OVERDUE,
@@ -232,6 +275,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         message: _messageController.text.trim(),
         sendMode: _isProgrammed ? SendMode.SCHEDULED : SendMode.NOW,
         time: time,
+        date: date,
         frequency: frequency,
         destinations: destinations,
       );
@@ -301,21 +345,6 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
       if (mounted) {
         setState(() => _isSaving = false);
       }
-    }
-  }
-
-  String _getRecipientsText(String recipients) {
-    switch (recipients) {
-      case 'todos':
-        return 'Todos los socios';
-      case 'profesores':
-        return 'Todos los profesores';
-      case 'equipo-1':
-        return 'Equipo Masculino A';
-      case 'equipo-2':
-        return 'Equipo Femenino B';
-      default:
-        return 'Sin destinatarios';
     }
   }
 
@@ -776,19 +805,17 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   }
 
   List<Widget> _buildStep2() {
-    final filteredTeams = _mockTeams
-        .where(
-          (team) => team['name']!.toLowerCase().contains(
-            _teamsSearchController.text.toLowerCase(),
-          ),
-        )
+    final searchText = _teamsSearchController.text.toLowerCase();
+    final filteredTeams = _allTeams
+        .where((team) => team.nombre.toLowerCase().contains(searchText))
         .toList();
 
-    final filteredPlayers = _mockPlayers
+    final searchTextPlayers = _playersSearchController.text.toLowerCase();
+    final filteredPlayers = _allPlayers
         .where(
-          (player) => player['name']!.toLowerCase().contains(
-            _playersSearchController.text.toLowerCase(),
-          ),
+          (player) =>
+              player.nombreCompleto.toLowerCase().contains(searchTextPlayers) ||
+              player.dni.toLowerCase().contains(searchTextPlayers),
         )
         .toList();
 
@@ -886,35 +913,53 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             const SizedBox(height: 12),
             SizedBox(
               height: 150,
-              child: ListView.builder(
-                itemCount: filteredTeams.length,
-                itemBuilder: (context, index) {
-                  final team = filteredTeams[index];
-                  final isSelected = _selectedTeams.contains(team['id']);
-                  return CheckboxListTile(
-                    value: isSelected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedTeams.add(team['id']!);
-                        } else {
-                          _selectedTeams.remove(team['id']);
-                        }
-                      });
-                    },
-                    title: Text(
-                      team['name']!,
-                      style: TextStyle(
-                        color: context.tokens.text,
-                        fontSize: 14,
+              child: _isLoadingTeams
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
                       ),
+                    )
+                  : filteredTeams.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No se encontraron equipos',
+                        style: TextStyle(
+                          color: context.tokens.placeholder,
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredTeams.length,
+                      itemBuilder: (context, index) {
+                        final team = filteredTeams[index];
+                        final isSelected = _selectedTeams.contains(team.id);
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedTeams.add(team.id);
+                              } else {
+                                _selectedTeams.remove(team.id);
+                              }
+                            });
+                          },
+                          title: Text(
+                            team.nombre,
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                            ),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                        );
+                      },
                     ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                    activeColor: Theme.of(context).colorScheme.primary,
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -982,35 +1027,62 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             const SizedBox(height: 12),
             SizedBox(
               height: 150,
-              child: ListView.builder(
-                itemCount: filteredPlayers.length,
-                itemBuilder: (context, index) {
-                  final player = filteredPlayers[index];
-                  final isSelected = _selectedPlayers.contains(player['id']);
-                  return CheckboxListTile(
-                    value: isSelected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedPlayers.add(player['id']!);
-                        } else {
-                          _selectedPlayers.remove(player['id']);
-                        }
-                      });
-                    },
-                    title: Text(
-                      player['name']!,
-                      style: TextStyle(
-                        color: context.tokens.text,
-                        fontSize: 14,
+              child: _isLoadingPlayers
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
                       ),
+                    )
+                  : filteredPlayers.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No se encontraron jugadores',
+                        style: TextStyle(
+                          color: context.tokens.placeholder,
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredPlayers.length,
+                      itemBuilder: (context, index) {
+                        final player = filteredPlayers[index];
+                        final isSelected = _selectedPlayers.contains(
+                          player.id ?? '',
+                        );
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedPlayers.add(player.id ?? '');
+                              } else {
+                                _selectedPlayers.remove(player.id ?? '');
+                              }
+                            });
+                          },
+                          title: Text(
+                            player.nombreCompleto,
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'DNI: ${player.dni}',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 12,
+                            ),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                        );
+                      },
                     ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                    activeColor: Theme.of(context).colorScheme.primary,
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -1108,23 +1180,6 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         ),
       ),
     ];
-  }
-
-  Widget _buildSectionHeader(String icon, String title) {
-    return Row(
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 18)),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            color: context.tokens.text,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildRadioTile(String title, bool value, VoidCallback onTap) {
