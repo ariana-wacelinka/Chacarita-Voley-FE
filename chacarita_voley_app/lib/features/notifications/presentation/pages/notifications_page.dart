@@ -256,7 +256,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.tokens.card1,
+        color: context.tokens.background,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -530,10 +530,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget _buildPagination() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.tokens.card1,
-        border: Border(top: BorderSide(color: context.tokens.stroke, width: 1)),
-      ),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

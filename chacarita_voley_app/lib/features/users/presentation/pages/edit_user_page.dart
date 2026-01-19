@@ -138,7 +138,7 @@ class _EditUserPageState extends State<EditUserPage> {
     return Scaffold(
       backgroundColor: context.tokens.background,
       appBar: AppBar(
-        backgroundColor: context.tokens.card1,
+        backgroundColor: context.tokens.card2,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),

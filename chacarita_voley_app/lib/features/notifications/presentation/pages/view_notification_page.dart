@@ -454,7 +454,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.gray,
+              backgroundColor: context.tokens.card2,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

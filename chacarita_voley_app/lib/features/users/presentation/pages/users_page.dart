@@ -147,7 +147,7 @@ class _UsersPageState extends State<UsersPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: context.tokens.card1,
+                color: context.tokens.background,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -440,7 +440,9 @@ class _UsersPageState extends State<UsersPage> {
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        decoration: BoxDecoration(color: context.tokens.card1),
+                        decoration: BoxDecoration(
+                          color: context.tokens.background,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

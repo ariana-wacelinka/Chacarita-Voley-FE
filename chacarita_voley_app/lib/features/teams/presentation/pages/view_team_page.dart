@@ -1078,7 +1078,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                   context.go('/teams/edit/${_team!.id}');
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: context.tokens.text,
+                  backgroundColor: context.tokens.card2,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

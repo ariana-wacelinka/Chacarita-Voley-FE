@@ -42,11 +42,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   Set<String> _selectedTeams = {};
   Set<String> _selectedPlayers = {};
 
-  final List<String> _frequencies = [
-    'Diaria',
-    'Semanal',
-    'Mensual',
-  ];
+  final List<String> _frequencies = ['Diaria', 'Semanal', 'Mensual'];
 
   final List<Map<String, String>> _mockTeams = [
     {'id': '1', 'name': 'Chacarita Femenino'},
@@ -134,7 +130,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -157,7 +155,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary,
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
             ),
           ),
           child: child!,
@@ -313,7 +312,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-            onPressed: () => context.go('/notifications/${widget.notificationId}'),
+            onPressed: () =>
+                context.go('/notifications/${widget.notificationId}'),
           ),
           title: Text(
             'Cargando...',
@@ -338,11 +338,12 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
     return Scaffold(
       backgroundColor: context.tokens.background,
       appBar: AppBar(
-        backgroundColor: context.tokens.card1,
+        backgroundColor: context.tokens.card2,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.go('/notifications/${widget.notificationId}'),
+          onPressed: () =>
+              context.go('/notifications/${widget.notificationId}'),
         ),
         title: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1068,10 +1069,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
               _titleController.text.isEmpty
                   ? 'Título genérico de mensaje'
                   : _titleController.text,
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
             const SizedBox(height: 20),
 
@@ -1089,10 +1087,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
               _messageController.text.isEmpty
                   ? 'Cuerpo genérico de mensaje'
                   : _messageController.text,
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
             const SizedBox(height: 20),
 
@@ -1109,28 +1104,19 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
             if (_isProgrammed) ...[
               Text(
                 'Programado para ${_dateController.text} a las ${_timeController.text}',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: context.tokens.text, fontSize: 14),
               ),
               if (_repeatNotification && _selectedFrequency != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Se repite ${_selectedFrequency!.toLowerCase()}',
-                  style: TextStyle(
-                    color: context.tokens.text,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: context.tokens.text, fontSize: 14),
                 ),
               ],
             ] else ...[
               Text(
                 'Enviar inmediatamente',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: context.tokens.text, fontSize: 14),
               ),
             ],
           ],
@@ -1216,7 +1202,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                 onPressed: _previousStep,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1282,7 +1270,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primary : context.tokens.card1,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : context.tokens.card1,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
