@@ -15,7 +15,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDarkMode = themeProvider.isDarkMode;
+    final systemBrightness = MediaQuery.of(context).platformBrightness;
+    final isDarkMode =
+        themeProvider.themeMode == ThemeMode.dark ||
+        (themeProvider.themeMode == ThemeMode.system &&
+            systemBrightness == Brightness.dark);
 
     return Scaffold(
       body: SingleChildScrollView(
