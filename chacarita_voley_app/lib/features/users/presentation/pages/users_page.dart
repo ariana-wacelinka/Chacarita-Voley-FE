@@ -52,6 +52,9 @@ class _UsersPageState extends State<UsersPage> {
           page: 0,
           size: _usersPerPage,
         );
+        _totalElementsFuture = _repository.getTotalUsers(
+          searchQuery: value.isEmpty ? null : value,
+        );
       });
     });
   }

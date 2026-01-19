@@ -23,19 +23,13 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
-  // INCLUYE player.id y professor.id para que TeamFormWidget funcione correctamente
+  // NO incluye relaciones para evitar N+1 y timeout
   static const String _personFieldsMinimal = r'''
     id
     dni
     name
     surname
     roles
-    player {
-      id
-    }
-    professor {
-      id
-    }
   ''';
 
   // Query completa para DETALLE (ver/editar usuario)
@@ -175,10 +169,10 @@ class UserRepository implements UserRepositoryInterface {
       // Primero intentar match exacto
       final exact = await execute({
         'page': page ?? 0,
-        'size': size ?? 100,
+        'size': size ?? 12,
         'dni': query,
-        'name': null,
-        'surname': null,
+        'name': '',
+        'surname': '',
         'role': role,
       });
 
@@ -192,10 +186,10 @@ class UserRepository implements UserRepositoryInterface {
       // Fallback LOCAL: traer todos y filtrar client-side
       final all = await execute({
         'page': 0,
-        'size': 1000, // Traer suficientes para filtrar localmente
-        'dni': null,
-        'name': null,
-        'surname': null,
+        'size': 12,
+        'dni': '',
+        'name': '',
+        'surname': '',
         'role': role,
       });
 
@@ -212,10 +206,10 @@ class UserRepository implements UserRepositoryInterface {
 
       final all = await execute({
         'page': 0,
-        'size': 1000,
-        'dni': null,
-        'name': null,
-        'surname': null,
+        'size': 12,
+        'dni': '',
+        'name': '',
+        'surname': '',
         'role': role,
       });
 
@@ -238,10 +232,10 @@ class UserRepository implements UserRepositoryInterface {
       // Traer resultados base (una sola vez)
       final all = await execute({
         'page': 0,
-        'size': 1000,
-        'dni': null,
-        'name': null,
-        'surname': null,
+        'size': 12,
+        'dni': '',
+        'name': '',
+        'surname': '',
         'role': role,
       });
 
@@ -262,10 +256,10 @@ class UserRepository implements UserRepositoryInterface {
 
     return execute({
       'page': page ?? 0,
-      'size': size ?? 100,
-      'dni': null,
-      'name': null,
-      'surname': null,
+      'size': size ?? 12,
+      'dni': '',
+      'name': '',
+      'surname': '',
       'role': role,
     });
   }
@@ -299,8 +293,8 @@ class UserRepository implements UserRepositoryInterface {
         'page': 0,
         'size': 1,
         'dni': query,
-        'name': null,
-        'surname': null,
+        'name': '',
+        'surname': '',
         'role': role,
       });
 
@@ -317,8 +311,15 @@ class UserRepository implements UserRepositoryInterface {
       return users.length;
     }
 
-    // Sin query, devolver 0
-    return 0;
+    // Sin query, consultar total real
+    return execute({
+      'page': 0,
+      'size': 1,
+      'dni': '',
+      'name': '',
+      'surname': '',
+      'role': role,
+    });
   }
 
   @override
