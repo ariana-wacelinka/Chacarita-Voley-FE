@@ -210,6 +210,17 @@ class AppTheme {
         borderSide: BorderSide(color: _lightTokens.stroke),
       ),
     ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: _lightScheme.surface,
+      hourMinuteColor: _lightScheme.surface,
+      hourMinuteTextColor: const Color(0xFF0C0C0C),
+      dayPeriodColor: _lightScheme.primary,
+      dayPeriodTextColor: const Color(0xFF0C0C0C),
+      dialHandColor: _lightScheme.primary,
+      dialBackgroundColor: _lightTokens.lightGray,
+      dialTextColor: _lightTokens.text,
+      entryModeIconColor: const Color(0xFF0C0C0C),
+    ),
     extensions: [_lightTokens],
   );
 
@@ -296,6 +307,17 @@ class AppTheme {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: _darkTokens.stroke),
       ),
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: _darkScheme.surface,
+      hourMinuteColor: _darkScheme.surface,
+      hourMinuteTextColor: Colors.white,
+      dayPeriodColor: _darkScheme.primary,
+      dayPeriodTextColor: Colors.white,
+      dialHandColor: _darkScheme.primary,
+      dialBackgroundColor: _darkTokens.card1,
+      dialTextColor: _darkTokens.text,
+      entryModeIconColor: _darkScheme.onSurface,
     ),
     extensions: [_darkTokens],
   );

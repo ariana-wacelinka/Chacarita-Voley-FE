@@ -37,7 +37,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   String? _selectedFrequency;
   bool _isSaving = false;
 
-  String _recipientFilter = 'todos';
+  String? _recipientFilter;
 
   Set<String> _selectedTeams = {};
   Set<String> _selectedPlayers = {};
@@ -836,17 +836,29 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
           _buildFilterChip(
             label: 'Seleccionar todos',
             isSelected: _recipientFilter == 'todos',
-            onTap: () => setState(() => _recipientFilter = 'todos'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'todos'
+                  ? null
+                  : 'todos',
+            ),
           ),
           _buildFilterChip(
             label: 'Cuota vencida',
             isSelected: _recipientFilter == 'vencida',
-            onTap: () => setState(() => _recipientFilter = 'vencida'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'vencida'
+                  ? null
+                  : 'vencida',
+            ),
           ),
           _buildFilterChip(
             label: 'Cuota pendiente',
             isSelected: _recipientFilter == 'pendiente',
-            onTap: () => setState(() => _recipientFilter = 'pendiente'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'pendiente'
+                  ? null
+                  : 'pendiente',
+            ),
           ),
         ],
       ),

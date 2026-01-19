@@ -61,6 +61,19 @@ enum Frequency {
       orElse: () => Frequency.WEEKLY,
     );
   }
+
+  static Frequency fromSpanish(String spanish) {
+    switch (spanish) {
+      case 'Diaria':
+        return Frequency.DAILY;
+      case 'Semanal':
+        return Frequency.WEEKLY;
+      case 'Mensual':
+        return Frequency.MONTHLY;
+      default:
+        return Frequency.WEEKLY;
+    }
+  }
 }
 
 enum DestinationType {

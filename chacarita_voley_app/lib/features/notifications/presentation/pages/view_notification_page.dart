@@ -362,7 +362,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               Icon(Symbols.person, color: context.tokens.text, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Destinatarios (${destinations.length})',
+                'Destinatarios',
                 style: TextStyle(
                   color: context.tokens.text,
                   fontSize: 18,
@@ -377,7 +377,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               'Sin destinatarios',
               style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
             )
-          else
+          else ...[
             Container(
               constraints: const BoxConstraints(maxHeight: 300),
               decoration: BoxDecoration(
@@ -422,6 +422,14 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
                 },
               ),
             ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                '1-${destinations.length} de ${destinations.length}',
+                style: TextStyle(color: context.tokens.text, fontSize: 14),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -462,8 +470,11 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              context.push('/notifications/${widget.notificationId}/edit');
+            onPressed: () async {
+              await context.push(
+                '/notifications/${widget.notificationId}/edit',
+              );
+              _loadNotification();
             },
             icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
             label: const Text(

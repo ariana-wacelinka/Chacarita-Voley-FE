@@ -445,14 +445,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               color: context.tokens.placeholder,
                               fontSize: 11,
                             ),
-                          )
-                        else if (notification.scheduledAt != null)
-                          Text(
-                            'Fecha: ${notification.scheduledAt!.day.toString().padLeft(2, '0')}/${notification.scheduledAt!.month.toString().padLeft(2, '0')}/${notification.scheduledAt!.year.toString().substring(2)}',
-                            style: TextStyle(
-                              color: context.tokens.placeholder,
-                              fontSize: 11,
-                            ),
                           ),
                       ],
                     ),

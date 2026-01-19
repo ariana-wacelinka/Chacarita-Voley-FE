@@ -190,7 +190,7 @@ class NotificationRepository {
     final input = {
       'title': title,
       'message': message,
-      'notificationSendMode': sendMode.name,
+      'sendMode': sendMode.name,
       'destinations': destinationsInput,
     };
 
@@ -234,7 +234,11 @@ class NotificationRepository {
     ''';
 
     final result = await _mutate(
-      MutationOptions(document: gql(mutation), variables: {'input': input}),
+      MutationOptions(
+        document: gql(mutation),
+        variables: {'input': input},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
     );
 
     if (result.hasException) {
@@ -251,9 +255,109 @@ class NotificationRepository {
     );
   }
 
+  Future<NotificationModel> updateNotification({
+    required String id,
+    required String title,
+    required String message,
+    required SendMode sendMode,
+    String? time,
+    String? date,
+    Frequency? frequency,
+    required List<NotificationDestinationInput> destinations,
+  }) async {
+    final destinationsInput = destinations.map((d) {
+      final dest = {'notificationDestinationType': d.type.name};
+      if (d.referenceId != null) {
+        dest['referenceId'] = d.referenceId!;
+      }
+      return dest;
+    }).toList();
+
+    final input = {
+      'title': title,
+      'message': message,
+      'sendMode': sendMode.name,
+      'destinations': destinationsInput,
+    };
+
+    if (time != null && time.isNotEmpty) {
+      input['time'] = time;
+    }
+
+    if (date != null && date.isNotEmpty) {
+      input['date'] = date;
+    }
+
+    if (frequency != null) {
+      input['frequency'] = frequency.name;
+    }
+
+    final mutation = '''
+      mutation UpdateNotification(\$id: ID!, \$input: UpdateNotificationInput!) {
+        updateNotification(id: \$id, input: \$input) {
+          id
+          title
+          message
+          sendMode
+          scheduledAt
+          repeatable
+          frequency
+          createdAt
+          destinations {
+            id
+            type
+            referenceId
+          }
+          deliveries {
+            id
+            status
+            sentAt
+            recipientId
+            attemptedAt
+          }
+        }
+      }
+    ''';
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(mutation),
+        variables: {'id': id, 'input': input},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final notificationData = result.data?['updateNotification'];
+    if (notificationData == null) {
+      throw Exception('No se pudo actualizar la notificación');
+    }
+
+    return _mapNotificationFromBackend(
+      notificationData as Map<String, dynamic>,
+    );
+  }
+
   Future<void> deleteNotification(String id) async {
-    // TODO: Implementar mutation de delete cuando esté disponible
-    await Future.delayed(const Duration(milliseconds: 200));
+    final mutation = '''
+      mutation DeleteNotification(\$id: ID!) {
+        deleteNotification(id: \$id)
+      }
+    ''';
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(mutation),
+        variables: {'id': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
   }
 }
 

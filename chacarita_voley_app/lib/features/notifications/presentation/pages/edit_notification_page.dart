@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../domain/entities/notification.dart';
 import '../../../teams/data/repositories/team_repository.dart';
 import '../../../teams/domain/entities/team_list_item.dart';
 import '../../../users/data/repositories/user_repository.dart';
@@ -39,7 +40,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   String? _selectedFrequency;
   bool _isSaving = false;
 
-  String _recipientFilter = 'todos';
+  String? _recipientFilter;
 
   Set<String> _selectedTeams = {};
   Set<String> _selectedPlayers = {};
@@ -245,8 +246,88 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
     setState(() => _isSaving = true);
 
     try {
-      // Aquí irá la lógica real de actualización
-      await Future.delayed(const Duration(seconds: 2));
+      SendMode sendMode = SendMode.NOW;
+      Frequency? frequency;
+      String? time;
+      String? date;
+
+      if (_isProgrammed) {
+        sendMode = _repeatNotification
+            ? SendMode.SCHEDULED
+            : SendMode.SCHEDULED;
+        if (_repeatNotification && _selectedFrequency != null) {
+          frequency = Frequency.fromSpanish(_selectedFrequency!);
+        }
+        if (_scheduledTime != null) {
+          time =
+              '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}';
+        }
+        if (_scheduledDate != null) {
+          date =
+              '${_scheduledDate!.year}-${_scheduledDate!.month.toString().padLeft(2, '0')}-${_scheduledDate!.day.toString().padLeft(2, '0')}';
+        }
+      }
+
+      // Construir destinations según la selección
+      List<NotificationDestinationInput> destinations = [];
+
+      if (_recipientFilter == 'todos') {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.ALL_PLAYERS,
+            referenceId: null,
+          ),
+        );
+      } else if (_recipientFilter == 'pendiente') {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.DUES_PENDING,
+            referenceId: null,
+          ),
+        );
+      } else if (_recipientFilter == 'vencida') {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.DUES_OVERDUE,
+            referenceId: null,
+          ),
+        );
+      }
+
+      // Agregar equipos seleccionados
+      for (final teamId in _selectedTeams) {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.TEAM,
+            referenceId: teamId,
+          ),
+        );
+      }
+
+      // Agregar jugadores seleccionados
+      for (final playerId in _selectedPlayers) {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.PLAYER,
+            referenceId: playerId,
+          ),
+        );
+      }
+
+      if (destinations.isEmpty) {
+        throw Exception('Debés seleccionar al menos un destinatario');
+      }
+
+      await _repository.updateNotification(
+        id: widget.notificationId,
+        title: _titleController.text,
+        message: _messageController.text,
+        sendMode: sendMode,
+        time: time,
+        date: date,
+        frequency: frequency,
+        destinations: destinations,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -836,17 +917,29 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           _buildFilterChip(
             label: 'Seleccionar todos',
             isSelected: _recipientFilter == 'todos',
-            onTap: () => setState(() => _recipientFilter = 'todos'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'todos'
+                  ? null
+                  : 'todos',
+            ),
           ),
           _buildFilterChip(
             label: 'Cuota vencida',
             isSelected: _recipientFilter == 'vencida',
-            onTap: () => setState(() => _recipientFilter = 'vencida'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'vencida'
+                  ? null
+                  : 'vencida',
+            ),
           ),
           _buildFilterChip(
             label: 'Cuota pendiente',
             isSelected: _recipientFilter == 'pendiente',
-            onTap: () => setState(() => _recipientFilter = 'pendiente'),
+            onTap: () => setState(
+              () => _recipientFilter = _recipientFilter == 'pendiente'
+                  ? null
+                  : 'pendiente',
+            ),
           ),
         ],
       ),
