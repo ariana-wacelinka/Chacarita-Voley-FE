@@ -21,6 +21,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _isLoading = true;
   int _currentPage = 1;
   final int _itemsPerPage = 25;
+  int _totalPages = 1;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
 
   @override
   void initState() {
@@ -37,11 +40,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      final notifications = await _repository.getNotifications();
+      final result = await _repository.getNotifications(
+        page: _currentPage - 1, // Backend usa 0-based indexing
+        size: _itemsPerPage,
+      );
       if (!mounted) return;
       setState(() {
-        _notifications = notifications;
-        _filteredNotifications = notifications;
+        _notifications = result.notifications;
+        _filteredNotifications = result.notifications;
+        _totalPages = result.totalPages;
+        _hasNext = result.hasNext;
+        _hasPrevious = result.hasPrevious;
         _isLoading = false;
       });
     } catch (e) {
@@ -188,17 +197,27 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  int get _totalPages => (_filteredNotifications.length / _itemsPerPage).ceil();
+  void _nextPage() {
+    if (_hasNext) {
+      setState(() {
+        _currentPage++;
+      });
+      _loadNotifications();
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 1 && _hasPrevious) {
+      setState(() {
+        _currentPage--;
+      });
+      _loadNotifications();
+    }
+  }
 
   List<NotificationModel> get _paginatedNotifications {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage;
-    return _filteredNotifications.sublist(
-      startIndex,
-      endIndex > _filteredNotifications.length
-          ? _filteredNotifications.length
-          : endIndex,
-    );
+    // Ahora los datos ya vienen paginados del backend
+    return _filteredNotifications;
   }
 
   @override
@@ -533,11 +552,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildPagination() {
-    final startItem = (_currentPage - 1) * _itemsPerPage + 1;
-    final endItem = _currentPage * _itemsPerPage > _filteredNotifications.length
-        ? _filteredNotifications.length
-        : _currentPage * _itemsPerPage;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -548,19 +562,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            onPressed: _currentPage > 1
-                ? () => setState(() => _currentPage--)
-                : null,
+            onPressed: _hasPrevious ? _previousPage : null,
             icon: Icon(
               Symbols.chevron_left,
-              color: _currentPage > 1
+              color: _hasPrevious
                   ? context.tokens.text
                   : context.tokens.text.withOpacity(0.3),
             ),
           ),
           const SizedBox(width: 16),
           Text(
-            '$startItem-$endItem de ${_filteredNotifications.length}',
+            'Página $_currentPage de $_totalPages',
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 14,
@@ -569,12 +581,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           const SizedBox(width: 16),
           IconButton(
-            onPressed: _currentPage < _totalPages
-                ? () => setState(() => _currentPage++)
-                : null,
+            onPressed: _hasNext ? _nextPage : null,
             icon: Icon(
               Symbols.chevron_right,
-              color: _currentPage < _totalPages
+              color: _hasNext
                   ? context.tokens.text
                   : context.tokens.text.withOpacity(0.3),
             ),

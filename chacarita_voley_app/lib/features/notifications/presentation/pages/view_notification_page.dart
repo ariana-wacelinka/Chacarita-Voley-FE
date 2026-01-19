@@ -30,9 +30,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final notifications = await _repository.getNotifications();
+      final result = await _repository.getNotifications();
       final notification =
-          notifications.firstWhere((n) => n.id == widget.notificationId);
+          result.notifications.firstWhere((n) => n.id == widget.notificationId);
 
       // Mock de destinatarios basado en la imagen
       _recipientsList = [

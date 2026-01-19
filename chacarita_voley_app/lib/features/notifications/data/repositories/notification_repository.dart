@@ -1,126 +1,175 @@
+import 'package:graphql_flutter/graphql_flutter.dart';
+import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/notification.dart';
 
 class NotificationRepository {
-  Future<List<NotificationModel>> getNotifications() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  Future<QueryResult> _query(QueryOptions options) {
+    return GraphQLClientFactory.client.query(options);
+  }
 
-    final now = DateTime.now();
+  Future<QueryResult> _mutate(MutationOptions options) {
+    return GraphQLClientFactory.client.mutate(options);
+  }
 
-    return [
-      NotificationModel(
-        id: '1',
-        title: 'Pago de cuota',
-        message: 'Recordatorio para el pago de la cuota mensual',
-        sendMode: SendMode.SCHEDULED,
-        createdAt: now.subtract(const Duration(days: 2)),
-        scheduledAt: DateTime(now.year, now.month, 1, 9, 0),
-        repeatable: true,
-        frequency: Frequency.MONTHLY,
-        destinations: [
-          NotificationDestination(
-            id: '1',
-            referenceId: null,
-            type: DestinationType.DUES_PENDING,
-          ),
-        ],
-        deliveries: [],
+  String _getAllNotificationsQuery() =>
+      '''
+    query GetAllNotifications(\$page: Int!, \$size: Int!) {
+      getAllNotifications(page: \$page, size: \$size) {
+        totalPages
+        totalElements
+        pageSize
+        pageNumber
+        hasNext
+        hasPrevious
+        content {
+          id
+          title
+          scheduledAt
+          repeatable
+          frequency
+          destinations {
+            id
+          }
+        }
+      }
+    }
+  ''';
+
+  Future<NotificationPageResult> getNotifications({
+    int page = 0,
+    int size = 10,
+  }) async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllNotificationsQuery()),
+        variables: {
+          'page': page,
+          'size': size,
+        },
+        fetchPolicy: FetchPolicy.cacheAndNetwork,
       ),
-      NotificationModel(
-        id: '2',
-        title: 'Entrenamiento cancelado',
-        message: 'El entrenamiento del jueves ha sido cancelado',
-        sendMode: SendMode.NOW,
-        createdAt: now.subtract(const Duration(days: 1)),
-        scheduledAt: null,
-        repeatable: false,
-        frequency: null,
-        destinations: [
-          NotificationDestination(
-            id: '2',
-            referenceId: 'team-1',
-            type: DestinationType.TEAM,
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final notificationsData = result.data?['getAllNotifications'];
+    if (notificationsData == null) {
+      return NotificationPageResult(
+        notifications: [],
+        totalPages: 0,
+        totalElements: 0,
+        currentPage: page,
+        hasNext: false,
+        hasPrevious: false,
+      );
+    }
+
+    final content = (notificationsData['content'] as List<dynamic>?) ?? const [];
+    final notifications = content
+        .whereType<Map<String, dynamic>>()
+        .map((data) => _mapNotificationFromBackend(data))
+        .toList();
+
+    return NotificationPageResult(
+      notifications: notifications,
+      totalPages: notificationsData['totalPages'] as int? ?? 0,
+      totalElements: notificationsData['totalElements'] as int? ?? 0,
+      currentPage: notificationsData['pageNumber'] as int? ?? page,
+      hasNext: notificationsData['hasNext'] as bool? ?? false,
+      hasPrevious: notificationsData['hasPrevious'] as bool? ?? false,
+    );
+  }
+
+  NotificationModel _mapNotificationFromBackend(Map<String, dynamic> data) {
+    // Parsear scheduledAt
+    DateTime? scheduledAt;
+    final scheduledAtStr = data['scheduledAt'] as String?;
+    if (scheduledAtStr != null && scheduledAtStr.isNotEmpty) {
+      try {
+        scheduledAt = DateTime.parse(scheduledAtStr);
+      } catch (e) {
+        // Si falla el parsing, usar null
+        scheduledAt = null;
+      }
+    }
+
+    // Mapear frequency
+    Frequency? frequency;
+    final frequencyStr = data['frequency'] as String?;
+    if (frequencyStr != null) {
+      switch (frequencyStr) {
+        case 'DAILY':
+          frequency = Frequency.DAILY;
+          break;
+        case 'WEEKLY':
+          frequency = Frequency.WEEKLY;
+          break;
+        case 'BIWEEKLY':
+          frequency = Frequency.BIWEEKLY;
+          break;
+        case 'MONTHLY':
+          frequency = Frequency.MONTHLY;
+          break;
+      }
+    }
+
+    // Mapear destinations
+    final destinationsData = (data['destinations'] as List<dynamic>?) ?? [];
+    final destinations = destinationsData
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (dest) => NotificationDestination(
+            id: dest['id'] as String? ?? '',
+            referenceId: null, // No disponible en la query actual
+            type: DestinationType.ALL_PLAYERS, // Default, se puede mejorar
           ),
-        ],
-        deliveries: [
-          NotificationDelivery(
-            id: '1',
-            recipientId: 'user-1',
-            status: DeliveryStatus.DELIVERED,
-            attemptedAt: now.subtract(const Duration(days: 1, hours: 2)),
-            sentAt: now.subtract(const Duration(days: 1, hours: 2)),
-          ),
-        ],
-      ),
-      NotificationModel(
-        id: '3',
-        title: 'Reunión de equipo',
-        message: 'Reunión importante este viernes a las 19:00',
-        sendMode: SendMode.SCHEDULED,
-        createdAt: now,
-        scheduledAt: DateTime(now.year, now.month, now.day + 2, 18, 0),
-        repeatable: true,
-        frequency: Frequency.WEEKLY,
-        destinations: [
-          NotificationDestination(
-            id: '3',
-            referenceId: null,
-            type: DestinationType.ALL_PLAYERS,
-          ),
-        ],
-        deliveries: [],
-      ),
-      NotificationModel(
-        id: '4',
-        title: 'Cuotas vencidas',
-        message: 'Tienes cuotas pendientes de pago',
-        sendMode: SendMode.SCHEDULED,
-        createdAt: now.subtract(const Duration(hours: 3)),
-        scheduledAt: DateTime(now.year, now.month, 15, 10, 0),
-        repeatable: true,
-        frequency: Frequency.WEEKLY,
-        destinations: [
-          NotificationDestination(
-            id: '4',
-            referenceId: null,
-            type: DestinationType.DUES_OVERDUE,
-          ),
-        ],
-        deliveries: [],
-      ),
-      NotificationModel(
-        id: '5',
-        title: 'Actualización de horarios',
-        message: 'Se han actualizado los horarios de entrenamiento',
-        sendMode: SendMode.NOW,
-        createdAt: now,
-        scheduledAt: null,
-        repeatable: false,
-        frequency: null,
-        destinations: [
-          NotificationDestination(
-            id: '5',
-            referenceId: 'team-2',
-            type: DestinationType.TEAM,
-          ),
-          NotificationDestination(
-            id: '6',
-            referenceId: 'team-3',
-            type: DestinationType.TEAM,
-          ),
-        ],
-        deliveries: [],
-      ),
-    ];
+        )
+        .toList();
+
+    return NotificationModel(
+      id: data['id'] as String? ?? '',
+      title: data['title'] as String? ?? '',
+      message: '', // No disponible en la query actual
+      sendMode: scheduledAt != null ? SendMode.SCHEDULED : SendMode.NOW,
+      createdAt: DateTime.now(), // No disponible en la query actual
+      scheduledAt: scheduledAt,
+      repeatable: data['repeatable'] as bool? ?? false,
+      frequency: frequency,
+      destinations: destinations,
+      deliveries: [], // No disponible en la query actual
+    );
   }
 
   Future<void> deleteNotification(String id) async {
+    // TODO: Implementar mutation de delete cuando esté disponible
     await Future.delayed(const Duration(milliseconds: 200));
   }
 
   Future<NotificationModel> createNotification(
     NotificationModel notification,
   ) async {
+    // TODO: Implementar mutation de create cuando esté disponible
     await Future.delayed(const Duration(milliseconds: 500));
     return notification;
   }
+}
+
+class NotificationPageResult {
+  final List<NotificationModel> notifications;
+  final int totalPages;
+  final int totalElements;
+  final int currentPage;
+  final bool hasNext;
+  final bool hasPrevious;
+
+  NotificationPageResult({
+    required this.notifications,
+    required this.totalPages,
+    required this.totalElements,
+    required this.currentPage,
+    required this.hasNext,
+    required this.hasPrevious,
+  });
 }

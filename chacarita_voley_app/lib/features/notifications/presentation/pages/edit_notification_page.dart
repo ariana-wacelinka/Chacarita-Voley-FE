@@ -68,8 +68,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final notifications = await _repository.getNotifications();
-      final notification = notifications.firstWhere(
+      final result = await _repository.getNotifications();
+      final notification = result.notifications.firstWhere(
         (n) => n.id == widget.notificationId,
       );
 
