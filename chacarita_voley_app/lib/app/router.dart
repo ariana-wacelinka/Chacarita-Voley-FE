@@ -18,6 +18,7 @@ import '../features/trainings/presentation/pages/view_training_page.dart';
 import '../features/trainings/presentation/pages/edit_training_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 import '../features/notifications/presentation/pages/new_notification_page.dart';
+import '../features/notifications/presentation/pages/new_notification_for_user_page.dart';
 import '../features/notifications/presentation/pages/view_notification_page.dart';
 import '../features/notifications/presentation/pages/edit_notification_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
@@ -107,6 +108,14 @@ final appRouter = GoRouter(
       name: 'users-attendance',
       builder: (_, state) =>
           AttendanceHistoryPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/users/:id/notification',
+      name: 'users-notification',
+      builder: (_, state) => NewNotificationForUserPage(
+        userId: state.pathParameters['id']!,
+        userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+      ),
     ),
     GoRoute(
       path: '/teams/register',

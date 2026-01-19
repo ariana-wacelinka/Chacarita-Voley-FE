@@ -162,7 +162,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             'Usuario no encontrado',
             style: TextStyle(
               color: context.tokens.text,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -178,7 +178,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 'Usuario no encontrado',
                 style: TextStyle(
                   color: context.tokens.text,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -201,7 +201,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           _user!.nombreCompleto,
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -535,7 +535,11 @@ class _ViewUserPageState extends State<ViewUserPage> {
             context,
             icon: Symbols.notifications_active,
             title: 'Enviar notificación',
-            onTap: () {},
+            onTap: () {
+              context.push(
+                '/users/${widget.userId}/notification?userName=${Uri.encodeComponent('${_user!.nombre} ${_user!.apellido}')}',
+              );
+            },
           ),
           const SizedBox(height: 8),
           _buildActionItem(
