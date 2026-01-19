@@ -165,7 +165,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al eliminar: $e'),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -203,13 +203,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
           await context.push('/notifications/new');
           _loadNotifications();
         },
-        backgroundColor: context.tokens.redToRosita,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Symbols.add, color: Colors.white),
       ),
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: context.tokens.redToRosita,
+                color: Theme.of(context).colorScheme.primary,
               ),
             )
           : Column(
@@ -397,13 +397,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               Icon(
                                 Symbols.delete,
                                 size: 20,
-                                color: context.tokens.redToRosita,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Eliminar',
                                 style: TextStyle(
-                                  color: context.tokens.redToRosita,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             ],

@@ -123,7 +123,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: context.tokens.redToRosita,
+                              color: Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                           ),
@@ -184,7 +184,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: context.tokens.redToRosita,
+                              color: Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                           ),
@@ -247,7 +247,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: context.tokens.redToRosita,
+                              color: Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                           ),
@@ -286,7 +286,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _changePassword,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.tokens.redToRosita,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

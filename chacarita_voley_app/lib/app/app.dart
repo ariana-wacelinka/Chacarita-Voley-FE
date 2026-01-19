@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_provider.dart';
 import './router.dart';
 
 class MyApp extends StatelessWidget {
@@ -7,13 +9,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Chacarita Voley',
-      debugShowCheckedModeBanner: false, // Quitar banner de debug
-      theme: AppTheme.light, // Tema claro como principal
-      darkTheme: AppTheme.dark, // Tema oscuro disponible
-      themeMode: ThemeMode.light, // Forzar tema claro por defecto
-      routerConfig: appRouter,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp.router(
+          title: 'Chacarita Voley',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeProvider.themeMode,
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

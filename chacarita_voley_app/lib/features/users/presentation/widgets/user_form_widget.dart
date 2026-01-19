@@ -79,7 +79,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -154,7 +156,11 @@ class _UserFormWidgetState extends State<UserFormWidget> {
               ),
             ),
             if (isSelected)
-              Icon(Symbols.check, color: context.tokens.redToRosita, size: 20),
+              Icon(
+                Symbols.check,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
           ],
         ),
       ),
@@ -182,14 +188,14 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   children: [
                     Icon(
                       Symbols.shield,
-                      color: context.tokens.redToRosita,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Tipo de Usuario',
                       style: TextStyle(
-                        color: context.tokens.redToRosita,
+                        color: context.tokens.text,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -269,7 +275,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide(
-                                  color: context.tokens.redToRosita,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
@@ -319,7 +325,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide(
-                                  color: context.tokens.redToRosita,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
@@ -364,7 +370,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: context.tokens.redToRosita),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -405,7 +413,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: context.tokens.redToRosita),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     suffixIcon: Icon(
                       Symbols.calendar_month,
@@ -447,7 +457,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: context.tokens.redToRosita),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -533,7 +545,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: context.tokens.redToRosita),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -575,7 +589,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: context.tokens.redToRosita),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -599,7 +615,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
             child: ElevatedButton(
               onPressed: _submitForm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../app/theme/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -10,21 +12,11 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool isDarkMode = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        isDarkMode = Theme.of(context).brightness == Brightness.dark;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -49,11 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   trailing: Switch(
                     value: isDarkMode,
                     onChanged: (value) {
-                      setState(() {
-                        isDarkMode = value;
-                      });
-
-                      _changeTheme(value);
+                      themeProvider.toggleTheme(value);
                     },
                   ),
                 ),
@@ -174,8 +162,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
-  void _changeTheme(bool isDark) {}
 }
 
 class _SettingItem {

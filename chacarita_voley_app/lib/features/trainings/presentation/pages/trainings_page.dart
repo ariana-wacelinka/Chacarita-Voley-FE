@@ -139,7 +139,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     onPressed: () => Navigator.pop(context, selected),
                     child: Text(
                       'Listo',
-                      style: TextStyle(color: context.tokens.redToRosita),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -180,7 +182,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   ? Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          context.tokens.redToRosita,
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     )
@@ -205,7 +207,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
               context.push('/trainings/create');
             }
           },
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -241,7 +243,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
             children: [
               Icon(
                 Symbols.filter_alt,
-                color: context.tokens.redToRosita,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
               const SizedBox(width: 8),
@@ -489,10 +491,12 @@ class _TrainingsPageState extends State<TrainingsPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? context.tokens.redToRosita : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
           border: Border.all(
             color: isSelected
-                ? context.tokens.redToRosita
+                ? Theme.of(context).colorScheme.primary
                 : context.tokens.stroke,
           ),
           borderRadius: BorderRadius.circular(20),
@@ -629,7 +633,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         color: training.status == TrainingStatus.proximo
                             ? context.tokens.green.withOpacity(0.1)
                             : training.status == TrainingStatus.completado
-                            ? context.tokens.redToRosita.withOpacity(0.1)
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -639,7 +645,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           color: training.status == TrainingStatus.proximo
                               ? context.tokens.green
                               : training.status == TrainingStatus.completado
-                              ? context.tokens.redToRosita
+                              ? Theme.of(context).colorScheme.primary
                               : context.tokens.placeholder,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -685,7 +691,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           },
                           child: Text(
                             'Eliminar',
-                            style: TextStyle(color: context.tokens.redToRosita),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -832,7 +840,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
             },
             child: Text(
               'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],

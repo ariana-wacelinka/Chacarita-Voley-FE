@@ -90,7 +90,9 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     onPressed: () => Navigator.pop(context, selected),
                     child: Text(
                       'Listo',
-                      style: TextStyle(color: context.tokens.redToRosita),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -174,7 +176,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Seleccioná un equipo para el entrenamiento'),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -259,7 +261,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
               ),
             ],
           ),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -318,7 +320,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                   child: FilledButton(
                     onPressed: _submit,
                     style: FilledButton.styleFrom(
-                      backgroundColor: context.tokens.redToRosita,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -671,7 +673,7 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? context.tokens.redToRosita
+                        ? Theme.of(context).colorScheme.primary
                         : context.tokens.card1,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: context.tokens.stroke),

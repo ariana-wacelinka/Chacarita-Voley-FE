@@ -55,7 +55,8 @@ class _NewNotificationForUserPageState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
+            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -78,7 +79,7 @@ class _NewNotificationForUserPageState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
+            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary),
           ),
           child: child!,
         );
@@ -101,7 +102,7 @@ class _NewNotificationForUserPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Debe seleccionar fecha y hora'),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -111,7 +112,7 @@ class _NewNotificationForUserPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Debe seleccionar una frecuencia'),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -176,7 +177,7 @@ class _NewNotificationForUserPageState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -252,7 +253,7 @@ class _NewNotificationForUserPageState
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _createNotification,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.tokens.redToRosita,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -327,7 +328,7 @@ class _NewNotificationForUserPageState
               'Enviar ahora',
               style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
-            activeColor: context.tokens.redToRosita,
+            activeColor: Theme.of(context).colorScheme.primary,
             contentPadding: EdgeInsets.zero,
           ),
           RadioListTile<bool>(
@@ -340,7 +341,7 @@ class _NewNotificationForUserPageState
               'Programar envío',
               style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
-            activeColor: context.tokens.redToRosita,
+            activeColor: Theme.of(context).colorScheme.primary,
             contentPadding: EdgeInsets.zero,
           ),
         ],
@@ -415,7 +416,7 @@ class _NewNotificationForUserPageState
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: context.tokens.redToRosita,
+                            color: Theme.of(context).colorScheme.primary,
                             width: 2,
                           ),
                         ),
@@ -464,7 +465,7 @@ class _NewNotificationForUserPageState
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: context.tokens.redToRosita,
+                            color: Theme.of(context).colorScheme.primary,
                             width: 2,
                           ),
                         ),
@@ -494,7 +495,7 @@ class _NewNotificationForUserPageState
               'Repetir notificación',
               style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
-            activeColor: context.tokens.redToRosita,
+            activeColor: Theme.of(context).colorScheme.primary,
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
           ),
@@ -524,7 +525,7 @@ class _NewNotificationForUserPageState
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
@@ -600,7 +601,7 @@ class _NewNotificationForUserPageState
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: context.tokens.redToRosita,
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),
@@ -647,7 +648,7 @@ class _NewNotificationForUserPageState
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: context.tokens.redToRosita,
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),

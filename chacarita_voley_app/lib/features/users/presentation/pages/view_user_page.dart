@@ -70,9 +70,9 @@ class _ViewUserPageState extends State<ViewUserPage> {
       case EstadoCuota.alDia:
         return context.tokens.green;
       case EstadoCuota.vencida:
-        return context.tokens.redToRosita;
+        return Theme.of(context).colorScheme.primary;
       case EstadoCuota.ultimoPago:
-        return context.tokens.redToRosita;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -101,7 +101,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-              context.tokens.redToRosita,
+              Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -244,12 +244,16 @@ class _ViewUserPageState extends State<ViewUserPage> {
         children: [
           Row(
             children: [
-              Icon(Symbols.shield, color: context.tokens.redToRosita, size: 20),
+              Icon(
+                Symbols.shield,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Tipo de Usuario y Cuota',
                 style: TextStyle(
-                  color: context.tokens.redToRosita,
+                  color: context.tokens.text,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -289,7 +293,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             decoration: BoxDecoration(
               color: _user!.estadoCuota == EstadoCuota.alDia
                   ? context.tokens.green.withOpacity(0.1)
-                  : context.tokens.redToRosita.withOpacity(0.1),
+                  : Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: _getEstadoCuotaColor(context, _user!.estadoCuota),
@@ -714,7 +718,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -751,7 +755,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],
@@ -775,7 +779,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Error al eliminar usuario'),
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }

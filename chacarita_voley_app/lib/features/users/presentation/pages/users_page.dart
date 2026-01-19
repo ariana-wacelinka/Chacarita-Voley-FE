@@ -118,7 +118,7 @@ class _UsersPageState extends State<UsersPage> {
                   ),
                 ],
               ),
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -190,7 +190,7 @@ class _UsersPageState extends State<UsersPage> {
                   const SizedBox(width: 12),
                   Container(
                     decoration: BoxDecoration(
-                      color: context.tokens.redToRosita,
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
@@ -210,7 +210,7 @@ class _UsersPageState extends State<UsersPage> {
                     return Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          context.tokens.redToRosita,
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     );
@@ -512,7 +512,7 @@ class _UsersPageState extends State<UsersPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go('/users/register'),
-        backgroundColor: context.tokens.redToRosita,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Symbols.add, color: Colors.white),
       ),
     );
@@ -529,7 +529,7 @@ class _UsersPageState extends State<UsersPage> {
       case EstadoCuota.vencida:
         return Icon(
           Symbols.cancel,
-          color: context.tokens.redToRosita,
+          color: Theme.of(context).colorScheme.primary,
           size: 20,
         );
       case EstadoCuota.ultimoPago:

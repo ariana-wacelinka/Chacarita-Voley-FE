@@ -17,7 +17,7 @@ class AppDrawer extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
-              color: context.tokens.redToRosita,
+              color: Theme.of(context).colorScheme.primary,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(
                             Icons.sports_volleyball,
-                            color: context.tokens.redToRosita,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 30,
                           );
                         },

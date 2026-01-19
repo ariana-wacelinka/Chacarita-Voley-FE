@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
                     title: 'Pagos vencidos',
                     value: '999',
                     icon: Symbols.warning,
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],

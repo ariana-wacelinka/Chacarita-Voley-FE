@@ -163,7 +163,7 @@ class _TeamsPageState extends State<TeamsPage> {
                         ),
                       ],
                     ),
-                    backgroundColor: context.tokens.redToRosita,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -175,7 +175,7 @@ class _TeamsPageState extends State<TeamsPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
             child: const Text(
               'Eliminar',
@@ -197,10 +197,10 @@ class _TeamsPageState extends State<TeamsPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: context.tokens.card1,
+                color: context.tokens.background,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: context.tokens.background,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -247,7 +247,7 @@ class _TeamsPageState extends State<TeamsPage> {
                     return Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          context.tokens.redToRosita,
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     );
@@ -482,7 +482,9 @@ class _TeamsPageState extends State<TeamsPage> {
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        decoration: BoxDecoration(color: context.tokens.card1),
+                        decoration: BoxDecoration(
+                          color: context.tokens.background,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -566,7 +568,7 @@ class _TeamsPageState extends State<TeamsPage> {
             });
           }
         },
-        backgroundColor: context.tokens.redToRosita,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Symbols.group_add, color: Colors.white),
       ),
     );

@@ -137,7 +137,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
               ),
             ],
           ),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -172,7 +172,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
           ? Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  context.tokens.redToRosita,
+                  Theme.of(context).colorScheme.primary,
                 ),
               ),
             )
@@ -197,7 +197,9 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
                         child: FilledButton(
                           onPressed: _submit,
                           style: FilledButton.styleFrom(
-                            backgroundColor: context.tokens.redToRosita,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),

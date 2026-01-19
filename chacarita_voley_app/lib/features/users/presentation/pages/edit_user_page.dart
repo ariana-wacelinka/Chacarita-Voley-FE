@@ -114,7 +114,7 @@ class _EditUserPageState extends State<EditUserPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -159,7 +159,7 @@ class _EditUserPageState extends State<EditUserPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )
@@ -186,7 +186,7 @@ class _EditUserPageState extends State<EditUserPage> {
                     ElevatedButton(
                       onPressed: () => context.pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: context.tokens.redToRosita,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                       child: const Text(
                         'Volver a la lista',
@@ -219,7 +219,7 @@ class _EditUserPageState extends State<EditUserPage> {
                     ElevatedButton(
                       onPressed: () => context.pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: context.tokens.redToRosita,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                       child: const Text(
                         'Volver a la lista',
@@ -233,7 +233,7 @@ class _EditUserPageState extends State<EditUserPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )

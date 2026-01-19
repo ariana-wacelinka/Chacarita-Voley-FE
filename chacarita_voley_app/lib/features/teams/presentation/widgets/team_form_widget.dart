@@ -283,13 +283,13 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                       Icon(
                         Symbols.shield,
                         size: 20,
-                        color: context.tokens.redToRosita,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Tipo de Equipo',
                         style: TextStyle(
-                          color: context.tokens.redToRosita,
+                          color: context.tokens.text,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

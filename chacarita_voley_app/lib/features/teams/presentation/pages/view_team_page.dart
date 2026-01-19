@@ -139,7 +139,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
@@ -223,7 +223,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: context.tokens.redToRosita,
+                          color: Theme.of(context).colorScheme.primary,
                           width: 2,
                         ),
                       ),
@@ -260,7 +260,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: context.tokens.redToRosita,
+                          color: Theme.of(context).colorScheme.primary,
                           width: 2,
                         ),
                       ),
@@ -294,7 +294,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
             FilledButton(
               key: const Key('competitive-save-button'),
               style: FilledButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
@@ -329,7 +329,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error al actualizar datos: $e'),
-                          backgroundColor: context.tokens.redToRosita,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                         ),
                       );
                     }
@@ -451,7 +453,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                     ),
                   ],
                 ),
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -491,7 +493,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-              context.tokens.redToRosita,
+              Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -573,13 +575,13 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                         Icon(
                           Symbols.shield,
                           size: 20,
-                          color: context.tokens.redToRosita,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Tipo de Equipo',
                           style: TextStyle(
-                            color: context.tokens.redToRosita,
+                            color: context.tokens.text,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1097,7 +1099,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               child: FilledButton.icon(
                 onPressed: _handleDeleteTeam,
                 style: FilledButton.styleFrom(
-                  backgroundColor: context.tokens.redToRosita,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -1173,7 +1175,7 @@ class _DeleteTeamDialogState extends State<_DeleteTeamDialog> {
               children: [
                 CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1197,7 +1199,7 @@ class _DeleteTeamDialogState extends State<_DeleteTeamDialog> {
               ElevatedButton(
                 onPressed: _isDeleting ? null : _handleConfirm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.tokens.redToRosita,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

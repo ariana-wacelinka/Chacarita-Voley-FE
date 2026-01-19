@@ -146,7 +146,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al eliminar: $e'),
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -185,7 +185,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-              context.tokens.redToRosita,
+              Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -477,7 +477,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

@@ -60,7 +60,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -280,7 +280,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -325,7 +325,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )

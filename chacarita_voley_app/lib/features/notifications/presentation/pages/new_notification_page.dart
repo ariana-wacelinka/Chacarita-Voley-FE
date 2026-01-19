@@ -73,7 +73,9 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -96,7 +98,9 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: context.tokens.redToRosita),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -283,7 +287,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -402,9 +406,9 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isActive
-                      ? context.tokens.redToRosita
+                      ? Theme.of(context).colorScheme.primary
                       : isCompleted
-                      ? context.tokens.redToRosita.withOpacity(0.5)
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
                       : Colors.grey.shade300,
                 ),
                 child: Center(
@@ -535,7 +539,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: context.tokens.redToRosita,
+                            color: Theme.of(context).colorScheme.primary,
                             width: 2,
                           ),
                         ),
@@ -576,7 +580,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: context.tokens.redToRosita,
+                            color: Theme.of(context).colorScheme.primary,
                             width: 2,
                           ),
                         ),
@@ -619,7 +623,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                           _selectedFrequency = null;
                         }
                       }),
-                      activeColor: context.tokens.redToRosita,
+                      activeColor: Theme.of(context).colorScheme.primary,
                     ),
                   ],
                 ),
@@ -648,7 +652,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: context.tokens.redToRosita,
+                        color: Theme.of(context).colorScheme.primary,
                         width: 2,
                       ),
                     ),
@@ -720,7 +724,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
@@ -754,7 +758,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
@@ -868,7 +872,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
@@ -907,7 +911,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                     ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
-                    activeColor: context.tokens.redToRosita,
+                    activeColor: Theme.of(context).colorScheme.primary,
                   );
                 },
               ),
@@ -964,7 +968,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
@@ -1003,7 +1007,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                     ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
-                    activeColor: context.tokens.redToRosita,
+                    activeColor: Theme.of(context).colorScheme.primary,
                   );
                 },
               ),
@@ -1131,12 +1135,12 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: value
-              ? context.tokens.redToRosita.withOpacity(0.05)
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: value
-                ? context.tokens.redToRosita.withOpacity(0.3)
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
                 : Colors.transparent,
             width: 1,
           ),
@@ -1147,7 +1151,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
               value: value,
               groupValue: true,
               onChanged: (_) => onTap(),
-              activeColor: context.tokens.redToRosita,
+              activeColor: Theme.of(context).colorScheme.primary,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             const SizedBox(width: 8),
@@ -1183,7 +1187,9 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 onPressed: _previousStep,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: context.tokens.redToRosita),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1191,7 +1197,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 child: Text(
                   'Anterior',
                   style: TextStyle(
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1205,7 +1211,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                   ? null
                   : (_currentStep == 2 ? _createNotification : _nextStep),
               style: FilledButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 24,
@@ -1249,11 +1255,13 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? context.tokens.redToRosita : context.tokens.card1,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : context.tokens.card1,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? context.tokens.redToRosita
+                ? Theme.of(context).colorScheme.primary
                 : context.tokens.stroke,
           ),
         ),
