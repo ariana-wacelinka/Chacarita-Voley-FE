@@ -50,6 +50,8 @@ class NotificationRepository {
     int page = 0,
     int size = 10,
   }) async {
+    print('📤 getNotifications called with page=$page, size=$size');
+
     final result = await _query(
       QueryOptions(
         document: gql(_getAllNotificationsQuery()),
@@ -58,12 +60,18 @@ class NotificationRepository {
       ),
     );
 
+    print('📥 Query result: hasException=${result.hasException}');
+
     if (result.hasException) {
+      print('❌ Exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
 
+    print('📥 Raw data: ${result.data}');
+
     final notificationsData = result.data?['getAllNotifications'];
     if (notificationsData == null) {
+      print('⚠️ notificationsData is null');
       return NotificationPageResult(
         notifications: [],
         totalPages: 0,
@@ -76,10 +84,14 @@ class NotificationRepository {
 
     final content =
         (notificationsData['content'] as List<dynamic>?) ?? const [];
+    print('📋 Content length: ${content.length}');
+
     final notifications = content
         .whereType<Map<String, dynamic>>()
         .map((data) => _mapNotificationFromBackend(data))
         .toList();
+
+    print('✅ Mapped ${notifications.length} notifications');
 
     return NotificationPageResult(
       notifications: notifications,

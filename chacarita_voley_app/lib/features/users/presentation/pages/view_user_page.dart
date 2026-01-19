@@ -736,7 +736,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           style: TextStyle(color: context.tokens.text),
         ),
         content: Text(
-          '¿Estás seguro de que quieres eliminar a ${_user!.nombreCompleto}? Esta acción no se puede deshacer.',
+          '¿Estás seguro de que querés eliminar a ${_user!.nombreCompleto}? Esta acción no se puede deshacer.',
           style: TextStyle(color: context.tokens.text),
         ),
         actions: [

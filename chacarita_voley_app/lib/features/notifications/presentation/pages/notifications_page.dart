@@ -73,88 +73,62 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _showDeleteConfirmation(String id) async {
+    final notification = _filteredNotifications.firstWhere((n) => n.id == id);
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: TextStyle(
-                    color: context.tokens.text,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Estás seguro de que querés '),
-                    TextSpan(
-                      text: 'eliminar',
-                      style: TextStyle(
-                        color: context.tokens.redToRosita,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const TextSpan(text: ' esta notificación?'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF424242),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancelar',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: context.tokens.redToRosita,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Confirmar',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: context.tokens.card1,
+        title: Text(
+          'Confirmar eliminación',
+          style: TextStyle(
+            color: context.tokens.text,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        content: Text(
+          '¿Estás seguro de que querés eliminar "${notification.title}"? Esta acción no se puede deshacer.',
+          style: TextStyle(color: context.tokens.text),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE0E0E0),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF8B0000),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Confirmar',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
 
@@ -372,7 +346,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             context.push('/notifications/${notification.id}');
                             break;
                           case 'edit':
-                            context.push('/notifications/${notification.id}/edit');
+                            context.push(
+                              '/notifications/${notification.id}/edit',
+                            );
                             break;
                           case 'delete':
                             _showDeleteConfirmation(notification.id);

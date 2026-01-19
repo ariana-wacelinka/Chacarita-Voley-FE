@@ -17,13 +17,10 @@ class AppDrawer extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
-              color: context
-                  .tokens
-                  .redToRosita,
+              color: context.tokens.redToRosita,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                 
                   Container(
                     width: 60,
                     height: 60,
@@ -57,16 +54,13 @@ class AppDrawer extends StatelessWidget {
                   Text(
                     'Club de Vóley',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.tokens.permanentWhite.withOpacity(
-                        0.9,
-                      ),
+                      color: context.tokens.permanentWhite.withOpacity(0.9),
                     ),
                   ),
                 ],
               ),
             ),
 
-           
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -129,7 +123,6 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-           
             const Divider(),
             _DrawerItem(
               icon: Icons.settings,
@@ -163,7 +156,7 @@ class AppDrawer extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Cerrar Sesión'),
-          content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+          content: const Text('¿Estás seguro de que querés cerrar sesión?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -172,7 +165,7 @@ class AppDrawer extends StatelessWidget {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-               
+
                 context.go('/');
               },
               child: Text(
