@@ -5,6 +5,7 @@ class TeamMember {
   final String dni;
   final String nombre;
   final String apellido;
+  final String? numeroAfiliado;
   final String? numeroCamiseta;
 
   TeamMember({
@@ -12,6 +13,7 @@ class TeamMember {
     required this.dni,
     required this.nombre,
     required this.apellido,
+    this.numeroAfiliado,
     this.numeroCamiseta,
   });
 
@@ -22,6 +24,7 @@ class TeamMember {
     String? dni,
     String? nombre,
     String? apellido,
+    String? numeroAfiliado,
     String? numeroCamiseta,
   }) {
     return TeamMember(
@@ -29,6 +32,7 @@ class TeamMember {
       dni: dni ?? this.dni,
       nombre: nombre ?? this.nombre,
       apellido: apellido ?? this.apellido,
+      numeroAfiliado: numeroAfiliado ?? this.numeroAfiliado,
       numeroCamiseta: numeroCamiseta ?? this.numeroCamiseta,
     );
   }

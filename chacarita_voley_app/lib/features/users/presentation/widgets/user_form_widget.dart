@@ -592,7 +592,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
           SizedBox(
             width: double.infinity,

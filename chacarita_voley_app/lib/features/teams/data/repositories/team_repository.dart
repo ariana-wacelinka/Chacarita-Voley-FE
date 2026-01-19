@@ -393,6 +393,7 @@ class TeamRepository implements TeamRepositoryInterface {
               dni: player.person?.dni ?? '',
               nombre: player.person?.name ?? '',
               apellido: player.person?.surname ?? '',
+              numeroAfiliado: player.leagueId?.toString(),
               numeroCamiseta: player.jerseyNumber?.toString(),
             ),
           )
@@ -447,6 +448,7 @@ class TeamRepository implements TeamRepositoryInterface {
               dni: player.person?.dni ?? '',
               nombre: player.person?.name ?? '',
               apellido: player.person?.surname ?? '',
+              numeroAfiliado: player.leagueId?.toString(),
               numeroCamiseta: player.jerseyNumber?.toString(),
             ),
           )

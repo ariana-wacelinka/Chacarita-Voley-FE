@@ -6,7 +6,6 @@ import '../../domain/entities/team.dart';
 import '../../domain/entities/team_type.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../../users/data/repositories/user_repository.dart';
-import '../../../users/domain/entities/user.dart';
 
 enum _MemberMenuAction {
   viewUser,
@@ -40,34 +39,128 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
       useRootNavigator: true,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Datos competitivos'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Datos del Jugador Competitivo',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member.nombreCompleto.trim().isEmpty
-                      ? member.dni
-                      : member.nombreCompleto,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+            width: 350,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.tokens.card1,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.tokens.stroke),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Symbols.badge, size: 24, color: context.tokens.text),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Número de afiliado',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            member.numeroAfiliado ?? 'No asignado',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Número de camiseta: ${member.numeroCamiseta ?? '-'}',
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(
+                        Symbols.apparel,
+                        size: 24,
+                        color: context.tokens.text,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Camiseta',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            member.numeroCamiseta ?? 'No asignado',
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: context.tokens.text,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
+              child: const Text(
+                'Cerrar',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: context.tokens.redToRosita,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                final memberIndex = _team!.integrantes.indexOf(member);
+                _showEditCompetitiveDataDialog(
+                  memberIndex: memberIndex,
+                  member: member,
+                );
+              },
+              child: const Text(
+                'Modificar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
@@ -79,38 +172,102 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
     required int memberIndex,
     required TeamMember member,
   }) {
-    final controller = TextEditingController(text: member.numeroCamiseta ?? '');
+    final afiliadoController = TextEditingController(
+      text: member.numeroAfiliado ?? '',
+    );
+    final camisetaController = TextEditingController(
+      text: member.numeroCamiseta ?? '',
+    );
 
     showDialog<void>(
       context: context,
       useRootNavigator: true,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Modificar datos competitivos'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Modificar Datos Competitivos',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           content: SizedBox(
-            width: 400,
+            width: 350,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    member.nombreCompleto.trim().isEmpty
-                        ? member.dni
-                        : member.nombreCompleto,
-                    style: const TextStyle(
+                    'Número de afiliado',
+                    style: TextStyle(
+                      color: context.tokens.text,
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: afiliadoController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Ingrese el número de afiliado',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.stroke),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.stroke),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: context.tokens.redToRosita,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ingrese el número de camiseta',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextField(
                     key: const Key('competitive-jersey-number-field'),
-                    controller: controller,
+                    controller: camisetaController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Número de camiseta',
-                      hintText: 'Ej: 10',
+                    decoration: InputDecoration(
+                      hintText: 'Número de camiseta',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.stroke),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.stroke),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: context.tokens.redToRosita,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -119,38 +276,59 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              style: TextButton.styleFrom(
+                foregroundColor: context.tokens.text,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
             ),
             FilledButton(
               key: const Key('competitive-save-button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: context.tokens.redToRosita,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
               onPressed: () async {
-                final value = controller.text.trim();
-                print(
-                  '🔢 Saving jersey number: $value for player ${member.playerId}',
-                );
+                final afiliadoValue = afiliadoController.text.trim();
+                final camisetaValue = camisetaController.text.trim();
 
-                final updated = member.copyWith(
-                  numeroCamiseta: value.isEmpty ? null : value,
-                );
-
-                if (member.playerId != null && value.isNotEmpty) {
+                if (member.playerId != null) {
                   try {
-                    print(
-                      '🚀 Calling updatePerson with playerId: ${member.playerId}, jerseyNumber: ${int.tryParse(value)}',
-                    );
-                    await _userRepository.updatePerson(member.playerId!, {
-                      'jerseyNumber': int.tryParse(value) ?? 0,
-                    });
-                    print('✅ Jersey number updated successfully');
+                    final Map<String, dynamic> updates = {};
+
+                    if (afiliadoValue.isNotEmpty) {
+                      updates['leagueId'] = int.tryParse(afiliadoValue) ?? 0;
+                    }
+
+                    if (camisetaValue.isNotEmpty) {
+                      updates['jerseyNumber'] =
+                          int.tryParse(camisetaValue) ?? 0;
+                    }
+
+                    if (updates.isNotEmpty) {
+                      await _userRepository.updatePerson(
+                        member.playerId!,
+                        updates,
+                      );
+                    }
                   } catch (e) {
-                    print('❌ Error updating jersey number: $e');
                     if (mounted) {
+                      Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            'Error al actualizar número de camiseta: $e',
-                          ),
+                          content: Text('Error al actualizar datos: $e'),
                           backgroundColor: context.tokens.redToRosita,
                         ),
                       );
@@ -158,6 +336,11 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                     return;
                   }
                 }
+
+                final updated = member.copyWith(
+                  numeroAfiliado: afiliadoValue.isEmpty ? null : afiliadoValue,
+                  numeroCamiseta: camisetaValue.isEmpty ? null : camisetaValue,
+                );
 
                 setState(() {
                   final updatedMembers = List<TeamMember>.from(
@@ -171,13 +354,20 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Número de camiseta actualizado'),
+                      content: const Text('Datos competitivos actualizados'),
                       backgroundColor: context.tokens.green,
                     ),
                   );
                 }
               },
-              child: const Text('Guardar'),
+              child: const Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );

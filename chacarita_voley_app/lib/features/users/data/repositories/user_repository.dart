@@ -380,6 +380,7 @@ class UserRepository implements UserRepositoryInterface {
     // Solo procesamos player si existe en la respuesta (query full)
     final player = person['player'] as Map<String, dynamic>?;
     final jerseyNumber = player?['jerseyNumber'];
+    final leagueId = player?['leagueId'];
     final teams = (player?['teams'] as List<dynamic>?) ?? const [];
 
     final equipo = teams.isNotEmpty
@@ -428,6 +429,7 @@ class UserRepository implements UserRepositoryInterface {
       email: (person['email'] as String?) ?? '',
       telefono: (person['phone'] as String?) ?? '',
       numeroCamiseta: jerseyNumber?.toString(),
+      numeroAfiliado: leagueId?.toString(),
       equipo: equipo,
       equipos: equipos,
       tipos: tipos,
@@ -467,6 +469,15 @@ class UserRepository implements UserRepositoryInterface {
     final birthDate = _formatBirthDate(user.fechaNacimiento);
     if (birthDate.isNotEmpty) {
       input['birthDate'] = birthDate;
+    }
+
+    // Si el usuario es jugador, incluir jerseyNumber y leagueId
+    if (user.tipos.contains(UserType.jugador)) {
+      final jersey = int.tryParse(user.numeroCamiseta ?? '');
+      input['jerseyNumber'] = jersey ?? 0;
+
+      final league = int.tryParse(user.numeroAfiliado ?? '');
+      input['leagueId'] = league ?? 0;
     }
 
     return input;
@@ -510,7 +521,9 @@ class UserRepository implements UserRepositoryInterface {
     if (user.tipos.contains(UserType.jugador)) {
       final jersey = int.tryParse(user.numeroCamiseta ?? '');
       input['jerseyNumber'] = jersey ?? 0;
-      input['leagueId'] = 0; // TODO: obtener del usuario cuando esté disponible
+
+      final league = int.tryParse(user.numeroAfiliado ?? '');
+      input['leagueId'] = league ?? 0;
     }
 
     return input;

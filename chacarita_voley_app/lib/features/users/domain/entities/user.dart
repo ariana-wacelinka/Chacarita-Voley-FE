@@ -26,6 +26,7 @@ class User {
   final String email;
   final String telefono;
   final String? numeroCamiseta;
+  final String? numeroAfiliado;
   final String equipo;
   final List<TeamInfo> equipos;
   final Set<UserType> tipos;
@@ -43,6 +44,7 @@ class User {
     required this.email,
     required this.telefono,
     this.numeroCamiseta,
+    this.numeroAfiliado,
     required this.equipo,
     this.equipos = const [],
     required this.tipos,
@@ -63,6 +65,7 @@ class User {
       email: json['email'],
       telefono: json['telefono'],
       numeroCamiseta: json['numeroCamiseta'],
+      numeroAfiliado: json['numeroAfiliado'],
       equipo: json['equipo'],
       equipos:
           (json['equipos'] as List<dynamic>?)
