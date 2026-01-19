@@ -38,11 +38,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
   Set<String> _selectedTeams = {};
   Set<String> _selectedPlayers = {};
 
-  final List<String> _frequencies = [
-    'Diaria',
-    'Semanal',
-    'Mensual',
-  ];
+  final List<String> _frequencies = ['Diaria', 'Semanal', 'Mensual'];
 
   final List<Map<String, String>> _mockTeams = [
     {'id': '1', 'name': 'Chacarita Femenino'},
@@ -159,18 +155,6 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
     setState(() => _isSaving = true);
 
     try {
-      // Construir la fecha y hora programada si aplica
-      DateTime? scheduledAt;
-      if (_isProgrammed && _scheduledDate != null && _scheduledTime != null) {
-        scheduledAt = DateTime(
-          _scheduledDate!.year,
-          _scheduledDate!.month,
-          _scheduledDate!.day,
-          _scheduledTime!.hour,
-          _scheduledTime!.minute,
-        );
-      }
-
       // Convertir frecuencia a enum
       Frequency? frequency;
       if (_repeatNotification && _selectedFrequency != null) {
@@ -187,60 +171,66 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         }
       }
 
+      // Construir time en formato HH:mm si está programado
+      String? time;
+      if (_isProgrammed && _scheduledTime != null) {
+        time =
+            '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}';
+      }
+
       // Construir destinations según la selección
-      List<NotificationDestination> destinations = [];
-      
+      List<NotificationDestinationInput> destinations = [];
+
       if (_selectedRecipients == 'todos') {
-        destinations.add(NotificationDestination(
-          id: '1',
-          referenceId: null,
-          type: DestinationType.ALL_PLAYERS,
-        ));
-      } else if (_selectedRecipients == 'profesores') {
-        // Los profesores podrían manejarse como un tipo especial de jugadores
-        // o se podría enviar a ALL_PLAYERS con un filtro
-        destinations.add(NotificationDestination(
-          id: '1',
-          referenceId: null,
-          type: DestinationType.ALL_PLAYERS,
-        ));
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.ALL_PLAYERS,
+            referenceId: null,
+          ),
+        );
+      } else if (_selectedRecipients == 'cuota_pendiente') {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.DUES_PENDING,
+            referenceId: null,
+          ),
+        );
+      } else if (_selectedRecipients == 'cuota_vencida') {
+        destinations.add(
+          NotificationDestinationInput(
+            type: DestinationType.DUES_OVERDUE,
+            referenceId: null,
+          ),
+        );
       } else if (_selectedTeams.isNotEmpty) {
-        int index = 1;
         for (var teamId in _selectedTeams) {
-          destinations.add(NotificationDestination(
-            id: index.toString(),
-            referenceId: teamId,
-            type: DestinationType.TEAM,
-          ));
-          index++;
+          destinations.add(
+            NotificationDestinationInput(
+              type: DestinationType.TEAM,
+              referenceId: teamId,
+            ),
+          );
         }
       } else if (_selectedPlayers.isNotEmpty) {
-        int index = 1;
         for (var playerId in _selectedPlayers) {
-          destinations.add(NotificationDestination(
-            id: index.toString(),
-            referenceId: playerId,
-            type: DestinationType.PLAYER,
-          ));
-          index++;
+          destinations.add(
+            NotificationDestinationInput(
+              type: DestinationType.PLAYER,
+              referenceId: playerId,
+            ),
+          );
         }
       }
 
       // Crear la notificación
-      final notification = NotificationModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      await _repository.createNotification(
         title: _titleController.text.trim(),
         message: _messageController.text.trim(),
         sendMode: _isProgrammed ? SendMode.SCHEDULED : SendMode.NOW,
-        createdAt: DateTime.now(),
-        scheduledAt: scheduledAt,
-        repeatable: _repeatNotification,
+        time: time,
         frequency: frequency,
         destinations: destinations,
-        deliveries: [],
       );
-
-      await _repository.createNotification(notification);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1060,10 +1050,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
               _titleController.text.isEmpty
                   ? 'Título genérico de mensaje'
                   : _titleController.text,
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
             const SizedBox(height: 20),
 
@@ -1081,10 +1068,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
               _messageController.text.isEmpty
                   ? 'Cuerpo genérico de mensaje'
                   : _messageController.text,
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: context.tokens.text, fontSize: 14),
             ),
             const SizedBox(height: 20),
 
@@ -1101,28 +1085,19 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             if (_isProgrammed) ...[
               Text(
                 'Programado para ${_dateController.text} a las ${_timeController.text}',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: context.tokens.text, fontSize: 14),
               ),
               if (_repeatNotification && _selectedFrequency != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Se repite ${_selectedFrequency!.toLowerCase()}',
-                  style: TextStyle(
-                    color: context.tokens.text,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: context.tokens.text, fontSize: 14),
                 ),
               ],
             ] else ...[
               Text(
                 'Enviar inmediatamente',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: context.tokens.text, fontSize: 14),
               ),
             ],
           ],

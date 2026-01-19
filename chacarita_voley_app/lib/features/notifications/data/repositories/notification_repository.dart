@@ -11,8 +11,7 @@ class NotificationRepository {
     return GraphQLClientFactory.client.mutate(options);
   }
 
-  String _getAllNotificationsQuery() =>
-      '''
+  String _getAllNotificationsQuery() => '''
     query GetAllNotifications(\$page: Int!, \$size: Int!) {
       getAllNotifications(page: \$page, size: \$size) {
         totalPages
@@ -24,11 +23,23 @@ class NotificationRepository {
         content {
           id
           title
+          message
+          sendMode
           scheduledAt
           repeatable
           frequency
+          createdAt
           destinations {
             id
+            type
+            referenceId
+          }
+          deliveries {
+            id
+            status
+            sentAt
+            recipientId
+            attemptedAt
           }
         }
       }
@@ -42,10 +53,7 @@ class NotificationRepository {
     final result = await _query(
       QueryOptions(
         document: gql(_getAllNotificationsQuery()),
-        variables: {
-          'page': page,
-          'size': size,
-        },
+        variables: {'page': page, 'size': size},
         fetchPolicy: FetchPolicy.cacheAndNetwork,
       ),
     );
@@ -66,7 +74,8 @@ class NotificationRepository {
       );
     }
 
-    final content = (notificationsData['content'] as List<dynamic>?) ?? const [];
+    final content =
+        (notificationsData['content'] as List<dynamic>?) ?? const [];
     final notifications = content
         .whereType<Map<String, dynamic>>()
         .map((data) => _mapNotificationFromBackend(data))
@@ -83,62 +92,145 @@ class NotificationRepository {
   }
 
   NotificationModel _mapNotificationFromBackend(Map<String, dynamic> data) {
-    // Parsear scheduledAt
     DateTime? scheduledAt;
     final scheduledAtStr = data['scheduledAt'] as String?;
     if (scheduledAtStr != null && scheduledAtStr.isNotEmpty) {
       try {
         scheduledAt = DateTime.parse(scheduledAtStr);
       } catch (e) {
-        // Si falla el parsing, usar null
         scheduledAt = null;
       }
     }
 
-    // Mapear frequency
-    Frequency? frequency;
-    final frequencyStr = data['frequency'] as String?;
-    if (frequencyStr != null) {
-      switch (frequencyStr) {
-        case 'DAILY':
-          frequency = Frequency.DAILY;
-          break;
-        case 'WEEKLY':
-          frequency = Frequency.WEEKLY;
-          break;
-        case 'BIWEEKLY':
-          frequency = Frequency.BIWEEKLY;
-          break;
-        case 'MONTHLY':
-          frequency = Frequency.MONTHLY;
-          break;
+    DateTime createdAt = DateTime.now();
+    final createdAtStr = data['createdAt'] as String?;
+    if (createdAtStr != null && createdAtStr.isNotEmpty) {
+      try {
+        createdAt = DateTime.parse(createdAtStr);
+      } catch (e) {
+        createdAt = DateTime.now();
       }
     }
 
-    // Mapear destinations
+    Frequency? frequency;
+    final frequencyStr = data['frequency'] as String?;
+    if (frequencyStr != null) {
+      frequency = Frequency.fromString(frequencyStr);
+    }
+
+    SendMode sendMode = SendMode.NOW;
+    final sendModeStr = data['sendMode'] as String?;
+    if (sendModeStr != null) {
+      sendMode = SendMode.fromString(sendModeStr);
+    }
+
     final destinationsData = (data['destinations'] as List<dynamic>?) ?? [];
     final destinations = destinationsData
         .whereType<Map<String, dynamic>>()
         .map(
           (dest) => NotificationDestination(
             id: dest['id'] as String? ?? '',
-            referenceId: null, // No disponible en la query actual
-            type: DestinationType.ALL_PLAYERS, // Default, se puede mejorar
+            referenceId: dest['referenceId'] as String?,
+            type: DestinationType.fromString(
+              dest['type'] as String? ?? 'ALL_PLAYERS',
+            ),
           ),
         )
+        .toList();
+
+    final deliveriesData = (data['deliveries'] as List<dynamic>?) ?? [];
+    final deliveries = deliveriesData
+        .whereType<Map<String, dynamic>>()
+        .map((del) => NotificationDelivery.fromJson(del))
         .toList();
 
     return NotificationModel(
       id: data['id'] as String? ?? '',
       title: data['title'] as String? ?? '',
-      message: '', // No disponible en la query actual
-      sendMode: scheduledAt != null ? SendMode.SCHEDULED : SendMode.NOW,
-      createdAt: DateTime.now(), // No disponible en la query actual
+      message: data['message'] as String? ?? '',
+      sendMode: sendMode,
+      createdAt: createdAt,
       scheduledAt: scheduledAt,
       repeatable: data['repeatable'] as bool? ?? false,
       frequency: frequency,
       destinations: destinations,
-      deliveries: [], // No disponible en la query actual
+      deliveries: deliveries,
+    );
+  }
+
+  Future<NotificationModel> createNotification({
+    required String title,
+    required String message,
+    required SendMode sendMode,
+    String? time,
+    Frequency? frequency,
+    required List<NotificationDestinationInput> destinations,
+  }) async {
+    final destinationsInput = destinations.map((d) {
+      final dest = {'notificationDestinationType': d.type.name};
+      if (d.referenceId != null) {
+        dest['referenceId'] = d.referenceId!;
+      }
+      return dest;
+    }).toList();
+
+    final input = {
+      'title': title,
+      'message': message,
+      'notificationSendMode': sendMode.name,
+      'destinations': destinationsInput,
+    };
+
+    if (time != null && time.isNotEmpty) {
+      input['time'] = time;
+    }
+
+    if (frequency != null) {
+      input['frequency'] = frequency.name;
+    }
+
+    final mutation = '''
+      mutation CreateNotification(\$input: NotificationInput!) {
+        createNotification(input: \$input) {
+          id
+          title
+          message
+          sendMode
+          scheduledAt
+          repeatable
+          frequency
+          createdAt
+          destinations {
+            id
+            type
+            referenceId
+          }
+          deliveries {
+            id
+            status
+            sentAt
+            recipientId
+            attemptedAt
+          }
+        }
+      }
+    ''';
+
+    final result = await _mutate(
+      MutationOptions(document: gql(mutation), variables: {'input': input}),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final notificationData = result.data?['createNotification'];
+    if (notificationData == null) {
+      throw Exception('No se pudo crear la notificación');
+    }
+
+    return _mapNotificationFromBackend(
+      notificationData as Map<String, dynamic>,
     );
   }
 
@@ -146,14 +238,13 @@ class NotificationRepository {
     // TODO: Implementar mutation de delete cuando esté disponible
     await Future.delayed(const Duration(milliseconds: 200));
   }
+}
 
-  Future<NotificationModel> createNotification(
-    NotificationModel notification,
-  ) async {
-    // TODO: Implementar mutation de create cuando esté disponible
-    await Future.delayed(const Duration(milliseconds: 500));
-    return notification;
-  }
+class NotificationDestinationInput {
+  final DestinationType type;
+  final String? referenceId;
+
+  NotificationDestinationInput({required this.type, this.referenceId});
 }
 
 class NotificationPageResult {

@@ -42,7 +42,6 @@ enum SendMode {
 enum Frequency {
   DAILY,
   WEEKLY,
-  BIWEEKLY,
   MONTHLY;
 
   String get displayName {
@@ -51,8 +50,6 @@ enum Frequency {
         return 'Diaria';
       case Frequency.WEEKLY:
         return 'Semanal';
-      case Frequency.BIWEEKLY:
-        return 'Quincenal';
       case Frequency.MONTHLY:
         return 'Mensual';
     }
@@ -143,11 +140,7 @@ class NotificationDestination {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'referenceId': referenceId,
-      'type': type.name,
-    };
+    return {'id': id, 'referenceId': referenceId, 'type': type.name};
   }
 }
 
@@ -231,7 +224,9 @@ class NotificationModel {
           ? Frequency.fromString(json['frequency'] as String)
           : null,
       destinations: (json['destinations'] as List<dynamic>)
-          .map((d) => NotificationDestination.fromJson(d as Map<String, dynamic>))
+          .map(
+            (d) => NotificationDestination.fromJson(d as Map<String, dynamic>),
+          )
           .toList(),
       deliveries: (json['deliveries'] as List<dynamic>)
           .map((d) => NotificationDelivery.fromJson(d as Map<String, dynamic>))
@@ -272,8 +267,6 @@ class NotificationModel {
         return 'Se repite cada día';
       case Frequency.WEEKLY:
         return 'Se repite todas las semanas';
-      case Frequency.BIWEEKLY:
-        return 'Se repite cada 15 días';
       case Frequency.MONTHLY:
         return 'Se repite cada mes';
     }
@@ -281,11 +274,11 @@ class NotificationModel {
 
   String get recipientsText {
     if (destinations.isEmpty) return 'Sin destinatarios';
-    
+
     if (destinations.length == 1) {
       return destinations.first.type.displayName;
     }
-    
+
     return '${destinations.length} grupos de destinatarios';
   }
 
@@ -340,4 +333,3 @@ class NotificationListResponse {
     };
   }
 }
-
