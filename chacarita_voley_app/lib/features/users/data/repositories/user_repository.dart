@@ -112,6 +112,40 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  /// Mapea el input de búsqueda del usuario a filtros para el backend
+  /// IMPORTANTE: El backend usa AND implícito entre filtros.
+  /// NUNCA enviar el mismo valor en múltiples campos (genera AND imposible).
+  /// Enviar SOLO UN filtro a la vez.
+  Map<String, dynamic> _buildFilters(String? query, String? role) {
+    if (query == null || query.trim().isEmpty) {
+      return {'dni': '', 'name': '', 'surname': '', 'role': role};
+    }
+
+    final q = query.trim();
+
+    // DNI numérico → buscar SOLO por DNI
+    if (RegExp(r'^\d+$').hasMatch(q)) {
+      return {'dni': q, 'name': '', 'surname': '', 'role': role};
+    }
+
+    final parts = q.split(RegExp(r'\s+'));
+
+    // Nombre + Apellido (múltiples palabras)
+    // Backend aplicará AND: name LIKE '%Juan%' AND surname LIKE '%Perez%'
+    if (parts.length >= 2) {
+      return {
+        'dni': '',
+        'name': parts.first,
+        'surname': parts.sublist(1).join(' '),
+        'role': role,
+      };
+    }
+
+    // Texto simple → buscar SOLO por name (no enviar en surname)
+    // Si el backend necesita OR, debe implementarlo del lado del servidor
+    return {'dni': '', 'name': q, 'surname': '', 'role': role};
+  }
+
   @override
   Future<List<User>> getUsers({
     String? role,
@@ -119,207 +153,82 @@ class UserRepository implements UserRepositoryInterface {
     int? page,
     int? size,
   }) async {
-    print('🔥🔥🔥 UserRepository.getUsers EJECUTADO 🔥🔥🔥');
-    print(
-      '📍 Parámetros: role=$role, searchQuery=$searchQuery, page=$page, size=$size',
+    final filters = _buildFilters(searchQuery, role);
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsQuery()),
+        variables: {'page': page ?? 0, 'size': size ?? 12, ...filters},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
     );
 
-    final query = searchQuery?.trim();
-    final isNumeric =
-        query != null && query.isNotEmpty && RegExp(r'^\d+$').hasMatch(query);
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
 
-    final tokens =
-        query?.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList() ?? [];
-    final isCompoundSearch = tokens.length >= 2;
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
 
-    Future<List<User>> execute(Map<String, dynamic> variables) async {
-      print('📤 Variables GraphQL: $variables');
-
-      final result = await _query(
+    // Si no hay resultados y la búsqueda es texto simple (no DNI ni nombre+apellido),
+    // reintentar buscando por surname en lugar de name
+    if (content.isEmpty &&
+        searchQuery != null &&
+        searchQuery.trim().isNotEmpty &&
+        !RegExp(r'^\d+$').hasMatch(searchQuery.trim()) &&
+        searchQuery.trim().split(RegExp(r'\s+')).length == 1) {
+      // Reintentar con surname
+      final retryResult = await _query(
         QueryOptions(
           document: gql(_getAllPersonsQuery()),
-          variables: variables,
+          variables: {
+            'page': page ?? 0,
+            'size': size ?? 12,
+            'dni': '',
+            'name': '',
+            'surname': searchQuery.trim(),
+            'role': role,
+          },
           fetchPolicy: FetchPolicy.networkOnly,
         ),
       );
 
-      print('📥 Result hasException: ${result.hasException}');
-
-      if (result.hasException) {
-        print('❌ GraphQL Exception: ${result.exception.toString()}');
-        throw Exception(result.exception.toString());
+      if (!retryResult.hasException) {
+        final retryContent =
+            (retryResult.data?['getAllPersons']?['content']
+                as List<dynamic>?) ??
+            const [];
+        return retryContent
+            .whereType<Map<String, dynamic>>()
+            .map(_mapPersonToUser)
+            .toList();
       }
-
-      final content =
-          (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
-          const [];
-
-      print('✅ Content length: ${content.length}');
-
-      return content
-          .whereType<Map<String, dynamic>>()
-          .map(_mapPersonToUser)
-          .toList();
     }
 
-    // 1️⃣ Búsqueda por DNI (numérica)
-    if (isNumeric) {
-      print('🔢 Buscando por DNI exacto: $query');
-
-      // Primero intentar match exacto
-      final exact = await execute({
-        'page': page ?? 0,
-        'size': size ?? 12,
-        'dni': query,
-        'name': '',
-        'surname': '',
-        'role': role,
-      });
-
-      if (exact.isNotEmpty) {
-        print('✅ Encontrado por DNI exacto: ${exact.length} resultados');
-        return exact;
-      }
-
-      print('⚠️ DNI exacto no encontrado, fallback local por contains');
-
-      // Fallback LOCAL: traer todos y filtrar client-side
-      final all = await execute({
-        'page': 0,
-        'size': 12,
-        'dni': '',
-        'name': '',
-        'surname': '',
-        'role': role,
-      });
-
-      final filtered = all.where((u) => u.dni.contains(query!)).toList();
-      print(
-        '✅ Encontrado por DNI parcial (local): ${filtered.length} resultados',
-      );
-      return filtered;
-    }
-
-    // 2️⃣ Búsqueda compuesta: "nombre apellido"
-    if (!isNumeric && isCompoundSearch) {
-      print('🧩 Búsqueda compuesta (name + surname): $tokens');
-
-      final all = await execute({
-        'page': 0,
-        'size': 12,
-        'dni': '',
-        'name': '',
-        'surname': '',
-        'role': role,
-      });
-
-      final namePart = tokens[0].toLowerCase();
-      final surnamePart = tokens.sublist(1).join(' ').toLowerCase();
-
-      final filtered = all.where((u) {
-        return u.nombre.toLowerCase().contains(namePart) &&
-            u.apellido.toLowerCase().contains(surnamePart);
-      }).toList();
-
-      print('✅ Encontrados por búsqueda compuesta: ${filtered.length}');
-      return filtered;
-    }
-
-    // 3️⃣ Búsqueda OR local (name | surname) para texto
-    if (query != null && query.isNotEmpty) {
-      print('🔍 Búsqueda OR local (name | surname) para: $query');
-
-      // Traer resultados base (una sola vez)
-      final all = await execute({
-        'page': 0,
-        'size': 12,
-        'dni': '',
-        'name': '',
-        'surname': '',
-        'role': role,
-      });
-
-      final q = query.toLowerCase();
-
-      // OR real en frontend
-      final filtered = all.where((u) {
-        return u.nombre.toLowerCase().contains(q) ||
-            u.apellido.toLowerCase().contains(q);
-      }).toList();
-
-      print('✅ Encontrados por OR local: ${filtered.length}');
-      return filtered;
-    }
-
-    // Sin query → traer listado completo
-    print('📋 Sin búsqueda, trayendo listado completo');
-
-    return execute({
-      'page': page ?? 0,
-      'size': size ?? 12,
-      'dni': '',
-      'name': '',
-      'surname': '',
-      'role': role,
-    });
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
   }
 
   @override
   Future<int> getTotalUsers({String? role, String? searchQuery}) async {
-    final query = searchQuery?.trim();
-    final isNumeric =
-        query != null && query.isNotEmpty && RegExp(r'^\d+$').hasMatch(query);
+    final filters = _buildFilters(searchQuery, role);
 
-    Future<int> execute(Map<String, dynamic> variables) async {
-      final result = await _query(
-        QueryOptions(
-          document: gql(_getAllPersonsQuery()),
-          variables: variables,
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsQuery()),
+        variables: {'page': 0, 'size': 1, ...filters},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
 
-      if (result.hasException) {
-        throw Exception(result.exception.toString());
-      }
-
-      return (result.data?['getAllPersons']?['totalElements'] as int?) ?? 0;
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
     }
 
-    // 1️⃣ Búsqueda por DNI (numérica)
-    if (isNumeric) {
-      // Primero intentar match exacto
-      final exact = await execute({
-        'page': 0,
-        'size': 1,
-        'dni': query,
-        'name': '',
-        'surname': '',
-        'role': role,
-      });
-
-      if (exact > 0) return exact;
-
-      // Fallback LOCAL: traer usuarios y contar los que hacen match parcial
-      final users = await getUsers(role: role, searchQuery: query);
-      return users.length;
-    }
-
-    // 2️⃣ Búsqueda OR local (name | surname)
-    if (query != null && query.isNotEmpty) {
-      final users = await getUsers(role: role, searchQuery: query);
-      return users.length;
-    }
-
-    // Sin query, consultar total real
-    return execute({
-      'page': 0,
-      'size': 1,
-      'dni': '',
-      'name': '',
-      'surname': '',
-      'role': role,
-    });
+    return (result.data?['getAllPersons']?['totalElements'] as int?) ?? 0;
   }
 
   @override
