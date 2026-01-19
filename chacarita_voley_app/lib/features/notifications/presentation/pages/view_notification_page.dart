@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -141,14 +140,6 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         ),
       );
     }
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy').format(date);
-  }
-
-  String _formatTime(DateTime date) {
-    return DateFormat('HH:mm').format(date);
   }
 
   @override

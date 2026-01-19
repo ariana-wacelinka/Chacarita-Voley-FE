@@ -87,8 +87,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
     }
   }
 
-  void _toggleFilters() {}
-
   Future<void> _pickTime(TextEditingController controller) async {
     final now = DateTime.now();
     DateTime initialDateTime = DateTime(now.year, now.month, now.day);
@@ -662,6 +660,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       elevation: 4,
                       itemBuilder: (context) => [
                         PopupMenuItem(
+                          value: _TrainingMenuAction.view,
                           onTap: () {
                             Future.microtask(() {
                               context.push('/trainings/${training.id}');
@@ -673,6 +672,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           ),
                         ),
                         PopupMenuItem(
+                          value: _TrainingMenuAction.edit,
                           onTap: () {
                             Future.microtask(() {
                               context.push('/trainings/${training.id}/edit');
@@ -684,6 +684,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           ),
                         ),
                         PopupMenuItem(
+                          value: _TrainingMenuAction.delete,
                           onTap: () {
                             Future.microtask(() {
                               _showDeleteDialog(context, training);

@@ -424,40 +424,6 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
     );
   }
 
-  Widget _buildInfoRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: context.tokens.placeholder),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(color: context.tokens.text, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAttendanceItem(
     BuildContext context,
     PlayerAttendance attendance,

@@ -221,6 +221,48 @@ class AppTheme {
       dialTextColor: _lightTokens.text,
       entryModeIconColor: const Color(0xFF0C0C0C),
     ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: _lightScheme.surface,
+      headerBackgroundColor: _lightScheme.primary,
+      headerForegroundColor: Colors.white,
+      dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _lightTokens.text;
+      }),
+      dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _lightScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      todayForegroundColor: WidgetStateProperty.all(_lightScheme.primary),
+      todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+      todayBorder: BorderSide(color: _lightScheme.primary, width: 1),
+      yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _lightTokens.text;
+      }),
+      yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _lightScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      surfaceTintColor: Colors.transparent,
+      weekdayStyle: TextStyle(color: _lightTokens.text),
+      dayStyle: TextStyle(color: _lightTokens.text),
+      yearStyle: TextStyle(color: _lightTokens.text),
+      cancelButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_lightTokens.text),
+      ),
+      confirmButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_lightScheme.primary),
+      ),
+    ),
     extensions: [_lightTokens],
   );
 
@@ -318,6 +360,48 @@ class AppTheme {
       dialBackgroundColor: _darkTokens.card1,
       dialTextColor: _darkTokens.text,
       entryModeIconColor: _darkScheme.onSurface,
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: _darkScheme.surface,
+      headerBackgroundColor: _darkScheme.primary,
+      headerForegroundColor: Colors.white,
+      dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _darkTokens.text;
+      }),
+      dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _darkScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      todayForegroundColor: WidgetStateProperty.all(_darkScheme.primary),
+      todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+      todayBorder: BorderSide(color: _darkScheme.primary, width: 1),
+      yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _darkTokens.text;
+      }),
+      yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _darkScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      surfaceTintColor: Colors.transparent,
+      weekdayStyle: TextStyle(color: Colors.white),
+      dayStyle: TextStyle(color: _darkTokens.text),
+      yearStyle: TextStyle(color: Colors.white),
+      cancelButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_darkTokens.text),
+      ),
+      confirmButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_darkScheme.primary),
+      ),
     ),
     extensions: [_darkTokens],
   );
