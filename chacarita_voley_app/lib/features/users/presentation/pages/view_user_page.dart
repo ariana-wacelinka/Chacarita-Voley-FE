@@ -82,7 +82,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
       return Scaffold(
         backgroundColor: context.tokens.background,
         appBar: AppBar(
-          backgroundColor: context.tokens.card1,
+          backgroundColor: context.tokens.secondaryButton,
           elevation: 0,
           leading: IconButton(
             icon: Icon(Symbols.arrow_back, color: context.tokens.text),

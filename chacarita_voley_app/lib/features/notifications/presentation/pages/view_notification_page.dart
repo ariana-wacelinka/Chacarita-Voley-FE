@@ -20,7 +20,6 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
   NotificationModel? _notification;
   bool _isLoading = true;
   String? _errorMessage;
-  List<Map<String, String>> _recipientsList = [];
 
   @override
   void initState() {
@@ -34,14 +33,6 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       final notification = result.notifications.firstWhere(
         (n) => n.id == widget.notificationId,
       );
-
-      // Mock de destinatarios basado en la imagen
-      _recipientsList = [
-        {'name': 'Juan Perez', 'dni': '12345678'},
-        {'name': 'John Doe', 'dni': '87654321'},
-        {'name': 'Jane Doe', 'dni': '23456789'},
-        // ... más destinatarios
-      ];
 
       if (!mounted) return;
       setState(() {
@@ -354,6 +345,8 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
   }
 
   Widget _buildRecipientsSection(BuildContext context) {
+    final destinations = _notification?.destinations ?? [];
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -369,7 +362,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               Icon(Symbols.person, color: context.tokens.text, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Destinatarios (${_recipientsList.length})',
+                'Destinatarios (${destinations.length})',
                 style: TextStyle(
                   color: context.tokens.text,
                   fontSize: 18,
@@ -379,60 +372,88 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: context.tokens.background,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: context.tokens.stroke),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por nombre o DNI...',
-                hintStyle: TextStyle(color: context.tokens.placeholder),
-                prefixIcon: Icon(
-                  Symbols.search,
-                  color: context.tokens.placeholder,
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+          if (destinations.isEmpty)
+            Text(
+              'Sin destinatarios',
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+            )
+          else
+            Container(
+              constraints: const BoxConstraints(maxHeight: 300),
+              decoration: BoxDecoration(
+                border: Border.all(color: context.tokens.stroke),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: destinations.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: context.tokens.stroke),
+                itemBuilder: (context, index) {
+                  final destination = destinations[index];
+                  String displayText = _getDestinationDisplayText(destination);
+
+                  return Container(
+                    color: context.tokens.background,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _getDestinationIcon(destination.type),
+                          color: context.tokens.placeholder,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            displayText,
+                            style: TextStyle(
+                              color: context.tokens.text,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 300),
-            decoration: BoxDecoration(
-              border: Border.all(color: context.tokens.stroke),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: _recipientsList.length,
-              separatorBuilder: (context, index) =>
-                  Divider(height: 1, color: context.tokens.stroke),
-              itemBuilder: (context, index) {
-                final recipient = _recipientsList[index];
-                return Container(
-                  color: context.tokens.background,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Text(
-                    recipient['name']!,
-                    style: TextStyle(color: context.tokens.text, fontSize: 14),
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  String _getDestinationDisplayText(NotificationDestination destination) {
+    switch (destination.type) {
+      case DestinationType.ALL_PLAYERS:
+        return 'Todos los jugadores';
+      case DestinationType.TEAM:
+        return 'Equipo (ID: ${destination.referenceId ?? 'N/A'})';
+      case DestinationType.PLAYER:
+        return 'Jugador (ID: ${destination.referenceId ?? 'N/A'})';
+      case DestinationType.DUES_PENDING:
+        return 'Jugadores con cuota pendiente';
+      case DestinationType.DUES_OVERDUE:
+        return 'Jugadores con cuota vencida';
+    }
+  }
+
+  IconData _getDestinationIcon(DestinationType type) {
+    switch (type) {
+      case DestinationType.ALL_PLAYERS:
+        return Symbols.groups;
+      case DestinationType.TEAM:
+        return Symbols.sports_volleyball;
+      case DestinationType.PLAYER:
+        return Symbols.person;
+      case DestinationType.DUES_PENDING:
+      case DestinationType.DUES_OVERDUE:
+        return Symbols.payment;
+    }
   }
 
   Widget _buildActionButtons(BuildContext context) {
@@ -454,7 +475,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.card2,
+              backgroundColor: context.tokens.secondaryButton,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

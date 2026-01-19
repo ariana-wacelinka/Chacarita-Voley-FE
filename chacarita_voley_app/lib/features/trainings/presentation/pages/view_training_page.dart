@@ -404,7 +404,7 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
             child: ElevatedButton(
               onPressed: () => context.push('/trainings/${training.id}/edit'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.card2,
+                backgroundColor: context.tokens.secondaryButton,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
