@@ -249,7 +249,8 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             referenceId: null,
           ),
         );
-      } else if (_selectedTeams.isNotEmpty) {
+      } else {
+        // Add selected teams
         for (var teamId in _selectedTeams) {
           destinations.add(
             NotificationDestinationInput(
@@ -258,7 +259,8 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             ),
           );
         }
-      } else if (_selectedPlayers.isNotEmpty) {
+        
+        // Add selected players
         for (var playerId in _selectedPlayers) {
           destinations.add(
             NotificationDestinationInput(

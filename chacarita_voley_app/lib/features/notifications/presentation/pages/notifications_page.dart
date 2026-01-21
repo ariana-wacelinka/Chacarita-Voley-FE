@@ -20,7 +20,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<NotificationModel> _filteredNotifications = [];
   bool _isLoading = true;
   int _currentPage = 1;
-  final int _itemsPerPage = 25;
+  final int _itemsPerPage = 10;
   int _totalPages = 1;
   int _totalElements = 0;
   bool _hasNext = false;
