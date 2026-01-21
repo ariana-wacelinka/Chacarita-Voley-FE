@@ -838,28 +838,49 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
           _buildFilterChip(
             label: 'Seleccionar todos',
             isSelected: _recipientFilter == 'todos',
+            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
             onTap: () => setState(
-              () => _recipientFilter = _recipientFilter == 'todos'
-                  ? null
-                  : 'todos',
+              () {
+                if (_recipientFilter == 'todos') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'todos';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              },
             ),
           ),
           _buildFilterChip(
             label: 'Cuota vencida',
             isSelected: _recipientFilter == 'vencida',
+            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
             onTap: () => setState(
-              () => _recipientFilter = _recipientFilter == 'vencida'
-                  ? null
-                  : 'vencida',
+              () {
+                if (_recipientFilter == 'vencida') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'vencida';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              },
             ),
           ),
           _buildFilterChip(
             label: 'Cuota pendiente',
             isSelected: _recipientFilter == 'pendiente',
+            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
             onTap: () => setState(
-              () => _recipientFilter = _recipientFilter == 'pendiente'
-                  ? null
-                  : 'pendiente',
+              () {
+                if (_recipientFilter == 'pendiente') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'pendiente';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              },
             ),
           ),
         ],
@@ -956,6 +977,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                             setState(() {
                               if (value == true) {
                                 _selectedTeams.add(team.id);
+                                _recipientFilter = null; // Clear filter when selecting team
                               } else {
                                 _selectedTeams.remove(team.id);
                               }
@@ -1072,6 +1094,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                             setState(() {
                               if (value == true) {
                                 _selectedPlayers.add(player.id ?? '');
+                                _recipientFilter = null; // Clear filter when selecting player
                               } else {
                                 _selectedPlayers.remove(player.id ?? '');
                               }
@@ -1317,21 +1340,26 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    bool enabled = true,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : context.tokens.card1,
+              : enabled
+                  ? context.tokens.card1
+                  : context.tokens.card1.withOpacity(0.5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
-                : context.tokens.stroke,
+                : enabled
+                    ? context.tokens.stroke
+                    : context.tokens.stroke.withOpacity(0.3),
           ),
         ),
         child: Row(
@@ -1340,7 +1368,11 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : context.tokens.text,
+                color: isSelected
+                    ? Colors.white
+                    : enabled
+                        ? context.tokens.text
+                        : context.tokens.text.withOpacity(0.3),
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
