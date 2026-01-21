@@ -32,6 +32,23 @@ class UserRepository implements UserRepositoryInterface {
     roles
   ''';
 
+  // Query para selección en equipos - Incluye IDs necesarios
+  static const String _personFieldsForTeams = r'''
+    id
+    dni
+    name
+    surname
+    roles
+    player {
+      id
+      jerseyNumber
+      leagueId
+    }
+    professor {
+      id
+    }
+  ''';
+
   // Query completa para DETALLE (ver/editar usuario)
   static const String _personFields = r'''
     id
@@ -62,6 +79,23 @@ class UserRepository implements UserRepositoryInterface {
       getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
         content {
           $_personFieldsMinimal
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
+      }
+    }
+  ''';
+
+  String _getAllPersonsForTeamsQuery() =>
+      '''
+    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
+        content {
+          $_personFieldsForTeams
         }
         hasNext
         hasPrevious
@@ -152,12 +186,13 @@ class UserRepository implements UserRepositoryInterface {
     String? searchQuery,
     int? page,
     int? size,
+    bool forTeamSelection = false,
   }) async {
     final filters = _buildFilters(searchQuery, role);
 
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllPersonsQuery()),
+        document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
         variables: {'page': page ?? 0, 'size': size ?? 12, ...filters},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
@@ -181,7 +216,7 @@ class UserRepository implements UserRepositoryInterface {
       // Reintentar con surname
       final retryResult = await _query(
         QueryOptions(
-          document: gql(_getAllPersonsQuery()),
+          document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
           variables: {
             'page': page ?? 0,
             'size': size ?? 12,

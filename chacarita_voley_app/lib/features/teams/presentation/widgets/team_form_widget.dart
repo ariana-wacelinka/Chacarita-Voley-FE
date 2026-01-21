@@ -53,6 +53,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         role: 'PROFESSOR',
         page: 0,
         size: 100,
+        forTeamSelection: true,
       );
       if (!mounted) return;
 
@@ -133,6 +134,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         role: 'PLAYER',
         page: 0,
         size: 20,
+        forTeamSelection: true,
       );
       if (!mounted) return;
       setState(() {
@@ -167,6 +169,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
           searchQuery: query,
           page: 0,
           size: 20,
+          forTeamSelection: true,
         );
         if (!mounted) return;
         setState(() {
@@ -781,6 +784,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
           final results = await _userRepository.getUsers(
             role: 'PROFESSOR',
             searchQuery: query,
+            forTeamSelection: true,
           );
           setDialogState(() {
             searchResults = results;

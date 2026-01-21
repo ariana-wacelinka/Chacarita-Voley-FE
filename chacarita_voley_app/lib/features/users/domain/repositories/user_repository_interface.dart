@@ -6,6 +6,7 @@ abstract class UserRepositoryInterface {
     String? searchQuery,
     int? page,
     int? size,
+    bool forTeamSelection = false,
   });
   Future<int> getTotalUsers({String? role, String? searchQuery});
   Future<User?> getUserById(String id);

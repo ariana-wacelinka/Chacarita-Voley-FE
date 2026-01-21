@@ -178,8 +178,8 @@ class CreateTeamRequestModel {
       'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
-      'playerIds': playerIds,
-      'professorIds': professorIds,
+      'playerIds': playerIds.map((id) => int.tryParse(id) ?? 0).toList(),
+      'professorIds': professorIds.map((id) => int.tryParse(id) ?? 0).toList(),
     };
   }
 }
@@ -209,9 +209,10 @@ class UpdateTeamRequestModel {
       if (name != null) 'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
-      if (playerIds != null && playerIds!.isNotEmpty) 'playerIds': playerIds,
+      if (playerIds != null && playerIds!.isNotEmpty) 
+        'playerIds': playerIds!.map((id) => int.tryParse(id) ?? 0).toList(),
       if (professorIds != null && professorIds!.isNotEmpty)
-        'professorIds': professorIds,
+        'professorIds': professorIds!.map((id) => int.tryParse(id) ?? 0).toList(),
       if (trainingIds != null && trainingIds!.isNotEmpty)
         'trainingIds': trainingIds,
     };
