@@ -6,6 +6,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     // PAGOS PENDIENTES
     Payment(
       id: '01',
+      userId: '01',
       userName: 'Jose Juan',
       dni: '12345678',
       paymentDate: DateTime.now().subtract(Duration(days: 1)),
@@ -16,6 +17,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     ),
     Payment(
       id: '02',
+      userId: '02',
       userName: 'María González',
       dni: '87654321',
       paymentDate: DateTime.now().subtract(Duration(days: 2)),
@@ -26,6 +28,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     ),
     Payment(
       id: '03',
+      userId: '03',
       userName: 'Carlos Rodríguez',
       dni: '11223344',
       paymentDate: DateTime.now().subtract(Duration(days: 3)),
@@ -37,6 +40,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     // PAGOS APROBADOS
     Payment(
       id: '04',
+      userId: '04',
       userName: 'Ana Martínez',
       dni: '22334455',
       paymentDate: DateTime.now().subtract(Duration(days: 5)),
@@ -47,6 +51,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     ),
     Payment(
       id: '05',
+      userId: '05',
       userName: 'Luis Fernández',
       dni: '33445566',
       paymentDate: DateTime.now().subtract(Duration(days: 8)),
@@ -58,6 +63,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     // PAGOS RECHAZADOS
     Payment(
       id: '06',
+      userId: '06',
       userName: 'Diego Sánchez',
       dni: '55667788',
       paymentDate: DateTime.now().subtract(Duration(days: 4)),
@@ -68,6 +74,7 @@ class PaymentRepository implements PaymentsRepositoryInterface {
     ),
     Payment(
       id: '07',
+      userId: '07',
       userName: 'Laura Torres',
       dni: '66778899',
       paymentDate: DateTime.now().subtract(Duration(days: 6)),
@@ -89,6 +96,17 @@ class PaymentRepository implements PaymentsRepositoryInterface {
       return _payments.firstWhere((payment) => payment.id == id);
     } catch (e) {
       return null;
+    }
+  }
+
+  @override //TODO
+  List<Payment> getPaymentByUserId(String id) {
+    try {
+      return List<Payment>.from(
+        _payments.where((payments) => payments.id == id),
+      );
+    } catch (e) {
+      return <Payment>[];
     }
   }
 

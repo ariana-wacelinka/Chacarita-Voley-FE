@@ -6,6 +6,7 @@ import 'dart:convert'; // Para JSON si necesitas, pero opcional
 @immutable
 class Payment {
   final String? id; // ID único para editar/detalle/historial
+  final String? userId;
   final String userName; // Nombre completo para display
   final String dni; // DNI para filtros/búsquedas
   final DateTime paymentDate; // Fecha y hora del pago (incluye time)
@@ -20,6 +21,7 @@ class Payment {
 
   const Payment({
     this.id,
+    required this.userId,
     required this.userName,
     required this.dni,
     required this.paymentDate,
@@ -34,6 +36,7 @@ class Payment {
   // Método copyWith para updates fáciles (útil en edición)
   Payment copyWith({
     String? id,
+    String? userId,
     String? userName,
     String? dni,
     DateTime? paymentDate,
@@ -46,6 +49,7 @@ class Payment {
   }) {
     return Payment(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       dni: dni ?? this.dni,
       paymentDate: paymentDate ?? this.paymentDate,
@@ -62,6 +66,7 @@ class Payment {
   factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
       id: json['id'] as String?,
+      userId: json['userId'] as String?,
       userName: json['userName'] as String,
       dni: json['dni'] as String,
       paymentDate: DateTime.parse(json['paymentDate'] as String),
@@ -82,6 +87,7 @@ class Payment {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'userId': userId,
       'userName': userName,
       'dni': dni,
       'paymentDate': paymentDate.toIso8601String(),
@@ -96,7 +102,7 @@ class Payment {
 
   @override
   String toString() {
-    return 'Payment(id: $id, userName: $userName, dni: $dni, paymentDate: $paymentDate, sentDate: $sentDate, dueDate: $dueDate, amount: $amount, status: $status, comprobantePath: $comprobantePath, notes: $notes)';
+    return 'Payment(id: $id, userId: $userId, userName: $userName, dni: $dni, paymentDate: $paymentDate, sentDate: $sentDate, dueDate: $dueDate, amount: $amount, status: $status, comprobantePath: $comprobantePath, notes: $notes)';
   }
 }
 

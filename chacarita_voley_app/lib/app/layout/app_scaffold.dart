@@ -30,13 +30,24 @@ class AppScaffold extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.payment),
-                    title: const Text('Pagos'),
+                    title: const Text('Gestión de cuotas'),
                     selected: currentPath == '/payments',
                     onTap: () {
                       context.goNamed('payments');
                       Navigator.pop(context);
                     },
                   ),
+                  //TODO pruebas para ver las pantallas
+                  ListTile(
+                    leading: const Icon(Icons.payment),
+                    title: const Text('history'),
+                    selected: currentPath == '/payments_history',
+                    onTap: () {
+                      context.goNamed('history');
+                      Navigator.pop(context);
+                    },
+                  ),
+                  //Fin pruebas pantallas
                 ],
               ),
             ),

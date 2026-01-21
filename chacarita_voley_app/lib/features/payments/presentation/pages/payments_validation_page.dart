@@ -17,6 +17,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   // Data dummy (replace with real data later)
   late final List<Payment> initialPayments = [
     Payment(
+      userId: '10',
       userName: 'Marcos Paz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
@@ -25,6 +26,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       status: PaymentStatus.pendiente,
     ),
     Payment(
+      userId: '11',
       userName: 'Enrique Cruz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
@@ -33,6 +35,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       status: PaymentStatus.aprobado,
     ),
     Payment(
+      userId: '12',
       userName: 'Mari Gonzales',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),

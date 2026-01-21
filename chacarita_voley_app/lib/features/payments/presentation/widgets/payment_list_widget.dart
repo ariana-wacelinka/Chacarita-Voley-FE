@@ -53,6 +53,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     return List.generate(
       count,
       (index) => Payment(
+        userId: '222',
         userName: 'Demas',
         dni: '12345678',
         paymentDate: now.subtract(Duration(days: index)),

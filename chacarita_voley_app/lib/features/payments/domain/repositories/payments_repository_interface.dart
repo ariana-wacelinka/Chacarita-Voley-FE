@@ -5,6 +5,8 @@ abstract class PaymentsRepositoryInterface {
 
   Payment? getPaymentById(String id);
 
+  List<Payment> getPaymentByUserId(String id);
+
   Future<Payment> createPayment(Payment payment);
 
   Future<Payment> updatePayment(Payment payment);

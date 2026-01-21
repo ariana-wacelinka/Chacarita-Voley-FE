@@ -1,6 +1,7 @@
 import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
 import 'package:go_router/go_router.dart';
 import '../features/payments/presentation/pages/payments_validation_page.dart';
+import '../features/payments/presentation/pages/payment_history_page.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 
@@ -37,6 +38,12 @@ final appRouter = GoRouter(
           path: '/notifications',
           name: 'notifications',
           builder: (_, __) => const _Page(text: 'Notificaciones'),
+        ),
+        GoRoute(
+          path: '/payments_history',
+          name: 'history',
+          builder: (_, __) =>
+              const PaymentHistoryPage(userId: '01', userName: 'Prueba'),
         ),
       ],
     ),
