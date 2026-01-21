@@ -309,7 +309,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
           ),
         );
 
-        context.pop();
+        context.pop(true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {

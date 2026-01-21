@@ -316,13 +316,52 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            notification.title,
-                            style: TextStyle(
-                              color: context.tokens.text,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  notification.title,
+                                  style: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (!notification.repeatable) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: notification.deliveries.isNotEmpty
+                                        ? Colors.green.withOpacity(0.15)
+                                        : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: notification.deliveries.isNotEmpty
+                                          ? Colors.green
+                                          : Theme.of(context).colorScheme.primary,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    notification.deliveries.isNotEmpty
+                                        ? 'Enviado'
+                                        : 'Próximamente',
+                                    style: TextStyle(
+                                      color: notification.deliveries.isNotEmpty
+                                          ? Colors.green
+                                          : Theme.of(context).colorScheme.primary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -463,6 +502,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         if (notification.getRepeatText().isNotEmpty)
                           Text(
                             notification.getRepeatText(),
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                            ),
+                          ),
+                        if (notification.sendMode == SendMode.SCHEDULED &&
+                            !notification.repeatable &&
+                            notification.scheduledAt != null)
+                          Text(
+                            'Envío: ${notification.scheduledAt!.day.toString().padLeft(2, '0')}/${notification.scheduledAt!.month.toString().padLeft(2, '0')}/${notification.scheduledAt!.year}',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                            ),
+                          ),
+                        if (notification.sendMode == SendMode.NOW &&
+                            !notification.repeatable &&
+                            notification.createdAt != null)
+                          Text(
+                            'Envío no programado: ${notification.createdAt!.day.toString().padLeft(2, '0')}/${notification.createdAt!.month.toString().padLeft(2, '0')}/${notification.createdAt!.year}',
                             style: TextStyle(
                               color: context.tokens.placeholder,
                               fontSize: 11,

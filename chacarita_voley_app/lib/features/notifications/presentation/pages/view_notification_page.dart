@@ -37,10 +37,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final result = await _repository.getNotifications();
-      final notification = result.notifications.firstWhere(
-        (n) => n.id == widget.notificationId,
-      );
+      final notification = await _repository.getNotificationById(widget.notificationId);
 
       // Cargar nombres de equipos y jugadores
       await _loadTeamAndPlayerNames(notification);
@@ -530,10 +527,14 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
-              await context.push(
+              final result = await context.push(
                 '/notifications/${widget.notificationId}/edit',
               );
-              _loadNotification();
+              if (result == true && mounted) {
+                _loadNotification();
+                // Propagate the update signal back to the list
+                context.pop(true);
+              }
             },
             icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
             label: const Text(

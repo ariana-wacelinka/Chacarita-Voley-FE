@@ -11,6 +11,40 @@ class NotificationRepository {
     return GraphQLClientFactory.client.mutate(options);
   }
 
+  String _getNotificationByIdQuery() => '''
+    query GetNotificationById(\$id: ID!) {
+      getNotificationById(id: \$id) {
+        id
+        title
+        message
+        sendMode
+        scheduledAt
+        repeatable
+        frequency
+        createdAt
+        countOfPlayers
+        sender {
+          id
+          name
+          surname
+          dni
+        }
+        destinations {
+          id
+          type
+          referenceId
+        }
+        deliveries {
+          id
+          status
+          sentAt
+          recipientId
+          attemptedAt
+        }
+      }
+    }
+  ''';
+
   String _getAllNotificationsQuery() => '''
     query GetAllNotifications(\$page: Int!, \$size: Int!) {
       getAllNotifications(page: \$page, size: \$size) {
@@ -63,7 +97,7 @@ class NotificationRepository {
       QueryOptions(
         document: gql(_getAllNotificationsQuery()),
         variables: {'page': page, 'size': size},
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
 
@@ -108,6 +142,34 @@ class NotificationRepository {
       hasNext: notificationsData['hasNext'] as bool? ?? false,
       hasPrevious: notificationsData['hasPrevious'] as bool? ?? false,
     );
+  }
+
+  Future<NotificationModel> getNotificationById(String id) async {
+    print('📤 getNotificationById called with id=$id');
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getNotificationByIdQuery()),
+        variables: {'id': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    print('📥 Query result: hasException=${result.hasException}');
+
+    if (result.hasException) {
+      print('❌ Exception: ${result.exception}');
+      throw Exception(result.exception.toString());
+    }
+
+    final notificationData = result.data?['getNotificationById'];
+    if (notificationData == null) {
+      throw Exception('Notification not found');
+    }
+
+    print('📥 Raw notification data: $notificationData');
+
+    return _mapNotificationFromBackend(notificationData);
   }
 
   NotificationModel _mapNotificationFromBackend(Map<String, dynamic> data) {
@@ -262,11 +324,13 @@ class NotificationRepository {
 
     print('📤 Creating notification with input: $input');
 
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(mutation),
-        variables: {'input': input},
-        fetchPolicy: FetchPolicy.networkOnly,
+    final result = await GraphQLClientFactory.withFreshClient(
+      run: (client) => client.mutate(
+        MutationOptions(
+          document: gql(mutation),
+          variables: {'input': input},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
       ),
     );
 
@@ -363,16 +427,33 @@ class NotificationRepository {
       }
     ''';
 
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(mutation),
-        variables: {'id': id, 'input': input},
+    print('📤 Updating notification id: $id with input: $input');
+
+    final result = await GraphQLClientFactory.withFreshClient(
+      run: (client) => client.mutate(
+        MutationOptions(
+          document: gql(mutation),
+          variables: {'id': id, 'input': input},
+        ),
       ),
     );
 
+    print('📥 Update result: hasException=${result.hasException}');
+
     if (result.hasException) {
+      print('❌ Update exception: ${result.exception}');
+      final exceptionStr = result.exception.toString();
+      
+      // Detectar errores específicos del backend
+      if (exceptionStr.contains('ILLEGAL_STATE') || 
+          exceptionStr.contains('already been sent')) {
+        throw Exception('No se puede editar una notificación que ya fue enviada');
+      }
+      
       throw Exception(result.exception.toString());
     }
+
+    print('📥 Update raw data: ${result.data}');
 
     final notificationData = result.data?['updateNotification'];
     if (notificationData == null) {

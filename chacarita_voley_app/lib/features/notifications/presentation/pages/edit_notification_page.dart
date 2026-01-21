@@ -96,10 +96,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final result = await _repository.getNotifications();
-      final notification = result.notifications.firstWhere(
-        (n) => n.id == widget.notificationId,
-      );
+      final notification = await _repository.getNotificationById(widget.notificationId);
 
       if (!mounted) return;
 
@@ -383,7 +380,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           ),
         );
 
-        context.go('/notifications/${widget.notificationId}');
+        // Return true to trigger refresh in parent page
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
