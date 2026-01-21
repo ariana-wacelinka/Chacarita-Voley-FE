@@ -145,13 +145,19 @@ class _EditTeamPageState extends State<EditTeamPage> {
             originalMember.numeroCamiseta != newMember.numeroCamiseta) {
           try {
             print(
-              '🔢 Updating jersey number for player ${newMember.playerId}: '
+              '🔢 Updating jersey number for player ${newMember.playerId} (person ${newMember.personId}): '
               '${originalMember.numeroCamiseta ?? "none"} → ${newMember.numeroCamiseta}',
             );
-            await _userRepository.updatePerson(newMember.playerId!, {
-              'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
-            });
-            updatedCount++;
+            // Usar personId para updatePerson, no playerId
+            if (newMember.personId != null) {
+              await _userRepository.updatePerson(newMember.personId!, {
+                'jerseyNumber': int.tryParse(newMember.numeroCamiseta!) ?? 0,
+              });
+              updatedCount++;
+            } else {
+              print('⚠️ Cannot update jersey - personId is null for player ${newMember.playerId}');
+              errorCount++;
+            }
           } catch (e) {
             print('❌ Error updating jersey for ${newMember.playerId}: $e');
             errorCount++;

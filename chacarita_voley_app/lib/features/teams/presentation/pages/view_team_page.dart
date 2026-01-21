@@ -304,7 +304,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                 final afiliadoValue = afiliadoController.text.trim();
                 final camisetaValue = camisetaController.text.trim();
 
-                if (member.playerId != null) {
+                if (member.personId != null) {
                   try {
                     final Map<String, dynamic> updates = {};
 
@@ -319,7 +319,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
 
                     if (updates.isNotEmpty) {
                       await _userRepository.updatePerson(
-                        member.playerId!,
+                        member.personId!,
                         updates,
                       );
                     }

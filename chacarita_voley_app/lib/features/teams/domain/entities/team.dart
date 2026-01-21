@@ -1,7 +1,8 @@
 import 'team_type.dart';
 
 class TeamMember {
-  final String? playerId; // ID del jugador para mutaciones
+  final String? playerId; // ID del jugador para mutaciones relacionadas con player
+  final String? personId; // ID de la persona para mutaciones relacionadas con person
   final String dni;
   final String nombre;
   final String apellido;
@@ -10,6 +11,7 @@ class TeamMember {
 
   TeamMember({
     this.playerId,
+    this.personId,
     required this.dni,
     required this.nombre,
     required this.apellido,
@@ -21,6 +23,7 @@ class TeamMember {
 
   TeamMember copyWith({
     String? playerId,
+    String? personId,
     String? dni,
     String? nombre,
     String? apellido,
@@ -29,6 +32,7 @@ class TeamMember {
   }) {
     return TeamMember(
       playerId: playerId ?? this.playerId,
+      personId: personId ?? this.personId,
       dni: dni ?? this.dni,
       nombre: nombre ?? this.nombre,
       apellido: apellido ?? this.apellido,

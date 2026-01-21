@@ -426,6 +426,11 @@ class TeamRepository implements TeamRepositoryInterface {
   TeamDetail _mapToTeamDetail(TeamResponseModel model) {
     final professors = model.professors ?? [];
 
+    if (kDebugMode) {
+      print('🏐 Mapping TeamDetail: ${model.name}');
+      print('   Players count: ${model.players?.length ?? 0}');
+    }
+
     return TeamDetail(
       id: model.id,
       nombre: model.name,
@@ -443,14 +448,23 @@ class TeamRepository implements TeamRepositoryInterface {
           .toList(),
       integrantes: (model.players ?? [])
           .map(
-            (player) => TeamMember(
-              playerId: player.id,
-              dni: player.person?.dni ?? '',
-              nombre: player.person?.name ?? '',
-              apellido: player.person?.surname ?? '',
-              numeroAfiliado: player.leagueId?.toString(),
-              numeroCamiseta: player.jerseyNumber?.toString(),
-            ),
+            (player) {
+              final member = TeamMember(
+                playerId: player.id,
+                personId: player.person?.id,
+                dni: player.person?.dni ?? '',
+                nombre: player.person?.name ?? '',
+                apellido: player.person?.surname ?? '',
+                numeroAfiliado: player.leagueId?.toString(),
+                numeroCamiseta: player.jerseyNumber?.toString(),
+              );
+              
+              if (kDebugMode) {
+                print('   Player: ${member.nombre} ${member.apellido} - playerId: ${member.playerId}, personId: ${member.personId}, dni: ${member.dni}');
+              }
+              
+              return member;
+            },
           )
           .toList(),
       entrenamientos: (model.trainings ?? [])

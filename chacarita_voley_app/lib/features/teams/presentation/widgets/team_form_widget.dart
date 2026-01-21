@@ -199,12 +199,13 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       // Para jugadores, playerId es el ID del player
       // Para profesores, no se agrega a integrantes (se maneja aparte en selectedEntrenadores)
       print(
-        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}',
+        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}, personId: ${user.id}',
       );
       setState(() {
         _integrantes.add(
           TeamMember(
-            playerId: user.playerId, // Solo para jugadores
+            playerId: user.playerId,
+            personId: user.id,
             dni: user.dni,
             nombre: user.nombre,
             apellido: user.apellido,
@@ -225,7 +226,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     setState(() {
       final member = _integrantes[index];
       _integrantes[index] = TeamMember(
-        playerId: member.playerId, // Preservar playerId
+        playerId: member.playerId,
+        personId: member.personId,
         dni: member.dni,
         nombre: member.nombre,
         apellido: member.apellido,
