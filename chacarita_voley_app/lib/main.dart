@@ -8,7 +8,10 @@ import 'core/network/graphql_client_factory.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  GraphQLClientFactory.init(baseUrl: Environment.baseUrl);
+  GraphQLClientFactory.init(
+    baseUrl: Environment.baseUrl,
+    token: 'mock-token',
+  );
 
   runApp(
     ChangeNotifierProvider(

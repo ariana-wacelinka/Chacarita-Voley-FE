@@ -49,6 +49,13 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  // Query ultra liviana para notificaciones - Solo id, nombre y apellido
+  static const String _personFieldsForNotifications = r'''
+    id
+    name
+    surname
+  ''';
+
   // Query completa para DETALLE (ver/editar usuario)
   static const String _personFields = r'''
     id
@@ -103,6 +110,18 @@ class UserRepository implements UserRepositoryInterface {
         pageSize
         totalElements
         totalPages
+      }
+    }
+  ''';
+
+  String _getAllPersonsForNotificationsQuery() =>
+      '''
+    query GetAllPersonsForNotifications(\$page: Int!, \$size: Int!) {
+      getAllPersons(page: \$page, size: \$size) {
+        content {
+          $_personFieldsForNotifications
+        }
+        totalElements
       }
     }
   ''';
@@ -240,6 +259,31 @@ class UserRepository implements UserRepositoryInterface {
             .toList();
       }
     }
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
+  }
+
+  /// Método específico para cargar usuarios para notificaciones
+  /// Solo trae id, name y surname para ser ultra liviano
+  Future<List<User>> getUsersForNotifications() async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsForNotificationsQuery()),
+        variables: {'page': 0, 'size': 100},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
 
     return content
         .whereType<Map<String, dynamic>>()

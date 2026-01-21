@@ -197,6 +197,40 @@ class NotificationDelivery {
   }
 }
 
+class NotificationSender {
+  final String id;
+  final String name;
+  final String surname;
+  final String dni;
+
+  NotificationSender({
+    required this.id,
+    required this.name,
+    required this.surname,
+    required this.dni,
+  });
+
+  factory NotificationSender.fromJson(Map<String, dynamic> json) {
+    return NotificationSender(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      surname: json['surname'] as String,
+      dni: json['dni'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'surname': surname,
+      'dni': dni,
+    };
+  }
+
+  String get fullName => '$name $surname';
+}
+
 class NotificationModel {
   final String id;
   final String title;
@@ -209,6 +243,7 @@ class NotificationModel {
   final List<NotificationDestination> destinations;
   final List<NotificationDelivery> deliveries;
   final int countOfPlayers;
+  final NotificationSender? sender;
 
   NotificationModel({
     required this.id,
@@ -222,6 +257,7 @@ class NotificationModel {
     required this.destinations,
     required this.deliveries,
     this.countOfPlayers = 0,
+    this.sender,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -247,6 +283,9 @@ class NotificationModel {
           .map((d) => NotificationDelivery.fromJson(d as Map<String, dynamic>))
           .toList(),
       countOfPlayers: json['countOfPlayers'] as int? ?? 0,
+      sender: json['sender'] != null
+          ? NotificationSender.fromJson(json['sender'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -263,6 +302,7 @@ class NotificationModel {
       'destinations': destinations.map((d) => d.toJson()).toList(),
       'deliveries': deliveries.map((d) => d.toJson()).toList(),
       'countOfPlayers': countOfPlayers,
+      if (sender != null) 'sender': sender!.toJson(),
     };
   }
 

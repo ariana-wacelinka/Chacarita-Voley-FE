@@ -4,6 +4,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../../teams/data/repositories/team_repository.dart';
+import '../../../teams/domain/entities/team_list_item.dart';
+import '../../../users/data/repositories/user_repository.dart';
+import '../../../users/domain/entities/user.dart';
 
 class ViewNotificationPage extends StatefulWidget {
   final String notificationId;
@@ -16,9 +20,14 @@ class ViewNotificationPage extends StatefulWidget {
 
 class _ViewNotificationPageState extends State<ViewNotificationPage> {
   final _repository = NotificationRepository();
+  final _teamRepository = TeamRepository();
+  final _userRepository = UserRepository();
   NotificationModel? _notification;
   bool _isLoading = true;
   String? _errorMessage;
+  
+  Map<String, String> _teamNames = {};
+  Map<String, String> _playerNames = {};
 
   @override
   void initState() {
@@ -33,6 +42,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         (n) => n.id == widget.notificationId,
       );
 
+      // Cargar nombres de equipos y jugadores
+      await _loadTeamAndPlayerNames(notification);
+
       if (!mounted) return;
       setState(() {
         _notification = notification;
@@ -45,6 +57,52 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         _isLoading = false;
         _errorMessage = 'Error al cargar notificación';
       });
+    }
+  }
+
+  Future<void> _loadTeamAndPlayerNames(NotificationModel notification) async {
+    try {
+      // Obtener IDs únicos de equipos y jugadores
+      final teamIds = <String>{};
+      final playerIds = <String>{};
+
+      for (var destination in notification.destinations) {
+        if (destination.type == DestinationType.TEAM && 
+            destination.referenceId != null) {
+          teamIds.add(destination.referenceId!);
+        } else if (destination.type == DestinationType.PLAYER && 
+                   destination.referenceId != null) {
+          playerIds.add(destination.referenceId!);
+        }
+      }
+
+      // Cargar equipos
+      if (teamIds.isNotEmpty) {
+        final teams = await _teamRepository.getTeamsListItems();
+        for (var team in teams) {
+          if (teamIds.contains(team.id)) {
+            _teamNames[team.id] = team.nombre;
+          }
+        }
+      }
+
+      // Cargar jugadores
+      if (playerIds.isNotEmpty) {
+        print('🔍 playerIds needed: $playerIds');
+        final users = await _userRepository.getUsersForNotifications();
+        print('📋 Total users loaded: ${users.length}');
+        for (var user in users) {
+          final userId = user.id;
+          print('  User: ${user.nombre} ${user.apellido} - id: $userId');
+          if (userId != null && playerIds.contains(userId)) {
+            _playerNames[userId] = '${user.nombre} ${user.apellido}';
+            print('  ✅ Matched player: $userId = ${user.nombre} ${user.apellido}');
+          }
+        }
+        print('🎯 Final _playerNames: $_playerNames');
+      }
+    } catch (e) {
+      print('Error loading team/player names: $e');
     }
   }
 
@@ -275,7 +333,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Jane Doe', // Mock del autor
+            _notification!.sender != null
+                ? '${_notification!.sender!.name} ${_notification!.sender!.surname}'
+                : 'Usuario desconocido',
             style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
           ),
           const SizedBox(height: 12),
@@ -431,9 +491,17 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       case DestinationType.ALL_PLAYERS:
         return 'Todos los jugadores';
       case DestinationType.TEAM:
-        return 'Equipo (ID: ${destination.referenceId ?? 'N/A'})';
+        if (destination.referenceId != null) {
+          return _teamNames[destination.referenceId] ?? 
+                 'Equipo (ID: ${destination.referenceId})';
+        }
+        return 'Equipo';
       case DestinationType.PLAYER:
-        return 'Jugador (ID: ${destination.referenceId ?? 'N/A'})';
+        if (destination.referenceId != null) {
+          return _playerNames[destination.referenceId] ?? 
+                 'Jugador (ID: ${destination.referenceId})';
+        }
+        return 'Jugador';
       case DestinationType.DUES_PENDING:
         return 'Jugadores con cuota pendiente';
       case DestinationType.DUES_OVERDUE:

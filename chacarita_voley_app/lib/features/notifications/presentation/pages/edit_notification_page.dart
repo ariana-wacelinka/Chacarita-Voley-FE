@@ -123,6 +123,31 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           _selectedFrequency = notification.frequency!.displayName;
         }
 
+        // Cargar destinatarios
+        for (var destination in notification.destinations) {
+          switch (destination.type) {
+            case DestinationType.ALL_PLAYERS:
+              _recipientFilter = 'todos';
+              break;
+            case DestinationType.DUES_PENDING:
+              _recipientFilter = 'pendiente';
+              break;
+            case DestinationType.DUES_OVERDUE:
+              _recipientFilter = 'vencida';
+              break;
+            case DestinationType.PLAYER:
+              if (destination.referenceId != null) {
+                _selectedPlayers.add(destination.referenceId!);
+              }
+              break;
+            case DestinationType.TEAM:
+              if (destination.referenceId != null) {
+                _selectedTeams.add(destination.referenceId!);
+              }
+              break;
+          }
+        }
+
         _isLoadingNotification = false;
       });
     } catch (e) {

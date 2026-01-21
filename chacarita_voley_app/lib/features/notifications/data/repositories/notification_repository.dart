@@ -30,6 +30,12 @@ class NotificationRepository {
           frequency
           createdAt
           countOfPlayers
+          sender {
+            id
+            name
+            surname
+            dni
+          }
           destinations {
             id
             type
@@ -157,6 +163,17 @@ class NotificationRepository {
         .map((del) => NotificationDelivery.fromJson(del))
         .toList();
 
+    NotificationSender? sender;
+    if (data['sender'] != null) {
+      final senderData = data['sender'] as Map<String, dynamic>;
+      sender = NotificationSender(
+        id: senderData['id'] as String,
+        name: senderData['name'] as String,
+        surname: senderData['surname'] as String,
+        dni: senderData['dni'] as String,
+      );
+    }
+
     return NotificationModel(
       id: data['id'] as String? ?? '',
       title: data['title'] as String? ?? '',
@@ -169,6 +186,7 @@ class NotificationRepository {
       destinations: destinations,
       deliveries: deliveries,
       countOfPlayers: data['countOfPlayers'] as int? ?? 0,
+      sender: sender,
     );
   }
 
@@ -220,6 +238,12 @@ class NotificationRepository {
           frequency
           createdAt
           countOfPlayers
+          sender {
+            id
+            name
+            surname
+            dni
+          }
           destinations {
             id
             type
@@ -236,6 +260,8 @@ class NotificationRepository {
       }
     ''';
 
+    print('📤 Creating notification with input: $input');
+
     final result = await _mutate(
       MutationOptions(
         document: gql(mutation),
@@ -244,14 +270,22 @@ class NotificationRepository {
       ),
     );
 
+    print('📥 Create result: hasException=${result.hasException}');
+
     if (result.hasException) {
+      print('❌ Create exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
 
+    print('📥 Create raw data: ${result.data}');
+
     final notificationData = result.data?['createNotification'];
     if (notificationData == null) {
+      print('⚠️ notificationData is null');
       throw Exception('No se pudo crear la notificación');
     }
+
+    print('✅ Notification created successfully with id: ${notificationData['id']}');
 
     return _mapNotificationFromBackend(
       notificationData as Map<String, dynamic>,
@@ -307,6 +341,12 @@ class NotificationRepository {
           frequency
           createdAt
           countOfPlayers
+          sender {
+            id
+            name
+            surname
+            dni
+          }
           destinations {
             id
             type

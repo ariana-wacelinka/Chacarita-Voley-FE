@@ -22,6 +22,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   int _currentPage = 1;
   final int _itemsPerPage = 25;
   int _totalPages = 1;
+  int _totalElements = 0;
   bool _hasNext = false;
   bool _hasPrevious = false;
 
@@ -49,6 +50,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _notifications = result.notifications;
         _filteredNotifications = result.notifications;
         _totalPages = result.totalPages;
+        _totalElements = result.totalElements;
         _hasNext = result.hasNext;
         _hasPrevious = result.hasPrevious;
         _isLoading = false;
@@ -200,8 +202,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
       backgroundColor: context.tokens.background,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await context.push('/notifications/new');
-          _loadNotifications();
+          final result = await context.push('/notifications/new');
+          if (result == true && mounted) {
+            _loadNotifications();
+          }
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Symbols.add, color: Colors.white),
@@ -322,7 +326,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Jane Doe',
+                            notification.sender != null
+                                ? '${notification.sender!.name} ${notification.sender!.surname}'
+                                : 'Usuario desconocido',
                             style: TextStyle(
                               color: context.tokens.text.withOpacity(0.6),
                               fontSize: 12,
@@ -338,22 +344,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         size: 20,
                       ),
                       color: context.tokens.card2,
-                      onSelected: (value) {
+                      onSelected: (value) async {
                         switch (value) {
                           case 'view':
-                            context.push('/notifications/${notification.id}');
+                            final result = await context.push('/notifications/${notification.id}');
+                            if (result == true && mounted) {
+                              _loadNotifications();
+                            }
                             break;
                           case 'edit':
-                            context.push(
+                            final result = await context.push(
                               '/notifications/${notification.id}/edit',
                             );
+                            if (result == true && mounted) {
+                              _loadNotifications();
+                            }
                             break;
                           case 'delete':
                             _showDeleteConfirmation(notification.id);
                             break;
                         }
                       },
-                      itemBuilder: (context) => [
+                      itemBuilder: (context) {
+                        final canEdit = notification.sendMode == SendMode.SCHEDULED || 
+                                        notification.deliveries.isEmpty;
+                        
+                        return [
                         PopupMenuItem(
                           value: 'view',
                           child: Row(
@@ -373,17 +389,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         ),
                         PopupMenuItem(
                           value: 'edit',
+                          enabled: canEdit,
                           child: Row(
                             children: [
                               Icon(
                                 Symbols.edit,
                                 size: 20,
-                                color: context.tokens.text,
+                                color: canEdit 
+                                    ? context.tokens.text 
+                                    : context.tokens.text.withOpacity(0.3),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Modificar',
-                                style: TextStyle(color: context.tokens.text),
+                                style: TextStyle(
+                                  color: canEdit 
+                                      ? context.tokens.text 
+                                      : context.tokens.text.withOpacity(0.3),
+                                ),
                               ),
                             ],
                           ),
@@ -407,7 +430,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             ],
                           ),
                         ),
-                      ],
+                      ];
+                      },
                     ),
                   ],
                 ),
@@ -535,7 +559,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           const SizedBox(width: 16),
           Text(
-            'Página $_currentPage de $_totalPages',
+            _buildPaginationText(),
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 14,
@@ -555,5 +579,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ],
       ),
     );
+  }
+
+  String _buildPaginationText() {
+    if (_totalElements == 0) {
+      return '0-0 de 0';
+    }
+    final start = (_currentPage - 1) * _itemsPerPage + 1;
+    final end = (_currentPage * _itemsPerPage).clamp(0, _totalElements);
+    return '$start-$end de $_totalElements';
   }
 }
