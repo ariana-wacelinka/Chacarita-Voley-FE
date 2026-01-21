@@ -208,6 +208,7 @@ class NotificationModel {
   final Frequency? frequency;
   final List<NotificationDestination> destinations;
   final List<NotificationDelivery> deliveries;
+  final int countOfPlayers;
 
   NotificationModel({
     required this.id,
@@ -220,6 +221,7 @@ class NotificationModel {
     this.frequency,
     required this.destinations,
     required this.deliveries,
+    this.countOfPlayers = 0,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -244,6 +246,7 @@ class NotificationModel {
       deliveries: (json['deliveries'] as List<dynamic>)
           .map((d) => NotificationDelivery.fromJson(d as Map<String, dynamic>))
           .toList(),
+      countOfPlayers: json['countOfPlayers'] as int? ?? 0,
     );
   }
 
@@ -259,6 +262,7 @@ class NotificationModel {
       'frequency': frequency?.name,
       'destinations': destinations.map((d) => d.toJson()).toList(),
       'deliveries': deliveries.map((d) => d.toJson()).toList(),
+      'countOfPlayers': countOfPlayers,
     };
   }
 
@@ -267,7 +271,8 @@ class NotificationModel {
     if (scheduledAt != null) {
       return '${scheduledAt!.hour.toString().padLeft(2, '0')}:${scheduledAt!.minute.toString().padLeft(2, '0')}';
     }
-    return '';
+    // If no scheduledAt, show createdAt time for NOW mode
+    return '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
   }
 
   String getRepeatText() {
@@ -293,11 +298,6 @@ class NotificationModel {
     }
 
     return '${destinations.length} grupos de destinatarios';
-  }
-
-  int get recipientCount {
-    // Mock count - en producción esto vendría del backend
-    return destinations.length * 43;
   }
 }
 

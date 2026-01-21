@@ -291,8 +291,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildNotificationCard(NotificationModel notification) {
-    final recipientCount = notification.recipientCount;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -450,7 +448,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     const Spacer(),
                     Text(
-                      '$recipientCount',
+                      '${notification.countOfPlayers}',
                       style: TextStyle(
                         color: context.tokens.text.withOpacity(0.8),
                         fontSize: 14,

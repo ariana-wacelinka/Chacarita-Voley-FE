@@ -29,6 +29,7 @@ class NotificationRepository {
           repeatable
           frequency
           createdAt
+          countOfPlayers
           destinations {
             id
             type
@@ -167,6 +168,7 @@ class NotificationRepository {
       frequency: frequency,
       destinations: destinations,
       deliveries: deliveries,
+      countOfPlayers: data['countOfPlayers'] as int? ?? 0,
     );
   }
 
@@ -217,6 +219,7 @@ class NotificationRepository {
           repeatable
           frequency
           createdAt
+          countOfPlayers
           destinations {
             id
             type
@@ -303,6 +306,7 @@ class NotificationRepository {
           repeatable
           frequency
           createdAt
+          countOfPlayers
           destinations {
             id
             type
