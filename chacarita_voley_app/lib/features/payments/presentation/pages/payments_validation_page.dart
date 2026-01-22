@@ -14,7 +14,7 @@ class PaymentsValidationPage extends StatefulWidget {
 }
 
 class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
-  // Data dummy (replace with real data later)
+  // Data dummy (replace with API/DB)
   late final List<Payment> initialPayments = [
     Payment(
       userId: '10',
@@ -74,22 +74,29 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     }
   }
 
-  // Filter
-  // String _dniFilter = '';
-  // DateTime? _startDate;
-  // DateTime? _endDate;
-  // TimeOfDay? _startTime;
-  // TimeOfDay? _endTime;
-  // final Set<String> _selectedFilters = {};
+  Filter
+  String _dniFilter = '';
+  DateTime? _startDate;
+  DateTime? _endDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  final Set<String> _selectedFilters = {};
 
   // Format
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
-
-  // final DateFormat _timeFormat = DateFormat('HH:mm');
+  final DateFormat _timeFormat = DateFormat('HH:mm');
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    // Filtered Payments
+    final filteredPayments = initialPayments.where((p) {
+      bool matchesDni = _dniFilter.isEmpty || p.dni.contains(_dniFilter);
+      bool matchesDate = _dateFilter == null || p.sentDate.day == _dateFilter;
+      bool matchesTime =
+          _timeFilter == null || p.paymentDate.hour == _timeFilter;
+      return matchesDni && matchesDate && matchesTime;
+    }).toList();
 
     return Scaffold(
       backgroundColor: tokens.background,
@@ -132,22 +139,22 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildSummaryItem(
-                          '70',
-                          'Aprobados',
-                          tokens.green,
-                          tokens.gray,
+                          number: '70',
+                          label: 'Aprobados',
+                          numberColor: tokens.green,
+                          labelColor: tokens.gray,
                         ),
                         _buildSummaryItem(
-                          '30',
-                          'Rechazados',
-                          tokens.redToRosita,
-                          tokens.gray,
+                          number: '30',
+                          label: 'Rechazados',
+                          numberColor:tokens.redToRosita,
+                          labelColor:tokens.gray,
                         ),
                         _buildSummaryItem(
-                          '70',
-                          'Pendientes',
-                          tokens.pending,
-                          tokens.gray,
+                          number: '70',
+                          label: 'Pendientes',
+                          numberColor: tokens.pending,
+                          labelColor: tokens.gray,
                         ),
                       ],
                     ),
@@ -196,15 +203,36 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       children: [
                         Expanded(
                           child: _buildDateField(
-                            'Fecha de inicio *',
-                            DateTime.now(),
+                            label: 'Fecha de inicio *',
+                            // DateTime.now(),
+                            date: _startDate,
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _startDate ?? DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                              if (date != null) setState(() => _startDate = date);
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildDateField(
-                            'Fecha de fin *',
-                            DateTime.now().add(const Duration(days: 30)),
+                            // 'Fecha de fin *',
+                            // DateTime.now().add(const Duration(days: 30)),
+                            label: 'Fecha de fin *',
+                            date: _endDate,
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _endDate ?? DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                              if (date != null) setState(() => _endDate = date);
+                            },
                           ),
                         ),
                       ],
@@ -215,21 +243,39 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       children: [
                         Expanded(
                           child: _buildTimeField(
-                            'Hora de inicio *',
-                            TimeOfDay.now(),
+                            // 'Hora de inicio *',
+                            // TimeOfDay.now(),
+                            label: 'Hora de inicio *',
+                            time: _startTime,
+                            onTap: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: _startTime ?? TimeOfDay.now(),
+                              );
+                              if (time != null) setState(() => _startTime = time);
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildTimeField(
-                            'Hora de fin *',
-                            TimeOfDay.now(),
+                            // 'Hora de fin *',
+                            // TimeOfDay.now(),
+                            label: 'Hora de fin *',
+                            time: _endTime,
+                            onTap: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: _endTime ?? TimeOfDay.now(),
+                              );
+                              if (time != null) setState(() => _endTime = time);
+                            },
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-
+                    // Button Filter
                     Text(
                       'Filtrar por:',
                       style: TextStyle(fontSize: 14, color: tokens.gray),
@@ -254,7 +300,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
             Expanded(
               // Inifity scroll label payment
-              child: PaymentListWidget(initialPayments: _payments),
+              child: PaymentListWidget(initialPayments: _payments), //initialPayments TODO
             ),
           ],
         ),
@@ -266,12 +312,12 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   // Widget private
   // ────────────────────────────────────────────────
 
-  Widget _buildSummaryItem(
-    String number,
-    String label,
-    Color numberColor,
-    Color labelColor,
-  ) {
+  Widget _buildSummaryItem({
+    required String number,
+    required String label,
+    required Color numberColor,
+    required Color labelColor,
+  }) {
     return Column(
       children: [
         Text(
@@ -287,9 +333,14 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     );
   }
 
-  // Widget for date field
-  Widget _buildDateField(String label, DateTime date) {
+  // Widget para campo de fecha
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap, //TODO que es el VoidCallback
+  }) {
     final tokens = context.tokens;
+
     final hasAsterisk = label.endsWith(' *');
     final textPart = hasAsterisk
         ? label.substring(0, label.length - 2).trim()
@@ -309,7 +360,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           ],
         ),
         const SizedBox(height: 4),
-        Container(
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             border: Border.all(color: tokens.stroke),
@@ -331,10 +384,10 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     );
   }
 
-  Widget _buildTimeField(String label, TimeOfDay time) {
+  Widget _buildTimeField(String label, TimeOfDay time, VoidCallback onTap) {
     final tokens = context.tokens;
-    final hasAsterisk = label.endsWith(' *');
-    final textPart = hasAsterisk
+    bool hasAsterisk = label.endsWith(' *');
+    String textPart = hasAsterisk
         ? label.substring(0, label.length - 2).trim()
         : label;
 
@@ -352,7 +405,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           ],
         ),
         const SizedBox(height: 4),
-        Container(
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             border: Border.all(color: tokens.stroke),
@@ -374,18 +429,98 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     );
   }
 
+  // Botón de filtro (usando GFButton para estilo)
   Widget _buildFilterButton(String label, Color color) {
-    // Por ahora sin estado seleccionado (puedes agregar lógica después)
+    final isSelected = _selectedFilters.contains(label);
     return GFButton(
       onPressed: () {
-        // Implementar toggle cuando lo necesites
+        setState(() {
+          if (isSelected) {
+            _selectedFilters.remove(label);
+          } else {
+            _selectedFilters.add(label);
+          }
+        });
       },
       text: label,
-      shape: GFButtonShape.standard,
+      // shape: GFButtonShape.standard,
+      //
+      // type: GFButtonType.outline,
+      // color: color,
+      // textStyle: TextStyle(color: context.tokens.text),
+      shape: GFButtonShape.pills,
+      type: isSelected ? GFButtonType.solid : GFButtonType.outline,
+      color: isSelected ? color : context.tokens.stroke,
+      borderSide: BorderSide(color: context.tokens.stroke),
+      textStyle: TextStyle(
+        color: isSelected ? context.tokens.permanentWhite : context.tokens.text,
+      ),
+    );
+  }
+}
 
-      type: GFButtonType.outline,
-      color: color,
-      textStyle: TextStyle(color: context.tokens.text),
+// Widget reutilizable para cada card de validación de pago (usando GFCard, GFListTile, GFBadge, GFButton)
+class PaymentValidationCard extends StatelessWidget {
+  final Payment payment;
+
+  const PaymentValidationCard({super.key, required this.payment});
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    Color statusColor;
+    GFButtonType buttonType;
+    switch (payment.status) {
+      case 'Pendiente':
+        statusColor = tokens.pending;
+        buttonType = GFButtonType.outline;
+        break;
+      case 'Vencida':
+        statusColor = tokens.redToRosita;
+        buttonType = GFButtonType.solid;
+        break;
+      default:
+        statusColor = tokens.green;
+        buttonType = GFButtonType.transparent;
+    }
+
+    return GFCard(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      boxFit: BoxFit.cover,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 2,
+      content: GFListTile(
+        title: Text(
+          payment.userName,
+          style: TextStyle(fontWeight: FontWeight.bold, color: tokens.text),
+        ),
+        subTitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Fecha: ${payment.paymentDate.day}/${payment.paymentDate.month}/${payment.paymentDate.year}',
+            ),
+            Text(
+              'Hora: ${payment.paymentDate.hour}:${payment.paymentDate.minute}',
+            ),
+            Text('Monto: \$${payment.amount.toStringAsFixed(2)}'),
+          ],
+        ),
+        description: GFBadge(
+          text: payment.status,
+          color: statusColor,
+          shape: GFBadgeShape.pills,
+        ),
+        icon: GFButton(
+          onPressed: () {
+            // Lógica para validar (navega a detalle o modal)
+          },
+          text: 'Validar',
+          color: tokens.redToRosita,
+          shape: GFButtonShape.standard,
+          type: buttonType,
+        ),
+      ),
     );
   }
 }

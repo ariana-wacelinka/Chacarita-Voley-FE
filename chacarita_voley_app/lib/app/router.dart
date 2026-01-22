@@ -39,6 +39,7 @@ final appRouter = GoRouter(
           name: 'notifications',
           builder: (_, __) => const _Page(text: 'Notificaciones'),
         ),
+        //TODO Temporal
         GoRoute(
           path: '/payments_history',
           name: 'history',
