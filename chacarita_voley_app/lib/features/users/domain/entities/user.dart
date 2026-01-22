@@ -1,7 +1,23 @@
 import 'gender.dart';
 
+class TeamInfo {
+  final String id;
+  final String name;
+  final String abbreviation;
+  final bool isCompetitive;
+
+  TeamInfo({
+    required this.id,
+    required this.name,
+    required this.abbreviation,
+    required this.isCompetitive,
+  });
+}
+
 class User {
   final String? id;
+  final String? playerId;
+  final String? professorId;
   final String dni;
   final String nombre;
   final String apellido;
@@ -10,12 +26,16 @@ class User {
   final String email;
   final String telefono;
   final String? numeroCamiseta;
+  final String? numeroAfiliado;
   final String equipo;
+  final List<TeamInfo> equipos;
   final Set<UserType> tipos;
   final EstadoCuota estadoCuota;
 
   User({
     this.id,
+    this.playerId,
+    this.professorId,
     required this.dni,
     required this.nombre,
     required this.apellido,
@@ -24,7 +44,9 @@ class User {
     required this.email,
     required this.telefono,
     this.numeroCamiseta,
+    this.numeroAfiliado,
     required this.equipo,
+    this.equipos = const [],
     required this.tipos,
     required this.estadoCuota,
   });
@@ -34,6 +56,7 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
+      playerId: json['playerId'],
       dni: json['dni'],
       nombre: json['nombre'],
       apellido: json['apellido'],
@@ -42,7 +65,20 @@ class User {
       email: json['email'],
       telefono: json['telefono'],
       numeroCamiseta: json['numeroCamiseta'],
+      numeroAfiliado: json['numeroAfiliado'],
       equipo: json['equipo'],
+      equipos:
+          (json['equipos'] as List<dynamic>?)
+              ?.map(
+                (e) => TeamInfo(
+                  id: e['id'] as String,
+                  name: e['name'] as String,
+                  abbreviation: e['abbreviation'] as String,
+                  isCompetitive: e['isCompetitive'] as bool,
+                ),
+              )
+              .toList() ??
+          [],
       tipos: (json['tipos'] as List<dynamic>)
           .map((e) => UserType.values.firstWhere((type) => type.name == e))
           .toSet(),
@@ -64,6 +100,16 @@ class User {
       'telefono': telefono,
       'numeroCamiseta': numeroCamiseta,
       'equipo': equipo,
+      'equipos': equipos
+          .map(
+            (e) => {
+              'id': e.id,
+              'name': e.name,
+              'abbreviation': e.abbreviation,
+              'isCompetitive': e.isCompetitive,
+            },
+          )
+          .toList(),
       'tipos': tipos.map((e) => e.name).toList(),
       'estadoCuota': estadoCuota.name,
     };

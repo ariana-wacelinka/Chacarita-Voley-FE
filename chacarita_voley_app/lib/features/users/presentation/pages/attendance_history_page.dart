@@ -19,6 +19,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   late final UserRepository _userRepository;
   User? _user;
   bool _isLoading = true;
+  String? _loadError;
 
   // Datos de ejemplo de asistencias
   final List<AttendanceRecord> _attendanceHistory = [
@@ -73,12 +74,23 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     _loadUser();
   }
 
-  void _loadUser() {
-    final user = _userRepository.getUserById(widget.userId);
-    setState(() {
-      _user = user;
-      _isLoading = false;
-    });
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoading = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _user = null;
+        _isLoading = false;
+        _loadError = 'Error al cargar usuario';
+      });
+    }
   }
 
   int get _presentCount => _attendanceHistory.where((a) => a.wasPresent).length;
@@ -152,7 +164,30 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: _attendanceHistory.isEmpty
+        child: _loadError != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Symbols.error,
+                      size: 64,
+                      color: context.tokens.placeholder,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _loadError!,
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            : _attendanceHistory.isEmpty
             ? _buildEmptyState(context)
             : _buildAttendanceContent(context),
       ),

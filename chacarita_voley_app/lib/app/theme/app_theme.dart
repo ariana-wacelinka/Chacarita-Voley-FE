@@ -210,6 +210,59 @@ class AppTheme {
         borderSide: BorderSide(color: _lightTokens.stroke),
       ),
     ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: _lightScheme.surface,
+      hourMinuteColor: _lightScheme.surface,
+      hourMinuteTextColor: const Color(0xFF0C0C0C),
+      dayPeriodColor: _lightScheme.primary,
+      dayPeriodTextColor: const Color(0xFF0C0C0C),
+      dialHandColor: _lightScheme.primary,
+      dialBackgroundColor: _lightTokens.lightGray,
+      dialTextColor: _lightTokens.text,
+      entryModeIconColor: const Color(0xFF0C0C0C),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: _lightScheme.surface,
+      headerBackgroundColor: _lightScheme.primary,
+      headerForegroundColor: Colors.white,
+      dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _lightTokens.text;
+      }),
+      dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _lightScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      todayForegroundColor: WidgetStateProperty.all(_lightScheme.primary),
+      todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+      todayBorder: BorderSide(color: _lightScheme.primary, width: 1),
+      yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _lightTokens.text;
+      }),
+      yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _lightScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      surfaceTintColor: Colors.transparent,
+      weekdayStyle: TextStyle(color: _lightTokens.text),
+      dayStyle: TextStyle(color: _lightTokens.text),
+      yearStyle: TextStyle(color: _lightTokens.text),
+      cancelButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_lightTokens.text),
+      ),
+      confirmButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_lightScheme.primary),
+      ),
+    ),
     extensions: [_lightTokens],
   );
 
@@ -226,7 +279,7 @@ class AppTheme {
     onTertiary: Colors.black,
     error: const Color(0xFFFFB4A9),
     onError: const Color(0xFF680003),
-    background: const Color(0xFF0C0C0C),
+    background: const Color(0xFF000000),
 
     onBackground: Colors.white,
     surface: const Color(0xFF121212),
@@ -246,17 +299,17 @@ class AppTheme {
     permanentWhite: const Color(0xFFFFFFFF),
     gray: const Color(0xFFDEDEDE),
     text: const Color(0xFFFFFFFF),
-    background: const Color(0xFF0C0C0C),
+    background: const Color(0xFF000000),
     lightGray: _rgba(50, 50, 50, 0.7),
     redToRosita: const Color(0xFFFF6262),
     placeholder: _rgba(255, 255, 255, 0.7),
-    drawer: _rgba(140, 140, 140, 0.1),
+    drawer: const Color(0xFF1A1A1A),
 
-    card1: _rgba(50, 50, 50, 0.5),
+    card1: _rgba(50, 50, 50, 0.9),
     card2: _rgba(50, 50, 50, 0.5),
     card3: _rgba(50, 50, 50, 0.9),
     card4: _rgba(255, 120, 120, 0.08),
-    stroke: _rgba(255, 255, 255, 0.5),
+    stroke: _rgba(255, 255, 255, 0.1),
     redToWhite: const Color(0xFFFFFFFF),
     blue: const Color(0xFF74A5FF),
     pending: const Color(0xFFFF8400),
@@ -295,6 +348,59 @@ class AppTheme {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: _darkTokens.stroke),
+      ),
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: _darkScheme.surface,
+      hourMinuteColor: _darkScheme.surface,
+      hourMinuteTextColor: Colors.white,
+      dayPeriodColor: _darkScheme.primary,
+      dayPeriodTextColor: Colors.white,
+      dialHandColor: _darkScheme.primary,
+      dialBackgroundColor: _darkTokens.card1,
+      dialTextColor: _darkTokens.text,
+      entryModeIconColor: _darkScheme.onSurface,
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: _darkScheme.surface,
+      headerBackgroundColor: _darkScheme.primary,
+      headerForegroundColor: Colors.white,
+      dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _darkTokens.text;
+      }),
+      dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _darkScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      todayForegroundColor: WidgetStateProperty.all(_darkScheme.primary),
+      todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+      todayBorder: BorderSide(color: _darkScheme.primary, width: 1),
+      yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return _darkTokens.text;
+      }),
+      yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return _darkScheme.primary;
+        }
+        return Colors.transparent;
+      }),
+      surfaceTintColor: Colors.transparent,
+      weekdayStyle: TextStyle(color: Colors.white),
+      dayStyle: TextStyle(color: _darkTokens.text),
+      yearStyle: TextStyle(color: Colors.white),
+      cancelButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_darkTokens.text),
+      ),
+      confirmButtonStyle: ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(_darkScheme.primary),
       ),
     ),
     extensions: [_darkTokens],

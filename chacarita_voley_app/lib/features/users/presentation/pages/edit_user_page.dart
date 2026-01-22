@@ -22,6 +22,7 @@ class _EditUserPageState extends State<EditUserPage> {
   User? _user;
   bool _isLoading = false;
   bool _isLoadingUser = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -31,12 +32,23 @@ class _EditUserPageState extends State<EditUserPage> {
     _loadUser();
   }
 
-  void _loadUser() {
-    final user = _userRepository.getUserById(widget.userId);
-    setState(() {
-      _user = user;
-      _isLoadingUser = false;
-    });
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoadingUser = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _user = null;
+        _isLoadingUser = false;
+        _loadError = 'Error al cargar usuario';
+      });
+    }
   }
 
   Future<void> _handleUpdateUser(User user) async {
@@ -80,7 +92,7 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         );
 
-        context.pop();
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -102,7 +114,7 @@ class _EditUserPageState extends State<EditUserPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -126,7 +138,7 @@ class _EditUserPageState extends State<EditUserPage> {
     return Scaffold(
       backgroundColor: context.tokens.background,
       appBar: AppBar(
-        backgroundColor: context.tokens.card1,
+        backgroundColor: context.tokens.card2,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
@@ -136,7 +148,7 @@ class _EditUserPageState extends State<EditUserPage> {
           'Modificar Usuario',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -147,8 +159,41 @@ class _EditUserPageState extends State<EditUserPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
+                ),
+              )
+            : _loadError != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Symbols.error,
+                      size: 64,
+                      color: context.tokens.placeholder,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _loadError!,
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: const Text(
+                        'Volver a la lista',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               )
             : _user == null
@@ -174,7 +219,7 @@ class _EditUserPageState extends State<EditUserPage> {
                     ElevatedButton(
                       onPressed: () => context.pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: context.tokens.redToRosita,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                       child: const Text(
                         'Volver a la lista',
@@ -188,7 +233,7 @@ class _EditUserPageState extends State<EditUserPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )

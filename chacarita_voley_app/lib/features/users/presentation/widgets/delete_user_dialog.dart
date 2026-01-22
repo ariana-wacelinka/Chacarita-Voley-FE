@@ -39,7 +39,7 @@ class DeleteUserDialog extends StatelessWidget {
             onConfirm();
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

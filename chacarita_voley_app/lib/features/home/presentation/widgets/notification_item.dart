@@ -20,7 +20,7 @@ class NotificationItem extends StatelessWidget {
       child: Container(
         width: double.maxFinite,
         decoration: BoxDecoration(
-          color: context.tokens.card1,
+          color: context.tokens.card2,
           border: Border.all(color: context.tokens.strokeToNoStroke, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),

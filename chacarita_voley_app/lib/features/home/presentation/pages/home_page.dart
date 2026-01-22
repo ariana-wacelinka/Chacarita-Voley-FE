@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
                     title: 'Pagos vencidos',
                     value: '999',
                     icon: Symbols.warning,
-                    color: context.tokens.redToRosita,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -79,7 +79,7 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             QuickActionCard(
-              title: 'Gestionar jugadores',
+              title: 'Gestionar usuarios',
               icon: Symbols.group,
               onTap: () => context.go('/users'),
             ),

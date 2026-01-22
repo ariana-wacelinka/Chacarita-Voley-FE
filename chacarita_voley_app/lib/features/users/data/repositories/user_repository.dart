@@ -1,240 +1,636 @@
-import '../../domain/entities/user.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/gender.dart';
+import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository_interface.dart';
 
 class UserRepository implements UserRepositoryInterface {
-  static final List<User> _users = [
-    User(
-      id: '1',
-      dni: '12345678',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      fechaNacimiento: DateTime(1990, 5, 15),
-      genero: Gender.masculino,
-      email: 'juan.perez@email.com',
-      telefono: '+54 221 123 4567',
-      numeroCamiseta: '10',
-      equipo: 'REC1',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '2',
-      dni: '87654321',
-      nombre: 'María',
-      apellido: 'González',
-      fechaNacimiento: DateTime(1985, 8, 22),
-      genero: Gender.femenino,
-      email: 'maria.gonzalez@email.com',
-      telefono: '+54 221 234 5678',
-      numeroCamiseta: '7',
-      equipo: 'CHR',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.ultimoPago,
-    ),
-    User(
-      id: '3',
-      dni: '23456789',
-      nombre: 'Carlos',
-      apellido: 'López',
-      fechaNacimiento: DateTime(1992, 3, 10),
-      genero: Gender.masculino,
-      email: 'carlos.lopez@email.com',
-      telefono: '+54 221 345 6789',
-      numeroCamiseta: '15',
-      equipo: 'CHB',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.vencida,
-    ),
-    User(
-      id: '4',
-      dni: '34567890',
-      nombre: 'Ana',
-      apellido: 'Martínez',
-      fechaNacimiento: DateTime(1988, 12, 5),
-      genero: Gender.femenino,
-      email: 'ana.martinez@email.com',
-      telefono: '+54 221 456 7890',
-      numeroCamiseta: null,
-      equipo: 'REC1',
-      tipos: {UserType.profesor, UserType.administrador},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '5',
-      dni: '45678901',
-      nombre: 'Luis',
-      apellido: 'García',
-      fechaNacimiento: DateTime(1995, 7, 18),
-      genero: Gender.masculino,
-      email: 'luis.garcia@email.com',
-      telefono: '+54 221 567 8901',
-      numeroCamiseta: '3',
-      equipo: 'CHF',
-      tipos: {UserType.jugador, UserType.profesor},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '6',
-      dni: '56789012',
-      nombre: 'Sofia',
-      apellido: 'Rodríguez',
-      fechaNacimiento: DateTime(1993, 11, 30),
-      genero: Gender.femenino,
-      email: 'sofia.rodriguez@email.com',
-      telefono: '+54 221 678 9012',
-      numeroCamiseta: '12',
-      equipo: 'CHR',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.vencida,
-    ),
-    User(
-      id: '7',
-      dni: '67890123',
-      nombre: 'Diego',
-      apellido: 'Fernández',
-      fechaNacimiento: DateTime(1987, 4, 25),
-      genero: Gender.masculino,
-      email: 'diego.fernandez@email.com',
-      telefono: '+54 221 789 0123',
-      numeroCamiseta: '9',
-      equipo: 'CHB',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.ultimoPago,
-    ),
-    User(
-      id: '8',
-      dni: '78901234',
-      nombre: 'Valentina',
-      apellido: 'Torres',
-      fechaNacimiento: DateTime(1991, 9, 12),
-      genero: Gender.femenino,
-      email: 'valentina.torres@email.com',
-      telefono: '+54 221 890 1234',
-      numeroCamiseta: '5',
-      equipo: 'REC1',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '9',
-      dni: '89012345',
-      nombre: 'Mateo',
-      apellido: 'Silva',
-      fechaNacimiento: DateTime(1989, 1, 8),
-      genero: Gender.masculino,
-      email: 'mateo.silva@email.com',
-      telefono: '+54 221 901 2345',
-      numeroCamiseta: null,
-      equipo: 'CHF',
-      tipos: {UserType.profesor},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '10',
-      dni: '90123456',
-      nombre: 'Camila',
-      apellido: 'Morales',
-      fechaNacimiento: DateTime(1994, 6, 20),
-      genero: Gender.femenino,
-      email: 'camila.morales@email.com',
-      telefono: '+54 221 012 3456',
-      numeroCamiseta: '8',
-      equipo: 'CHR',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.vencida,
-    ),
-    User(
-      id: '11',
-      dni: '01234567',
-      nombre: 'Sebastián',
-      apellido: 'Romero',
-      fechaNacimiento: DateTime(1986, 10, 15),
-      genero: Gender.masculino,
-      email: 'sebastian.romero@email.com',
-      telefono: '+54 221 123 4567',
-      numeroCamiseta: '11',
-      equipo: 'CHB',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-    User(
-      id: '12',
-      dni: '11234567',
-      nombre: 'Isabella',
-      apellido: 'Jiménez',
-      fechaNacimiento: DateTime(1996, 2, 3),
-      genero: Gender.femenino,
-      email: 'isabella.jimenez@email.com',
-      telefono: '+54 221 234 5678',
-      numeroCamiseta: '4',
-      equipo: 'REC1',
-      tipos: {UserType.jugador},
-      estadoCuota: EstadoCuota.ultimoPago,
-    ),
-    User(
-      id: '13',
-      dni: '21234567',
-      nombre: 'Federico',
-      apellido: 'Vargas',
-      fechaNacimiento: DateTime(1983, 8, 28),
-      genero: Gender.masculino,
-      email: 'federico.vargas@email.com',
-      telefono: '+54 221 345 6789',
-      numeroCamiseta: null,
-      equipo: 'CHF',
-      tipos: {UserType.administrador},
-      estadoCuota: EstadoCuota.alDia,
-    ),
-  ];
+  UserRepository({GraphQLClient? graphQLClient})
+    : _clientOverride = graphQLClient;
 
-  @override
-  List<User> getUsers() {
-    return List.from(_users);
+  final GraphQLClient? _clientOverride;
+
+  Future<QueryResult> _query(QueryOptions options) {
+    final override = _clientOverride;
+    if (override != null) return override.query(options);
+    return GraphQLClientFactory.client.query(options);
+  }
+
+  Future<QueryResult> _mutate(MutationOptions options) {
+    final override = _clientOverride;
+    if (override != null) return override.mutate(options);
+    return GraphQLClientFactory.client.mutate(options);
+  }
+
+  // Query mínima para LISTADOS - Solo lo necesario para mostrar en tabla
+  // NO incluye relaciones para evitar N+1 y timeout
+  static const String _personFieldsMinimal = r'''
+    id
+    dni
+    name
+    surname
+    roles
+  ''';
+
+  // Query para selección en equipos - Incluye IDs necesarios
+  static const String _personFieldsForTeams = r'''
+    id
+    dni
+    name
+    surname
+    roles
+    player {
+      id
+      jerseyNumber
+      leagueId
+    }
+    professor {
+      id
+    }
+  ''';
+
+  // Query ultra liviana para notificaciones - Solo id, nombre y apellido
+  static const String _personFieldsForNotifications = r'''
+    id
+    name
+    surname
+  ''';
+
+  // Query completa para DETALLE (ver/editar usuario)
+  static const String _personFields = r'''
+    id
+    dni
+    email
+    gender
+    name
+    phone
+    roles
+    surname
+    birthDate
+    player {
+      id
+      leagueId
+      jerseyNumber
+      teams { id isCompetitive name abbreviation }
+      dues { id }
+      assistances { id }
+    }
+    professor {
+      id
+    }
+  ''';
+
+  String _getAllPersonsQuery() =>
+      '''
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
+        content {
+          $_personFieldsMinimal
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
+      }
+    }
+  ''';
+
+  String _getAllPersonsForTeamsQuery() =>
+      '''
+    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
+        content {
+          $_personFieldsForTeams
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
+      }
+    }
+  ''';
+
+  String _getAllPersonsForNotificationsQuery() =>
+      '''
+    query GetAllPersonsForNotifications(\$page: Int!, \$size: Int!) {
+      getAllPersons(page: \$page, size: \$size) {
+        content {
+          $_personFieldsForNotifications
+        }
+        totalElements
+      }
+    }
+  ''';
+
+  String _getPersonByIdQuery() =>
+      '''
+    query GetPersonById(\$id: ID!) {
+      getPersonById(id: \$id) {
+        $_personFields
+      }
+    }
+  ''';
+
+  String _createPersonMutation() =>
+      '''
+    mutation CreatePerson(\$input: CreatePersonInput!) {
+      createPerson(input: \$input) {
+        $_personFields
+      }
+    }
+  ''';
+
+  String _updatePersonMutation() =>
+      '''
+    mutation UpdatePerson(\$id: ID!, \$input: UpdatePersonInput!) {
+      updatePerson(id: \$id, input: \$input) {
+        $_personFields
+      }
+    }
+  ''';
+
+  static const String _deletePlayerMutation = r'''
+    mutation DeletePlayer($id: ID!) {
+      deletePlayer(id: $id)
+    }
+  ''';
+
+  static const String _deleteProfessorMutation = r'''
+    mutation DeleteProfessor($id: ID!) {
+      deleteProfessor(id: $id)
+    }
+  ''';
+
+  /// Mapea el input de búsqueda del usuario a filtros para el backend
+  /// IMPORTANTE: El backend usa AND implícito entre filtros.
+  /// NUNCA enviar el mismo valor en múltiples campos (genera AND imposible).
+  /// Enviar SOLO UN filtro a la vez.
+  Map<String, dynamic> _buildFilters(String? query, String? role) {
+    if (query == null || query.trim().isEmpty) {
+      return {'dni': '', 'name': '', 'surname': '', 'role': role};
+    }
+
+    final q = query.trim();
+
+    // DNI numérico → buscar SOLO por DNI
+    if (RegExp(r'^\d+$').hasMatch(q)) {
+      return {'dni': q, 'name': '', 'surname': '', 'role': role};
+    }
+
+    final parts = q.split(RegExp(r'\s+'));
+
+    // Nombre + Apellido (múltiples palabras)
+    // Backend aplicará AND: name LIKE '%Juan%' AND surname LIKE '%Perez%'
+    if (parts.length >= 2) {
+      return {
+        'dni': '',
+        'name': parts.first,
+        'surname': parts.sublist(1).join(' '),
+        'role': role,
+      };
+    }
+
+    // Texto simple → buscar SOLO por name (no enviar en surname)
+    // Si el backend necesita OR, debe implementarlo del lado del servidor
+    return {'dni': '', 'name': q, 'surname': '', 'role': role};
   }
 
   @override
-  User? getUserById(String id) {
-    try {
-      return _users.firstWhere((user) => user.id == id);
-    } catch (e) {
-      return null;
+  Future<List<User>> getUsers({
+    String? role,
+    String? searchQuery,
+    int? page,
+    int? size,
+    bool forTeamSelection = false,
+  }) async {
+    final filters = _buildFilters(searchQuery, role);
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
+        variables: {'page': page ?? 0, 'size': size ?? 12, ...filters},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
     }
+
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
+
+    // Si no hay resultados y la búsqueda es texto simple (no DNI ni nombre+apellido),
+    // reintentar buscando por surname en lugar de name
+    if (content.isEmpty &&
+        searchQuery != null &&
+        searchQuery.trim().isNotEmpty &&
+        !RegExp(r'^\d+$').hasMatch(searchQuery.trim()) &&
+        searchQuery.trim().split(RegExp(r'\s+')).length == 1) {
+      // Reintentar con surname
+      final retryResult = await _query(
+        QueryOptions(
+          document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
+          variables: {
+            'page': page ?? 0,
+            'size': size ?? 12,
+            'dni': '',
+            'name': '',
+            'surname': searchQuery.trim(),
+            'role': role,
+          },
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (!retryResult.hasException) {
+        final retryContent =
+            (retryResult.data?['getAllPersons']?['content']
+                as List<dynamic>?) ??
+            const [];
+        return retryContent
+            .whereType<Map<String, dynamic>>()
+            .map(_mapPersonToUser)
+            .toList();
+      }
+    }
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
+  }
+
+  /// Método específico para cargar usuarios para notificaciones
+  /// Solo trae id, name y surname para ser ultra liviano
+  Future<List<User>> getUsersForNotifications() async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsForNotificationsQuery()),
+        variables: {'page': 0, 'size': 100},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
+  }
+
+  @override
+  Future<int> getTotalUsers({String? role, String? searchQuery}) async {
+    final filters = _buildFilters(searchQuery, role);
+
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsQuery()),
+        variables: {'page': 0, 'size': 1, ...filters},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    return (result.data?['getAllPersons']?['totalElements'] as int?) ?? 0;
+  }
+
+  @override
+  Future<User?> getUserById(String id) async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getPersonByIdQuery()),
+        variables: {'id': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final data = result.data?['getPersonById'] as Map<String, dynamic>?;
+    if (data == null) return null;
+    return _mapPersonToUser(data);
   }
 
   @override
   Future<User> createUser(User user) async {
-    final newId = (_users.length + 1).toString();
-    final newUser = User(
-      id: newId,
-      dni: user.dni,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      fechaNacimiento: user.fechaNacimiento,
-      genero: user.genero,
-      email: user.email,
-      telefono: user.telefono,
-      numeroCamiseta: user.numeroCamiseta,
-      equipo: user.equipo,
-      tipos: user.tipos,
-      estadoCuota: user.estadoCuota,
+    final input = _mapUserToCreateInput(user);
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_createPersonMutation()),
+        variables: {'input': input},
+      ),
     );
-    _users.add(newUser);
-    return newUser;
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final data = result.data?['createPerson'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw Exception('Respuesta inválida de createPerson');
+    }
+    return _mapPersonToUser(data);
   }
 
   @override
   Future<User> updateUser(User user) async {
-    final index = _users.indexWhere((u) => u.id == user.id);
-    if (index != -1) {
-      _users[index] = user;
-      return user;
+    final id = user.id;
+    if (id == null || id.isEmpty) {
+      throw Exception('No se puede actualizar un usuario sin id');
     }
-    throw Exception('Usuario no encontrado');
+
+    final input = _mapUserToUpdateInput(user);
+    print('📤 Update input: $input');
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_updatePersonMutation()),
+        variables: {'id': id, 'input': input},
+      ),
+    );
+
+    print('📥 Update result hasException: ${result.hasException}');
+    if (result.hasException) {
+      print('❌ Update exception: ${result.exception.toString()}');
+      throw Exception(result.exception.toString());
+    }
+
+    print('📦 Update result data: ${result.data}');
+    final data = result.data?['updatePerson'] as Map<String, dynamic>?;
+    if (data == null) {
+      print('⚠️ updatePerson data is null');
+      throw Exception('Respuesta inválida de updatePerson');
+    }
+    print('✅ Update successful, mapping to User');
+    return _mapPersonToUser(data);
+  }
+
+  Future<void> updatePerson(String personId, Map<String, dynamic> input) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_updatePersonMutation()),
+        variables: {'id': personId, 'input': input},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
   }
 
   @override
   Future<void> deleteUser(String id) async {
-    _users.removeWhere((user) => user.id == id);
+    // Primero obtener el usuario para determinar su rol
+    final user = await getUserById(id);
+    if (user == null) {
+      throw Exception('Usuario no encontrado');
+    }
+
+    // Determinar qué mutation usar según el rol principal
+    String mutation;
+    if (user.tipos.contains(UserType.profesor)) {
+      mutation = _deleteProfessorMutation;
+    } else {
+      // Por defecto usar deletePlayer (jugadores y admins)
+      mutation = _deletePlayerMutation;
+    }
+
+    final result = await _mutate(
+      MutationOptions(document: gql(mutation), variables: {'id': id}),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  User _mapPersonToUser(Map<String, dynamic> person) {
+    // Query minimal: NO trae gender, birthDate, email, phone, player, professor
+    // Query full: trae TODO
+    final gender = (person['gender'] as String?) ?? 'OTHER';
+    final parsedGender = switch (gender) {
+      'MALE' => Gender.masculino,
+      'FEMALE' => Gender.femenino,
+      _ => Gender.otro,
+    };
+
+    final rolesRaw = person['roles'];
+    final roles = <String>[];
+    if (rolesRaw is List) {
+      roles.addAll(rolesRaw.whereType<String>());
+    } else if (rolesRaw is String) {
+      roles.add(rolesRaw);
+    }
+
+    final tipos = <UserType>{};
+    for (final r in roles) {
+      switch (r) {
+        case 'PLAYER':
+          tipos.add(UserType.jugador);
+          break;
+        case 'PROFESSOR':
+          tipos.add(UserType.profesor);
+          break;
+        case 'ADMIN':
+        case 'ADMINISTRATOR':
+          tipos.add(UserType.administrador);
+          break;
+      }
+    }
+
+    // Solo procesamos player si existe en la respuesta (query full)
+    final player = person['player'] as Map<String, dynamic>?;
+    final jerseyNumber = player?['jerseyNumber'];
+    final leagueId = player?['leagueId'];
+    final teams = (player?['teams'] as List<dynamic>?) ?? const [];
+
+    final equipo = teams.isNotEmpty
+        ? ((teams.first as Map<String, dynamic>)['abbreviation'] as String? ??
+              '')
+        : '';
+
+    final equipos = teams
+        .map((t) {
+          final teamMap = t as Map<String, dynamic>;
+          return TeamInfo(
+            id: teamMap['id'] as String? ?? '',
+            name: teamMap['name'] as String? ?? '',
+            abbreviation: teamMap['abbreviation'] as String? ?? '',
+            isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
+          );
+        })
+        .where((team) => team.id.isNotEmpty)
+        .toList();
+
+    final birthDate = person['birthDate'] as String?;
+    final parsedBirthDate = birthDate != null && birthDate.isNotEmpty
+        ? DateTime.tryParse(birthDate)
+        : null;
+
+    final professor = person['professor'] as Map<String, dynamic>?;
+
+    // Estado de cuota: default alDia (para listados sin player)
+    EstadoCuota estadoCuota = EstadoCuota.alDia;
+    if (player != null) {
+      final dues = (player['dues'] as List<dynamic>?) ?? [];
+      if (dues.isNotEmpty) {
+        estadoCuota = EstadoCuota.alDia;
+      }
+    }
+
+    return User(
+      id: person['id'] as String?,
+      playerId: player?['id'] as String?,
+      professorId: professor?['id'] as String?,
+      dni: (person['dni'] as String?) ?? '',
+      nombre: (person['name'] as String?) ?? '',
+      apellido: (person['surname'] as String?) ?? '',
+      fechaNacimiento: parsedBirthDate ?? DateTime(2000, 1, 1),
+      genero: parsedGender,
+      email: (person['email'] as String?) ?? '',
+      telefono: (person['phone'] as String?) ?? '',
+      numeroCamiseta: jerseyNumber?.toString(),
+      numeroAfiliado: leagueId?.toString(),
+      equipo: equipo,
+      equipos: equipos,
+      tipos: tipos,
+      estadoCuota: estadoCuota,
+    );
+  }
+
+  Map<String, dynamic> _mapUserToCreateInput(User user) {
+    if (user.nombre.isEmpty) {
+      throw Exception('El nombre es obligatorio');
+    }
+    if (user.apellido.isEmpty) {
+      throw Exception('El apellido es obligatorio');
+    }
+    if (user.dni.isEmpty) {
+      throw Exception('El DNI es obligatorio');
+    }
+    if (user.email.isEmpty) {
+      throw Exception('El email es obligatorio');
+    }
+
+    final input = <String, dynamic>{
+      'name': user.nombre,
+      'surname': user.apellido,
+      'dni': user.dni,
+      'email': user.email,
+      'roles': _mapRolesToApi(user.tipos),
+    };
+
+    if (user.telefono.isNotEmpty) {
+      input['phone'] = user.telefono;
+    }
+
+    // Siempre incluir gender (requerido por el backend)
+    input['gender'] = _mapGenderToApi(user.genero);
+
+    final birthDate = _formatBirthDate(user.fechaNacimiento);
+    if (birthDate.isNotEmpty) {
+      input['birthDate'] = birthDate;
+    }
+
+    // Si el usuario es jugador, incluir jerseyNumber y leagueId
+    if (user.tipos.contains(UserType.jugador)) {
+      final jersey = int.tryParse(user.numeroCamiseta ?? '');
+      input['jerseyNumber'] = jersey ?? 0;
+
+      final league = int.tryParse(user.numeroAfiliado ?? '');
+      input['leagueId'] = league ?? 0;
+    }
+
+    return input;
+  }
+
+  Map<String, dynamic> _mapUserToUpdateInput(User user) {
+    if (user.nombre.isEmpty) {
+      throw Exception('El nombre es obligatorio');
+    }
+    if (user.apellido.isEmpty) {
+      throw Exception('El apellido es obligatorio');
+    }
+    if (user.dni.isEmpty) {
+      throw Exception('El DNI es obligatorio');
+    }
+    if (user.email.isEmpty) {
+      throw Exception('El email es obligatorio');
+    }
+
+    final input = <String, dynamic>{
+      'name': user.nombre,
+      'surname': user.apellido,
+      'dni': user.dni,
+      'email': user.email,
+      'roles': _mapRolesToApi(user.tipos),
+    };
+
+    if (user.telefono.isNotEmpty) {
+      input['phone'] = user.telefono;
+    }
+
+    // Siempre incluir gender (requerido por el backend)
+    input['gender'] = _mapGenderToApi(user.genero);
+
+    final birthDate = _formatBirthDate(user.fechaNacimiento);
+    if (birthDate.isNotEmpty) {
+      input['birthDate'] = birthDate;
+    }
+
+    // Si el usuario es jugador, incluir jerseyNumber y leagueId
+    if (user.tipos.contains(UserType.jugador)) {
+      final jersey = int.tryParse(user.numeroCamiseta ?? '');
+      input['jerseyNumber'] = jersey ?? 0;
+
+      final league = int.tryParse(user.numeroAfiliado ?? '');
+      input['leagueId'] = league ?? 0;
+    }
+
+    return input;
+  }
+
+  String _formatBirthDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  String _mapGenderToApi(Gender gender) {
+    switch (gender) {
+      case Gender.masculino:
+        return 'MALE';
+      case Gender.femenino:
+        return 'FEMALE';
+      case Gender.otro:
+        return 'OTHER';
+    }
+  }
+
+  List<String> _mapRolesToApi(Set<UserType> tipos) {
+    final roles = <String>{};
+    if (tipos.contains(UserType.administrador)) roles.add('ADMIN');
+    if (tipos.contains(UserType.profesor)) roles.add('PROFESSOR');
+    if (tipos.contains(UserType.jugador) || roles.isEmpty) roles.add('PLAYER');
+    return roles.toList();
   }
 }

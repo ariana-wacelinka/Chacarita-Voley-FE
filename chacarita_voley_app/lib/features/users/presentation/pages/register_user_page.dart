@@ -87,7 +87,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -121,7 +121,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           'Registrar Usuario',
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -132,7 +132,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
             ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    context.tokens.redToRosita,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )

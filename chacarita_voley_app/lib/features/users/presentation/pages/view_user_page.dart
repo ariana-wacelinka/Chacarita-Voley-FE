@@ -22,6 +22,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
   late final DeleteUserUseCase _deleteUserUseCase;
   User? _user;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -31,12 +32,22 @@ class _ViewUserPageState extends State<ViewUserPage> {
     _loadUser();
   }
 
-  void _loadUser() {
-    final user = _userRepository.getUserById(widget.userId);
-    setState(() {
-      _user = user;
-      _isLoading = false;
-    });
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Error al cargar usuario';
+      });
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -59,9 +70,9 @@ class _ViewUserPageState extends State<ViewUserPage> {
       case EstadoCuota.alDia:
         return context.tokens.green;
       case EstadoCuota.vencida:
-        return context.tokens.redToRosita;
+        return Theme.of(context).colorScheme.primary;
       case EstadoCuota.ultimoPago:
-        return context.tokens.redToRosita;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -71,7 +82,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
       return Scaffold(
         backgroundColor: context.tokens.background,
         appBar: AppBar(
-          backgroundColor: context.tokens.card1,
+          backgroundColor: context.tokens.secondaryButton,
           elevation: 0,
           leading: IconButton(
             icon: Icon(Symbols.arrow_back, color: context.tokens.text),
@@ -90,8 +101,48 @@ class _ViewUserPageState extends State<ViewUserPage> {
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-              context.tokens.redToRosita,
+              Theme.of(context).colorScheme.primary,
             ),
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: context.tokens.background,
+        appBar: AppBar(
+          backgroundColor: context.tokens.card1,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+            onPressed: () => context.go('/users'),
+          ),
+          title: Text(
+            _errorMessage!,
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Symbols.error, size: 64, color: context.tokens.placeholder),
+              const SizedBox(height: 16),
+              Text(
+                'No se pudo cargar el usuario',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -111,7 +162,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             'Usuario no encontrado',
             style: TextStyle(
               color: context.tokens.text,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -127,7 +178,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 'Usuario no encontrado',
                 style: TextStyle(
                   color: context.tokens.text,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -150,7 +201,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           _user!.nombreCompleto,
           style: TextStyle(
             color: context.tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -193,12 +244,16 @@ class _ViewUserPageState extends State<ViewUserPage> {
         children: [
           Row(
             children: [
-              Icon(Symbols.shield, color: context.tokens.redToRosita, size: 20),
+              Icon(
+                Symbols.shield,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Tipo de Usuario y Cuota',
                 style: TextStyle(
-                  color: context.tokens.redToRosita,
+                  color: context.tokens.text,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -238,7 +293,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             decoration: BoxDecoration(
               color: _user!.estadoCuota == EstadoCuota.alDia
                   ? context.tokens.green.withOpacity(0.1)
-                  : context.tokens.redToRosita.withOpacity(0.1),
+                  : Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: _getEstadoCuotaColor(context, _user!.estadoCuota),
@@ -423,13 +478,25 @@ class _ViewUserPageState extends State<ViewUserPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Column(
-            children: [
-              _buildTeamItem(context, 'Recreativo 1'),
-              const SizedBox(height: 8),
-              _buildTeamItem(context, 'Recreativo 3'),
-            ],
-          ),
+          if (_user?.equipos.isEmpty ?? true)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No pertenece a ningún equipo',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            )
+          else
+            Column(
+              children: (_user?.equipos ?? [])
+                  .map(
+                    (team) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildTeamItem(context, team.name),
+                    ),
+                  )
+                  .toList(),
+            ),
         ],
       ),
     );
@@ -472,7 +539,11 @@ class _ViewUserPageState extends State<ViewUserPage> {
             context,
             icon: Symbols.notifications_active,
             title: 'Enviar notificación',
-            onTap: () {},
+            onTap: () {
+              context.push(
+                '/users/${widget.userId}/notification?userName=${Uri.encodeComponent('${_user!.nombre} ${_user!.apellido}')}',
+              );
+            },
           ),
           const SizedBox(height: 8),
           _buildActionItem(
@@ -624,7 +695,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.gray,
+              backgroundColor: context.tokens.card2,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -647,7 +718,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -669,7 +740,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           style: TextStyle(color: context.tokens.text),
         ),
         content: Text(
-          '¿Estás seguro de que quieres eliminar a ${_user!.nombreCompleto}? Esta acción no se puede deshacer.',
+          '¿Estás seguro de que querés eliminar a ${_user!.nombreCompleto}? Esta acción no se puede deshacer.',
           style: TextStyle(color: context.tokens.text),
         ),
         actions: [
@@ -684,7 +755,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],
@@ -708,7 +779,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Error al eliminar usuario'),
-              backgroundColor: context.tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
