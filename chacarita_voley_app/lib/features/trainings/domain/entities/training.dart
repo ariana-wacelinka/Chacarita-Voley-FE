@@ -1,8 +1,6 @@
 enum TrainingType {
   fisico('PHYSICAL'),
-  tecnico('BALL_SKILLS'),
-  tactico('TACTICAL'),
-  partido('MATCH');
+  pelota('BALL_SKILLS');
 
   final String backendValue;
   const TrainingType(this.backendValue);
@@ -11,12 +9,8 @@ enum TrainingType {
     switch (this) {
       case TrainingType.fisico:
         return 'Físico';
-      case TrainingType.tecnico:
-        return 'Técnico';
-      case TrainingType.tactico:
-        return 'Táctico';
-      case TrainingType.partido:
-        return 'Partido';
+      case TrainingType.pelota:
+        return 'Pelota';
     }
   }
 
@@ -25,11 +19,7 @@ enum TrainingType {
       case 'PHYSICAL':
         return TrainingType.fisico;
       case 'BALL_SKILLS':
-        return TrainingType.tecnico;
-      case 'TACTICAL':
-        return TrainingType.tactico;
-      case 'MATCH':
-        return TrainingType.partido;
+        return TrainingType.pelota;
       default:
         return TrainingType.fisico;
     }
@@ -42,7 +32,8 @@ enum DayOfWeek {
   wednesday('WEDNESDAY'),
   thursday('THURSDAY'),
   friday('FRIDAY'),
-  saturday('SATURDAY');
+  saturday('SATURDAY'),
+  sunday('SUNDAY');
 
   final String backendValue;
   const DayOfWeek(this.backendValue);
@@ -61,6 +52,8 @@ enum DayOfWeek {
         return 'Viernes';
       case DayOfWeek.saturday:
         return 'Sábado';
+      case DayOfWeek.sunday:
+        return 'Domingo';
     }
   }
 
@@ -78,6 +71,8 @@ enum DayOfWeek {
         return DayOfWeek.friday;
       case 'SATURDAY':
         return DayOfWeek.saturday;
+      case 'SUNDAY':
+        return DayOfWeek.sunday;
       default:
         return DayOfWeek.monday;
     }
@@ -144,11 +139,14 @@ class PlayerAttendance {
 class Training {
   final String id;
   final DateTime? date;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final String? teamId;
   final String? teamName;
   final String? professorId;
   final String? professorName;
   final DayOfWeek? dayOfWeek;
+  final List<DayOfWeek>? daysOfWeek;
   final String startTime;
   final String endTime;
   final String location;
@@ -160,11 +158,14 @@ class Training {
   Training({
     required this.id,
     this.date,
+    this.startDate,
+    this.endDate,
     this.teamId,
     this.teamName,
     this.professorId,
     this.professorName,
     this.dayOfWeek,
+    this.daysOfWeek,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -222,11 +223,14 @@ class Training {
   Training copyWith({
     String? id,
     DateTime? date,
+    DateTime? startDate,
+    DateTime? endDate,
     String? teamId,
     String? teamName,
     String? professorId,
     String? professorName,
     DayOfWeek? dayOfWeek,
+    List<DayOfWeek>? daysOfWeek,
     String? startTime,
     String? endTime,
     String? location,
@@ -238,11 +242,14 @@ class Training {
     return Training(
       id: id ?? this.id,
       date: date ?? this.date,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       teamId: teamId ?? this.teamId,
       teamName: teamName ?? this.teamName,
       professorId: professorId ?? this.professorId,
       professorName: professorName ?? this.professorName,
       dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      daysOfWeek: daysOfWeek ?? this.daysOfWeek,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,

@@ -11,8 +11,9 @@ enum _TrainingMenuAction { view, edit, delete }
 class TrainingsPage extends StatefulWidget {
   final String? teamId;
   final String? teamName;
+  final String? refresh;
 
-  const TrainingsPage({super.key, this.teamId, this.teamName});
+  const TrainingsPage({super.key, this.teamId, this.teamName, this.refresh});
 
   @override
   State<TrainingsPage> createState() => _TrainingsPageState();
@@ -21,7 +22,6 @@ class TrainingsPage extends StatefulWidget {
 class _TrainingsPageState extends State<TrainingsPage> {
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
-  List<Training> _allTrainings = [];
   bool _isLoading = true;
 
   final _startDateController = TextEditingController();
@@ -33,12 +33,24 @@ class _TrainingsPageState extends State<TrainingsPage> {
 
   int _currentPage = 0;
   final int _itemsPerPage = 10;
-  int get _totalPages => (_allTrainings.length / _itemsPerPage).ceil();
+  int _totalPages = 0;
+  int _totalElements = 0;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
 
   @override
   void initState() {
     super.initState();
     _loadTrainings();
+  }
+
+  @override
+  void didUpdateWidget(TrainingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refresh != null && widget.refresh != oldWidget.refresh) {
+      _currentPage = 0;
+      _loadTrainings();
+    }
   }
 
   @override
@@ -53,12 +65,18 @@ class _TrainingsPageState extends State<TrainingsPage> {
   Future<void> _loadTrainings() async {
     setState(() => _isLoading = true);
     try {
-      final trainings = await _repository.getTrainings(status: _selectedStatus);
+      final result = await _repository.getTrainingsWithPagination(
+        status: _selectedStatus,
+        page: _currentPage,
+        size: _itemsPerPage,
+      );
       if (mounted) {
         setState(() {
-          _allTrainings = trainings;
-          _currentPage = 0;
-          _updatePagedTrainings();
+          _trainings = result['content'] as List<Training>;
+          _totalPages = result['totalPages'] as int;
+          _totalElements = result['totalElements'] as int;
+          _hasNext = result['hasNext'] as bool;
+          _hasPrevious = result['hasPrevious'] as bool;
           _isLoading = false;
         });
       }
@@ -69,21 +87,12 @@ class _TrainingsPageState extends State<TrainingsPage> {
     }
   }
 
-  void _updatePagedTrainings() {
-    final startIndex = _currentPage * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(
-      0,
-      _allTrainings.length,
-    );
-    _trainings = _allTrainings.sublist(startIndex, endIndex);
-  }
-
   void _goToPage(int page) {
     if (page >= 0 && page < _totalPages) {
       setState(() {
         _currentPage = page;
-        _updatePagedTrainings();
       });
+      _loadTrainings();
     }
   }
 
@@ -483,6 +492,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
       onTap: () {
         setState(() {
           _selectedStatus = isSelected ? null : status;
+          _currentPage = 0;
         });
         _loadTrainings();
       },
@@ -562,6 +572,9 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   Widget _buildPagination(BuildContext context) {
+    final startIndex = _currentPage * _itemsPerPage + 1;
+    final endIndex = (_currentPage * _itemsPerPage) + _trainings.length;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -572,22 +585,46 @@ class _TrainingsPageState extends State<TrainingsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: Icon(Symbols.chevron_left, color: context.tokens.text),
-            onPressed: _currentPage > 0
-                ? () => _goToPage(_currentPage - 1)
-                : null,
+            icon: Icon(
+              Symbols.keyboard_double_arrow_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(0) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.chevron_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(_currentPage - 1) : null,
           ),
           const SizedBox(width: 8),
           Text(
-            '${_allTrainings.isEmpty ? 0 : _currentPage * _itemsPerPage + 1}-${(_currentPage * _itemsPerPage) + _trainings.length} de ${_allTrainings.length}',
+            '$startIndex-$endIndex de $_totalElements',
             style: TextStyle(color: context.tokens.text, fontSize: 14),
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: Icon(Symbols.chevron_right, color: context.tokens.text),
-            onPressed: _currentPage < _totalPages - 1
-                ? () => _goToPage(_currentPage + 1)
-                : null,
+            icon: Icon(
+              Symbols.chevron_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_currentPage + 1) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.keyboard_double_arrow_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_totalPages - 1) : null,
           ),
         ],
       ),

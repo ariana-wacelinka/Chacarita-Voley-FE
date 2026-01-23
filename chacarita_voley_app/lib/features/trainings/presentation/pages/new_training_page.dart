@@ -40,7 +40,10 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
 
   final Set<int> _selectedWeekdays = {};
 
-  Future<void> _pickTime(TextEditingController controller) async {
+  Future<void> _pickTime(
+    TextEditingController controller, {
+    bool isEndTime = false,
+  }) async {
     final now = DateTime.now();
     DateTime initialDateTime = DateTime(now.year, now.month, now.day);
 
@@ -57,6 +60,27 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
             hour,
             minute,
           );
+        }
+      }
+    }
+
+    if (isEndTime && _startTimeController.text.isNotEmpty) {
+      final startParts = _startTimeController.text.split(':');
+      if (startParts.length == 2) {
+        final startHour = int.tryParse(startParts[0]);
+        final startMinute = int.tryParse(startParts[1]);
+        if (startHour != null && startMinute != null) {
+          final startTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            startHour,
+            startMinute,
+          );
+          if (initialDateTime.isBefore(startTime) ||
+              initialDateTime.isAtSameMomentAs(startTime)) {
+            initialDateTime = startTime.add(const Duration(hours: 1));
+          }
         }
       }
     }
@@ -115,6 +139,37 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
     );
 
     if (picked != null) {
+      if (isEndTime && _startTimeController.text.isNotEmpty) {
+        final startParts = _startTimeController.text.split(':');
+        if (startParts.length == 2) {
+          final startHour = int.tryParse(startParts[0]);
+          final startMinute = int.tryParse(startParts[1]);
+          if (startHour != null && startMinute != null) {
+            final now = DateTime.now();
+            final startTime = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              startHour,
+              startMinute,
+            );
+            if (picked.isBefore(startTime) ||
+                picked.isAtSameMomentAs(startTime)) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'La hora de fin debe ser posterior a la hora de inicio',
+                    ),
+                    backgroundColor: context.tokens.redToRosita,
+                  ),
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
       final hour = picked.hour.toString().padLeft(2, '0');
       final minute = picked.minute.toString().padLeft(2, '0');
       controller.text = '$hour:$minute';
@@ -182,13 +237,80 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
       return;
     }
 
+    DateTime? parsedStartDate;
+    DateTime? parsedEndDate;
+
+    if (_startDateController.text.isNotEmpty) {
+      final parts = _startDateController.text.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          parsedStartDate = DateTime(year, month, day);
+        }
+      }
+    }
+
+    if (_endDateController.text.isNotEmpty) {
+      final parts = _endDateController.text.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          parsedEndDate = DateTime(year, month, day);
+        }
+      }
+    }
+
+    if (parsedEndDate != null && parsedStartDate != null) {
+      if (parsedEndDate.isBefore(parsedStartDate)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'La fecha de fin debe ser posterior a la fecha de inicio',
+            ),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (_selectedWeekdays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Seleccioná al menos un día de la semana'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+      return;
+    }
+
+    final indexToDayOfWeek = [
+      DayOfWeek.monday,
+      DayOfWeek.tuesday,
+      DayOfWeek.wednesday,
+      DayOfWeek.thursday,
+      DayOfWeek.friday,
+      DayOfWeek.saturday,
+      DayOfWeek.sunday,
+    ];
+
+    final selectedDays = _selectedWeekdays
+        .map((index) => indexToDayOfWeek[index])
+        .toList();
+
     final training = Training(
       id: '',
       teamId: teamId,
       teamName: teamName,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
       professorId: '4',
       professorName: 'Profesor 1',
-      dayOfWeek: DayOfWeek.monday,
+      daysOfWeek: selectedDays,
       startTime: _startTimeController.text.trim(),
       endTime: _endTimeController.text.trim(),
       location: _locationController.text.trim(),
@@ -235,12 +357,12 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
       if (widget.teamId != null && widget.teamName != null) {
         final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
         context.go(
-          '/trainings?teamId=${widget.teamId}&teamName=$teamNameEncoded',
+          '/trainings?teamId=${widget.teamId}&teamName=$teamNameEncoded&refresh=true',
         );
       } else {
-        context.go('/trainings');
+        context.go('/trainings?refresh=true');
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -616,7 +738,8 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                     TextFormField(
                       controller: _endTimeController,
                       readOnly: true,
-                      onTap: () => _pickTime(_endTimeController),
+                      onTap: () =>
+                          _pickTime(_endTimeController, isEndTime: true),
                       decoration: InputDecoration(
                         hintText: 'HH:MM',
                         suffixIcon: Icon(
