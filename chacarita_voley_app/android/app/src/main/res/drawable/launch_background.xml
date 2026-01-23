@@ -1,12 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+<?xml version="1.0" encoding="utf-8"?><?xml version="1.0" encoding="utf-8"?>
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+<!-- Splash nativa con logo de Chacarita --><!-- Splash nativa mínima - solo color de fondo -->
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Fondo blanco -->    <!-- Fondo del mismo color que nuestra splash -->
+
+    <item android:drawable="@android:color/white" />    <item android:drawable="@android:color/white" />
+
+</layer-list>
+
+    <!-- Logo centrado -->
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/launcher_icon" />
+    </item>
 </layer-list>

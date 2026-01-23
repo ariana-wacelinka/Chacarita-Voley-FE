@@ -32,3 +32,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+.github/
+chacarita_voley_app/lib/core/environment.dart

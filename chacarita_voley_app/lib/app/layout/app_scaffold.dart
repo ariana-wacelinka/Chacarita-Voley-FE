@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'app_drawer.dart';
+import '../theme/app_theme.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -7,52 +9,115 @@ class AppScaffold extends StatelessWidget {
     required this.title,
     required this.child,
     this.drawer,
+    this.subtitle,
+    this.showDrawer = true,
+    this.onBack,
   });
 
   final String title;
   final Widget child;
   final Widget? drawer;
+  final String? subtitle;
+  final bool showDrawer;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    final currentPath = GoRouterState.of(context).uri.path;
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      drawer:
-          drawer ??
-          Drawer(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const ListTile(
-                    leading: Icon(Icons.home),
-                    title: Text('Inicio'),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.payment),
-                    title: const Text('Gestión de cuotas'),
-                    selected: currentPath == '/payments',
-                    onTap: () {
-                      context.goNamed('payments');
-                      Navigator.pop(context);
-                    },
-                  ),
-                  //TODO pruebas para ver las pantallas
-                  ListTile(
-                    leading: const Icon(Icons.payment),
-                    title: const Text('history'),
-                    selected: currentPath == '/payments_history',
-                    onTap: () {
-                      context.goNamed('history');
-                      Navigator.pop(context);
-                    },
-                  ),
-                  //Fin pruebas pantallas
-                ],
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        if (onBack != null) {
+          onBack!();
+          return;
+        }
+
+        final currentRoute = GoRouterState.of(context).uri.path;
+        if (currentRoute == '/home') {
+          // Si estamos en home, permitir cerrar la app
+          // No hacemos nada y Flutter cerrará la app
+        } else {
+          // Si no estamos en home, navegar a home
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: context.tokens.drawer,
+        appBar: AppBar(
+          leading: onBack != null
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back, color: context.tokens.text),
+                  onPressed: onBack,
+                )
+              : null,
+          title: Center(
+            child: Transform.translate(
+              offset: const Offset(-20, 0),
+              child: subtitle == null
+                  ? Text(title, textAlign: TextAlign.center)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(title, textAlign: TextAlign.center),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: context.tokens.placeholder,
+                                fontSize: 12,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+    // final currentPath = GoRouterState.of(context).uri.path;
+    // return Scaffold(
+    //   appBar: AppBar(title: Text(title)),
+    //   drawer:
+    //       drawer ??
+    //       Drawer(
+    //         child: SafeArea(
+    //           child: Column(
+    //             children: [
+    //               const ListTile(
+    //                 leading: Icon(Icons.home),
+    //                 title: Text('Inicio'),
+    //               ),
+    //               ListTile(
+    //                 leading: const Icon(Icons.payment),
+    //                 title: const Text('Gestión de cuotas'),
+    //                 selected: currentPath == '/payments',
+    //                 onTap: () {
+    //                   context.goNamed('payments');
+    //                   Navigator.pop(context);
+    //                 },
+    //               ),
+    //               //TODO pruebas para ver las pantallas
+    //               ListTile(
+    //                 leading: const Icon(Icons.payment),
+    //                 title: const Text('history'),
+    //                 selected: currentPath == '/payments_history',
+    //                 onTap: () {
+    //                   context.goNamed('history');
+    //                   Navigator.pop(context);
+    //                 },
+    //               ),
+    //               //Fin pruebas pantallas
+    //             ],
+    //           ),
             ),
           ),
-      body: child,
+          backgroundColor: context.tokens.drawer,
+          centerTitle: false,
+          foregroundColor: context.tokens.text,
+          elevation: 0,
+        ),
+        drawer: showDrawer ? (drawer ?? const AppDrawer()) : null,
+        body: SafeArea(child: child),
+      ),
     );
   }
 }
