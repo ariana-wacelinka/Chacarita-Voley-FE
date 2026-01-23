@@ -21,15 +21,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
     return GraphQLClientFactory.client.mutate(options);
   }
 
-  static const String _trainingFields = r'''
-    id
-    dayOfWeek
-    startTime
-    endTime
-    location
-    trainingType
-  ''';
-
   static const String _createTrainingMutation = r'''
     mutation CreateTraining($input: CreateTrainingInput!) {
       createTraining(input: $input) {
@@ -62,10 +53,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
-  String _getAllTrainingsQuery() =>
-      '''
-    query GetAllTrainings(\$page: Int!, \$size: Int!) {
-      getAllTrainings(page: \$page, size: \$size) {
+  String _getAllSessionsQuery() => '''
+    query GetAllSessions(\$page: Int!, \$size: Int!) {
+      getAllSessions(page: \$page, size: \$size) {
         totalPages
         totalElements
         pageSize
@@ -74,32 +64,78 @@ class TrainingRepository implements TrainingRepositoryInterface {
         hasNext
         content {
           id
-          dayOfWeek
+          date
           startTime
           endTime
           location
+          trainingType
+          status
           team {
+            id
+            name
             abbreviation
-            professors {
-              person {
-                name
-                surname
-              }
-            }
-            players {
-              id
-            }
+            isCompetitive
+          }
+          training {
+            id
+            dayOfWeek
+            startTime
+            endTime
+            location
+            trainingType
           }
         }
       }
     }
   ''';
 
-  String _getTrainingByIdQuery() =>
-      '''
-    query GetTrainingById(\$id: ID!) {
-      getTrainingById(id: \$id) {
-        $_trainingFields
+  String _getSessionByIdQuery() => '''
+    query GetSessionById(\$id: ID!) {
+      getSessionById(id: \$id) {
+        id
+        date
+        startTime
+        endTime
+        location
+        trainingType
+        status
+        team {
+          id
+          name
+          abbreviation
+          isCompetitive
+          professors {
+            id
+            person {
+              id
+              name
+              surname
+            }
+          }
+          players {
+            id
+            jerseyNumber
+            leagueId
+            person {
+              id
+              name
+              surname
+            }
+            assistances {
+              id
+              date
+              assistance
+            }
+          }
+        }
+        training {
+          id
+          dayOfWeek
+          startTime
+          endTime
+          location
+          trainingType
+        }
       }
     }
   ''';
@@ -115,12 +151,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
   }) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllTrainingsQuery()),
-        variables: {
-          'page': page,
-          'size': size,
-        },
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        document: gql(_getAllSessionsQuery()),
+        variables: {'page': page, 'size': size},
+        fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
 
@@ -128,14 +161,14 @@ class TrainingRepository implements TrainingRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final trainingsData = result.data?['getAllTrainings'];
-    if (trainingsData == null) return [];
+    final sessionsData = result.data?['getAllSessions'];
+    if (sessionsData == null) return [];
 
-    final content = (trainingsData['content'] as List<dynamic>?) ?? const [];
+    final content = (sessionsData['content'] as List<dynamic>?) ?? const [];
 
     return content
         .whereType<Map<String, dynamic>>()
-        .map((data) => _mapTrainingFromBackend(data))
+        .map((data) => _mapSessionFromBackend(data))
         .toList();
   }
 
@@ -143,7 +176,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
   Future<Training?> getTrainingById(String id) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getTrainingByIdQuery()),
+        document: gql(_getSessionByIdQuery()),
         variables: {'id': id},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
@@ -153,10 +186,10 @@ class TrainingRepository implements TrainingRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final data = result.data?['getTrainingById'] as Map<String, dynamic>?;
+    final data = result.data?['getSessionById'] as Map<String, dynamic>?;
     if (data == null) return null;
 
-    return _mapTrainingFromBackend(data);
+    return _mapSessionDetailFromBackend(data);
   }
 
   @override
@@ -239,12 +272,127 @@ class TrainingRepository implements TrainingRepositoryInterface {
     throw UnimplementedError('updateAttendance not yet implemented');
   }
 
+  Training _mapSessionFromBackend(Map<String, dynamic> data) {
+    final teamData = data['team'] as Map<String, dynamic>?;
+    final trainingData = data['training'] as Map<String, dynamic>?;
+
+    final dateString = data['date'] as String?;
+    DateTime? sessionDate;
+    if (dateString != null) {
+      sessionDate = DateTime.tryParse(dateString);
+    }
+
+    return Training(
+      id: data['id'] as String? ?? '',
+      date: sessionDate,
+      teamId: teamData?['id'] as String?,
+      teamName:
+          teamData?['abbreviation'] as String? ?? teamData?['name'] as String?,
+      trainingId: trainingData?['id'] as String?,
+      dayOfWeek: trainingData?['dayOfWeek'] != null
+          ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
+          : null,
+      startTime: data['startTime'] as String? ?? '',
+      endTime: data['endTime'] as String? ?? '',
+      location: data['location'] as String? ?? '',
+      type: TrainingType.fromBackend(
+        data['trainingType'] as String? ?? 'PHYSICAL',
+      ),
+      status: TrainingStatus.fromBackend(
+        data['status'] as String? ?? 'UPCOMING',
+      ),
+      attendances: const [],
+    );
+  }
+
+  Training _mapSessionDetailFromBackend(Map<String, dynamic> data) {
+    final teamData = data['team'] as Map<String, dynamic>?;
+    final trainingData = data['training'] as Map<String, dynamic>?;
+
+    final dateString = data['date'] as String?;
+    DateTime? sessionDate;
+    if (dateString != null) {
+      sessionDate = DateTime.tryParse(dateString);
+    }
+
+    final professorsData = (teamData?['professors'] as List<dynamic>?) ?? [];
+    String? professorName;
+    String? professorId;
+    if (professorsData.isNotEmpty) {
+      final firstProfessor = professorsData.first as Map<String, dynamic>;
+      professorId = firstProfessor['id'] as String?;
+      final personData = firstProfessor['person'] as Map<String, dynamic>?;
+      if (personData != null) {
+        final name = personData['name'] as String? ?? '';
+        final surname = personData['surname'] as String? ?? '';
+        professorName = '$name $surname'.trim();
+      }
+    }
+
+    final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
+    final attendances = playersData.whereType<Map<String, dynamic>>().map((
+      player,
+    ) {
+      final personData = player['person'] as Map<String, dynamic>?;
+      final name = personData?['name'] as String? ?? '';
+      final surname = personData?['surname'] as String? ?? '';
+
+      final assistancesData = (player['assistances'] as List<dynamic>?) ?? [];
+      bool isPresent = false;
+
+      if (sessionDate != null && assistancesData.isNotEmpty) {
+        for (final assistance in assistancesData) {
+          final assistanceMap = assistance as Map<String, dynamic>;
+          final assistanceDate = assistanceMap['date'] as String?;
+          if (assistanceDate != null) {
+            final parsedDate = DateTime.tryParse(assistanceDate);
+            if (parsedDate != null &&
+                parsedDate.year == sessionDate.year &&
+                parsedDate.month == sessionDate.month &&
+                parsedDate.day == sessionDate.day) {
+              isPresent = assistanceMap['assistance'] as bool? ?? false;
+              break;
+            }
+          }
+        }
+      }
+
+      return PlayerAttendance(
+        playerId: player['id'] as String? ?? '',
+        playerName: '$name $surname'.trim(),
+        isPresent: isPresent,
+      );
+    }).toList();
+
+    return Training(
+      id: data['id'] as String? ?? '',
+      date: sessionDate,
+      teamId: teamData?['id'] as String?,
+      teamName:
+          teamData?['abbreviation'] as String? ?? teamData?['name'] as String?,
+      professorId: professorId,
+      professorName: professorName,
+      trainingId: trainingData?['id'] as String?,
+      dayOfWeek: trainingData?['dayOfWeek'] != null
+          ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
+          : null,
+      startTime: data['startTime'] as String? ?? '',
+      endTime: data['endTime'] as String? ?? '',
+      location: data['location'] as String? ?? '',
+      type: TrainingType.fromBackend(
+        data['trainingType'] as String? ?? 'PHYSICAL',
+      ),
+      status: TrainingStatus.fromBackend(
+        data['status'] as String? ?? 'UPCOMING',
+      ),
+      attendances: attendances,
+    );
+  }
+
   Training _mapTrainingFromBackend(Map<String, dynamic> data) {
-    // Extraer información del team
     final teamData = data['team'] as Map<String, dynamic>?;
     final teamAbbreviation = teamData?['abbreviation'] as String?;
-    
-    // Extraer información de professors
+
     final professorsData = (teamData?['professors'] as List<dynamic>?) ?? [];
     String? professorName;
     if (professorsData.isNotEmpty) {
@@ -257,24 +405,23 @@ class TrainingRepository implements TrainingRepositoryInterface {
       }
     }
 
-    // Extraer información de players 
     final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
     final attendances = playersData
         .whereType<Map<String, dynamic>>()
         .map(
           (player) => PlayerAttendance(
             playerId: player['id'] as String? ?? '',
-            playerName: '', // No tenemos nombre en esta query
-            isPresent: false, // Default para listado
+            playerName: '',
+            isPresent: false,
           ),
         )
         .toList();
 
     return Training(
       id: data['id'] as String? ?? '',
-      teamId: teamData?['id'] as String?, // Si está disponible en team
+      teamId: teamData?['id'] as String?,
       teamName: teamAbbreviation,
-      professorId: null, // No disponible en esta estructura
+      professorId: null,
       professorName: professorName,
       dayOfWeek: data['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(data['dayOfWeek'] as String)

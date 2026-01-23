@@ -85,9 +85,12 @@ enum DayOfWeek {
 }
 
 enum TrainingStatus {
-  proximo,
-  completado,
-  cancelado;
+  proximo('UPCOMING'),
+  completado('COMPLETED'),
+  cancelado('CANCELLED');
+
+  final String backendValue;
+  const TrainingStatus(this.backendValue);
 
   String get displayName {
     switch (this) {
@@ -97,6 +100,19 @@ enum TrainingStatus {
         return 'Completado';
       case TrainingStatus.cancelado:
         return 'Cancelado';
+    }
+  }
+
+  static TrainingStatus fromBackend(String value) {
+    switch (value) {
+      case 'UPCOMING':
+        return TrainingStatus.proximo;
+      case 'COMPLETED':
+        return TrainingStatus.completado;
+      case 'CANCELLED':
+        return TrainingStatus.cancelado;
+      default:
+        return TrainingStatus.proximo;
     }
   }
 }
@@ -127,6 +143,7 @@ class PlayerAttendance {
 
 class Training {
   final String id;
+  final DateTime? date;
   final String? teamId;
   final String? teamName;
   final String? professorId;
@@ -138,9 +155,11 @@ class Training {
   final TrainingType type;
   final TrainingStatus status;
   final List<PlayerAttendance> attendances;
+  final String? trainingId;
 
   Training({
     required this.id,
+    this.date,
     this.teamId,
     this.teamName,
     this.professorId,
@@ -152,6 +171,7 @@ class Training {
     required this.type,
     required this.status,
     this.attendances = const [],
+    this.trainingId,
   });
 
   int get totalPlayers => attendances.length;
@@ -159,11 +179,49 @@ class Training {
   int get absentCount => attendances.where((a) => !a.isPresent).length;
 
   String get dateFormatted {
+    if (date != null) {
+      final months = [
+        'Ene',
+        'Feb',
+        'Mar',
+        'Abr',
+        'May',
+        'Jun',
+        'Jul',
+        'Ago',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dic',
+      ];
+      return '${date!.day} ${months[date!.month - 1]} ${date!.year}';
+    }
     return dayOfWeek?.displayName ?? 'Sin día asignado';
+  }
+
+  String get startTimeFormatted {
+    if (startTime.contains(':')) {
+      final parts = startTime.split(':');
+      if (parts.length >= 2) {
+        return '${parts[0]}:${parts[1]}';
+      }
+    }
+    return startTime;
+  }
+
+  String get endTimeFormatted {
+    if (endTime.contains(':')) {
+      final parts = endTime.split(':');
+      if (parts.length >= 2) {
+        return '${parts[0]}:${parts[1]}';
+      }
+    }
+    return endTime;
   }
 
   Training copyWith({
     String? id,
+    DateTime? date,
     String? teamId,
     String? teamName,
     String? professorId,
@@ -175,9 +233,11 @@ class Training {
     TrainingType? type,
     TrainingStatus? status,
     List<PlayerAttendance>? attendances,
+    String? trainingId,
   }) {
     return Training(
       id: id ?? this.id,
+      date: date ?? this.date,
       teamId: teamId ?? this.teamId,
       teamName: teamName ?? this.teamName,
       professorId: professorId ?? this.professorId,
@@ -189,6 +249,7 @@ class Training {
       type: type ?? this.type,
       status: status ?? this.status,
       attendances: attendances ?? this.attendances,
+      trainingId: trainingId ?? this.trainingId,
     );
   }
 }

@@ -196,7 +196,7 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${training.startTime} - ${training.endTime}',
+                          '${training.startTimeFormatted} - ${training.endTimeFormatted}',
                           style: TextStyle(
                             color: context.tokens.text,
                             fontSize: 14,
