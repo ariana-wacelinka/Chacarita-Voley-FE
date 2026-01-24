@@ -22,7 +22,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
   }
 
   static const String _addTrainingsToTeamMutation = r'''
-    mutation AddTrainingsToTeam($teamId: ID!, $dayOfWeek: DayOfWeek!, $startTime: String!, $endTime: String!, $trainingType: TrainingType!, $location: String!, $startDate: String!, $endDate: String!) {
+    mutation AddTrainingsToTeam($teamId: ID!, $dayOfWeek: [DayOfWeek!]!, $startTime: String!, $endTime: String!, $trainingType: TrainingType!, $location: String!, $startDate: String!, $endDate: String!) {
       addTrainingsToTeam(
         teamId: $teamId
         trainingInputs: {
@@ -121,6 +121,12 @@ class TrainingRepository implements TrainingRepositoryInterface {
   static const String _deleteTrainingMutation = r'''
     mutation DeleteTraining($id: ID!) {
       deleteTraining(id: $id)
+    }
+  ''';
+
+  static const String _deleteSessionMutation = r'''
+    mutation DeleteSession($id: ID!) {
+      deleteSession(id: $id)
     }
   ''';
 
@@ -387,70 +393,59 @@ class TrainingRepository implements TrainingRepositoryInterface {
       '[createTraining] Creando training(s) para ${daysToCreate.length} día(s)',
     );
 
-    Training? createdTraining;
+    final daysOfWeekValues = daysToCreate.map((d) => d.backendValue).toList();
+    print('[createTraining] Días a enviar: $daysOfWeekValues');
 
-    for (final day in daysToCreate) {
-      print('[createTraining] Creando para día: ${day.backendValue}');
+    final variables = {
+      'teamId': training.teamId,
+      'dayOfWeek': daysOfWeekValues,
+      'startTime': training.startTime,
+      'endTime': training.endTime,
+      'trainingType': training.type.backendValue,
+      'location': training.location,
+      'startDate': startDate,
+      'endDate': endDate,
+    };
 
-      final variables = {
-        'teamId': training.teamId,
-        'dayOfWeek': day.backendValue,
-        'startTime': training.startTime,
-        'endTime': training.endTime,
-        'trainingType': training.type.backendValue,
-        'location': training.location,
-        'startDate': startDate,
-        'endDate': endDate,
-      };
+    print('[createTraining] Variables: $variables');
 
-      print('[createTraining] Variables: $variables');
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_createTrainingMutation),
+        variables: variables,
+      ),
+    );
 
-      final result = await _mutate(
-        MutationOptions(
-          document: gql(_createTrainingMutation),
-          variables: variables,
-        ),
-      );
+    print('[createTraining] Mutación ejecutada');
+    print('[createTraining] hasException: ${result.hasException}');
 
-      print('[createTraining] Mutación ejecutada para ${day.backendValue}');
-      print('[createTraining] hasException: ${result.hasException}');
-
-      if (result.hasException) {
-        print('[createTraining] ERROR: ${result.exception.toString()}');
-        print(
-          '[createTraining] GraphQL Errors: ${result.exception?.graphqlErrors}',
-        );
-        print(
-          '[createTraining] Link Exception: ${result.exception?.linkException}',
-        );
-        throw Exception(result.exception.toString());
-      }
-
-      final dataList = result.data?['addTrainingsToTeam'] as List<dynamic>?;
-      if (dataList == null || dataList.isEmpty) {
-        print(
-          '[createTraining] ERROR: data es null o vacío en addTrainingsToTeam',
-        );
-        continue;
-      }
-
+    if (result.hasException) {
+      print('[createTraining] ERROR: ${result.exception.toString()}');
       print(
-        '[createTraining] Training(s) creado(s) para ${day.backendValue}: ${dataList.length} session(s)',
+        '[createTraining] GraphQL Errors: ${result.exception?.graphqlErrors}',
       );
-
-      if (createdTraining == null) {
-        final firstTraining = dataList.first as Map<String, dynamic>;
-        createdTraining = _mapTrainingFromBackend(firstTraining);
-      }
+      print(
+        '[createTraining] Link Exception: ${result.exception?.linkException}',
+      );
+      throw Exception(result.exception.toString());
     }
 
-    if (createdTraining == null) {
-      throw Exception('No se pudo crear ningún training');
+    final dataList = result.data?['addTrainingsToTeam'] as List<dynamic>?;
+    if (dataList == null || dataList.isEmpty) {
+      print(
+        '[createTraining] ERROR: data es null o vacío en addTrainingsToTeam',
+      );
+      throw Exception('No se recibieron trainings del backend');
     }
 
     print(
-      '[createTraining] Finalizado - Total días procesados: ${daysToCreate.length}',
+      '[createTraining] Training(s) creado(s): ${dataList.length} session(s)',
     );
+
+    final firstTraining = dataList.first as Map<String, dynamic>;
+    final createdTraining = _mapTrainingFromBackend(firstTraining);
+
+    print('[createTraining] Finalizado exitosamente');
     return createdTraining;
   }
 
@@ -514,6 +509,19 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql(_deleteTrainingMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  Future<void> deleteSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_deleteSessionMutation),
         variables: {'id': id},
       ),
     );
@@ -715,7 +723,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
       type: TrainingType.fromBackend(
         data['trainingType'] as String? ?? 'PHYSICAL',
       ),
-      status: TrainingStatus.proximo,
+      status: TrainingStatus.fromBackend(
+        data['status'] as String? ?? 'UPCOMING',
+      ),
       attendances: attendances,
     );
   }

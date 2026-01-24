@@ -695,14 +695,22 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       color: context.tokens.card1,
                       elevation: 4,
+                      onSelected: (action) {
+                        switch (action) {
+                          case _TrainingMenuAction.view:
+                            context.push('/trainings/${training.id}');
+                            break;
+                          case _TrainingMenuAction.edit:
+                            context.push('/trainings/${training.id}/edit');
+                            break;
+                          case _TrainingMenuAction.delete:
+                            _showDeleteDialog(context, training);
+                            break;
+                        }
+                      },
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           value: _TrainingMenuAction.view,
-                          onTap: () {
-                            Future.microtask(() {
-                              context.push('/trainings/${training.id}');
-                            });
-                          },
                           child: Text(
                             'Ver',
                             style: TextStyle(color: context.tokens.text),
@@ -710,11 +718,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         ),
                         PopupMenuItem(
                           value: _TrainingMenuAction.edit,
-                          onTap: () {
-                            Future.microtask(() {
-                              context.push('/trainings/${training.id}/edit');
-                            });
-                          },
                           child: Text(
                             'Modificar',
                             style: TextStyle(color: context.tokens.text),
@@ -722,11 +725,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         ),
                         PopupMenuItem(
                           value: _TrainingMenuAction.delete,
-                          onTap: () {
-                            Future.microtask(() {
-                              _showDeleteDialog(context, training);
-                            });
-                          },
                           child: Text(
                             'Eliminar',
                             style: TextStyle(
@@ -856,9 +854,19 @@ class _TrainingsPageState extends State<TrainingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
-        content: Text(
-          '¿Estás seguro de que querés eliminar este entrenamiento?',
+        title: Text(
+          '¿Qué querés eliminar?',
           style: TextStyle(color: context.tokens.text),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Podés eliminar solo este entrenamiento o este y todos los posteriores.',
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -869,20 +877,231 @@ class _TrainingsPageState extends State<TrainingsPage> {
             ),
           ),
           TextButton(
-            onPressed: () async {
-              await _repository.deleteTraining(training.id);
-              if (context.mounted) {
-                Navigator.pop(context);
-                _loadTrainings();
-              }
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeleteSessionConfirmation(context, training);
             },
             child: Text(
-              'Eliminar',
+              'Solo este entrenamiento',
+              style: TextStyle(color: context.tokens.text),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeleteAllConfirmation(context, training);
+            },
+            child: Text(
+              'Este y todos los posteriores',
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteSessionConfirmation(
+    BuildContext parentContext,
+    Training training,
+  ) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: parentContext.tokens.card1,
+        title: Text(
+          'Eliminar entrenamiento',
+          style: TextStyle(color: parentContext.tokens.text),
+        ),
+        content: Text(
+          '¿Estás seguro de que querés eliminar este entrenamiento del ${training.dateFormatted}?',
+          style: TextStyle(color: parentContext.tokens.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: parentContext.tokens.placeholder),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+
+              try {
+                await _repository.deleteSession(training.id);
+
+                if (!mounted) return;
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+
+                  setState(() {
+                    _trainings = [];
+                    _currentPage = 0;
+                  });
+
+                  _loadTrainings();
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Entrenamiento eliminado exitosamente',
+                      ),
+                      backgroundColor: parentContext.tokens.green,
+                    ),
+                  );
+                });
+              } catch (e) {
+                if (!mounted) return;
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al eliminar el entrenamiento: $e'),
+                      backgroundColor: parentContext.tokens.redToRosita,
+                    ),
+                  );
+                });
+              }
+            },
+            child: Text(
+              'Eliminar',
+              style: TextStyle(
+                color: Theme.of(parentContext).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAllConfirmation(
+    BuildContext parentContext,
+    Training training,
+  ) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) {
+        final confirmController = TextEditingController();
+
+        return AlertDialog(
+          backgroundColor: parentContext.tokens.card1,
+          title: Text(
+            '¡Atención!',
+            style: TextStyle(
+              color: Theme.of(parentContext).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estás por eliminar este entrenamiento y todos los posteriores. Esta acción no se puede deshacer.',
+                style: TextStyle(color: parentContext.tokens.text),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Escribí "ELIMINAR" para confirmar:',
+                style: TextStyle(
+                  color: parentContext.tokens.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: 'ELIMINAR',
+                  hintStyle: TextStyle(color: parentContext.tokens.placeholder),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                style: TextStyle(color: parentContext.tokens.text),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: parentContext.tokens.placeholder),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (confirmController.text.trim().toUpperCase() != 'ELIMINAR') {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Debés escribir "ELIMINAR" para confirmar',
+                      ),
+                      backgroundColor: parentContext.tokens.redToRosita,
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(dialogContext);
+
+                try {
+                  final trainingId = training.trainingId ?? training.id;
+                  await _repository.deleteTraining(trainingId);
+
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _trainings = [];
+                      _currentPage = 0;
+                    });
+
+                    _loadTrainings();
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Entrenamiento eliminado exitosamente',
+                        ),
+                        backgroundColor: parentContext.tokens.green,
+                      ),
+                    );
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al eliminar el entrenamiento: $e'),
+                        backgroundColor: parentContext.tokens.redToRosita,
+                      ),
+                    );
+                  });
+                }
+              },
+              child: Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: Theme.of(parentContext).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
