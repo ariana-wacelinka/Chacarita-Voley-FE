@@ -62,10 +62,44 @@ class _TrainingsPageState extends State<TrainingsPage> {
     super.dispose();
   }
 
+  bool get _hasActiveFilters {
+    return _startDateController.text.isNotEmpty ||
+        _endDateController.text.isNotEmpty ||
+        _startTimeController.text.isNotEmpty ||
+        _endTimeController.text.isNotEmpty ||
+        _selectedStatus != null;
+  }
+
   Future<void> _loadTrainings() async {
     setState(() => _isLoading = true);
     try {
+      // Convertir fechas de DD/MM/AAAA a AAAA-MM-DD para el backend
+      String? dateFrom;
+      String? dateTo;
+
+      if (_startDateController.text.isNotEmpty) {
+        final parts = _startDateController.text.split('/');
+        if (parts.length == 3) {
+          dateFrom = '${parts[2]}-${parts[1]}-${parts[0]}';
+        }
+      }
+
+      if (_endDateController.text.isNotEmpty) {
+        final parts = _endDateController.text.split('/');
+        if (parts.length == 3) {
+          dateTo = '${parts[2]}-${parts[1]}-${parts[0]}';
+        }
+      }
+
       final result = await _repository.getTrainingsWithPagination(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        startTimeFrom: _startTimeController.text.isNotEmpty
+            ? _startTimeController.text
+            : null,
+        startTimeTo: _endTimeController.text.isNotEmpty
+            ? _endTimeController.text
+            : null,
         status: _selectedStatus,
         page: _currentPage,
         size: _itemsPerPage,
@@ -174,6 +208,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
       final hour = picked.hour.toString().padLeft(2, '0');
       final minute = picked.minute.toString().padLeft(2, '0');
       controller.text = '$hour:$minute';
+      _loadTrainings();
     }
   }
 
@@ -182,23 +217,24 @@ class _TrainingsPageState extends State<TrainingsPage> {
     return Scaffold(
       backgroundColor: context.tokens.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : _trainings.isEmpty
-                  ? _buildEmptyState(context)
-                  : _buildTrainingsList(context),
-            ),
-          ],
-        ),
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              )
+            : Column(
+                children: [
+                  Expanded(
+                    child: _trainings.isEmpty
+                        ? _buildEmptyStateWithFilters(context)
+                        : _buildTrainingsList(context),
+                  ),
+                  if (_totalPages > 1) _buildPagination(context),
+                ],
+              ),
       ),
       floatingActionButton: SizedBox(
         width: 56,
@@ -236,7 +272,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
 
   Widget _buildFilterSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.tokens.card1,
@@ -247,21 +282,59 @@ class _TrainingsPageState extends State<TrainingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Symbols.filter_alt,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
+              Row(
+                children: [
+                  Icon(
+                    Symbols.filter_alt,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Filtro',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Filtro',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+              if (_hasActiveFilters)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _startDateController.clear();
+                      _endDateController.clear();
+                      _startTimeController.clear();
+                      _endTimeController.clear();
+                      _selectedStatus = null;
+                      _currentPage = 0;
+                    });
+                    _loadTrainings();
+                  },
+                  icon: Icon(
+                    Symbols.close,
+                    color: context.tokens.text,
+                    size: 18,
+                  ),
+                  label: Text(
+                    'Limpiar filtros',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -293,6 +366,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         if (picked != null) {
                           _startDateController.text =
                               '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          _loadTrainings();
                         }
                       },
                       decoration: InputDecoration(
@@ -346,6 +420,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         if (picked != null) {
                           _endDateController.text =
                               '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          _loadTrainings();
                         }
                       },
                       decoration: InputDecoration(
@@ -466,15 +541,17 @@ class _TrainingsPageState extends State<TrainingsPage> {
             style: TextStyle(color: context.tokens.text, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _buildStatusChip(context, 'Próximos', TrainingStatus.proximo),
-              const SizedBox(width: 8),
               _buildStatusChip(
                 context,
                 'Completados',
                 TrainingStatus.completado,
               ),
+              _buildStatusChip(context, 'Cancelados', TrainingStatus.cancelado),
             ],
           ),
         ],
@@ -548,26 +625,33 @@ class _TrainingsPageState extends State<TrainingsPage> {
     );
   }
 
-  Widget _buildTrainingsList(BuildContext context) {
-    return Column(
+  Widget _buildEmptyStateWithFilters(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _trainings.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildFilterSection(context);
-              }
-
-              final trainingIndex = index - 1;
-              final training = _trainings[trainingIndex];
-              return _buildTrainingCard(context, training);
-            },
-          ),
-        ),
-        if (_totalPages > 1) _buildPagination(context),
+        _buildFilterSection(context),
+        const SizedBox(height: 100),
+        _buildEmptyState(context),
       ],
+    );
+  }
+
+  Widget _buildTrainingsList(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _trainings.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildFilterSection(context),
+          );
+        }
+
+        final trainingIndex = index - 1;
+        final training = _trainings[trainingIndex];
+        return _buildTrainingCard(context, training);
+      },
     );
   }
 
@@ -671,6 +755,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                             ? Theme.of(
                                 context,
                               ).colorScheme.primary.withOpacity(0.1)
+                            : training.status == TrainingStatus.cancelado
+                            ? context.tokens.redToRosita.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -681,6 +767,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                               ? context.tokens.green
                               : training.status == TrainingStatus.completado
                               ? Theme.of(context).colorScheme.primary
+                              : training.status == TrainingStatus.cancelado
+                              ? context.tokens.redToRosita
                               : context.tokens.placeholder,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,

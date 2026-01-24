@@ -147,9 +147,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
-  String _getAllSessionsQuery() => '''
+  String _getAllSessionsQuery({
+    String? dateFrom,
+    String? dateTo,
+    String? startTimeFrom,
+    String? startTimeTo,
+    String? statusValue,
+  }) =>
+      '''
     query GetAllSessions(\$page: Int!, \$size: Int!) {
-      getAllSessions(page: \$page, size: \$size) {
+      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}}) {
         totalPages
         totalElements
         pageSize
@@ -238,30 +245,68 @@ class TrainingRepository implements TrainingRepositoryInterface {
   ''';
 
   Future<Map<String, dynamic>> getTrainingsWithPagination({
-    DateTime? startDate,
-    DateTime? endDate,
-    String? teamId,
+    String? dateFrom,
+    String? dateTo,
+    String? startTimeFrom,
+    String? startTimeTo,
     TrainingStatus? status,
     int page = 0,
     int size = 10,
   }) async {
-    final Map<String, dynamic> variables = {'page': page, 'size': size};
+    print('[getTrainingsWithPagination] Iniciando con filtros:');
+    print('  dateFrom: $dateFrom');
+    print('  dateTo: $dateTo');
+    print('  startTimeFrom: $startTimeFrom');
+    print('  startTimeTo: $startTimeTo');
+    print('  status: ${status?.backendValue}');
+    print('  page: $page, size: $size');
 
-    if (status != null) {
-      variables['filters'] = {'statuses': status.backendValue};
-    }
+    final Map<String, dynamic> variables = {
+      'page': page,
+      'size': size,
+      'filters': {
+        'dateFrom': dateFrom ?? '',
+        'dateTo': dateTo ?? '',
+        'startTimeFrom': startTimeFrom ?? '',
+        'startTimeTo': startTimeTo ?? '',
+        'statuses': status?.backendValue,
+      },
+    };
+
+    print('[getTrainingsWithPagination] Variables: $variables');
 
     final result = await _query(
       QueryOptions(
-        document: gql(_getAllSessionsQuery()),
-        variables: variables,
+        document: gql(
+          _getAllSessionsQuery(
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+            startTimeFrom: startTimeFrom,
+            startTimeTo: startTimeTo,
+            statusValue: status?.backendValue,
+          ),
+        ),
+        variables: {'page': page, 'size': size},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
 
+    print(
+      '[getTrainingsWithPagination] Result hasException: ${result.hasException}',
+    );
+
     if (result.hasException) {
+      print('[getTrainingsWithPagination] Exception: ${result.exception}');
+      print(
+        '[getTrainingsWithPagination] GraphQL Errors: ${result.exception?.graphqlErrors}',
+      );
+      print(
+        '[getTrainingsWithPagination] Link Exception: ${result.exception?.linkException}',
+      );
       throw Exception(result.exception.toString());
     }
+
+    print('[getTrainingsWithPagination] Data recibida exitosamente');
 
     final sessionsData = result.data?['getAllSessions'];
     if (sessionsData == null) {
@@ -300,10 +345,23 @@ class TrainingRepository implements TrainingRepositoryInterface {
     int page = 0,
     int size = 10,
   }) async {
+    // Convertir DateTime a String formato YYYY-MM-DD si están presentes
+    String? dateFrom;
+    String? dateTo;
+
+    if (startDate != null) {
+      dateFrom =
+          '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    }
+
+    if (endDate != null) {
+      dateTo =
+          '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+    }
+
     final result = await getTrainingsWithPagination(
-      startDate: startDate,
-      endDate: endDate,
-      teamId: teamId,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
       status: status,
       page: page,
       size: size,
