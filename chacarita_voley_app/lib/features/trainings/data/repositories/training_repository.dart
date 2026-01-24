@@ -130,6 +130,23 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  static const String _createAssistanceMutation = r'''
+    mutation CreateAssistance($inputList: [AssistanceInput!]!) {
+      createAssistance(inputList: $inputList) {
+        id
+        assistance
+        date
+        player {
+          id
+          person {
+            name
+            surname
+          }
+        }
+      }
+    }
+  ''';
+
   String _getAllSessionsQuery() => '''
     query GetAllSessions(\$page: Int!, \$size: Int!) {
       getAllSessions(page: \$page, size: \$size) {
@@ -536,7 +553,66 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String trainingId,
     List<PlayerAttendance> attendances,
   ) async {
-    throw UnimplementedError('updateAttendance not yet implemented');
+    print('[updateAttendance] Iniciando actualización de asistencia');
+    print('[updateAttendance] sessionId: $trainingId');
+    print('[updateAttendance] attendances: ${attendances.length} jugadores');
+
+    // Construir la lista de inputs como strings para la mutación
+    final inputListString = attendances
+        .map(
+          (attendance) =>
+              '{assistance: ${attendance.isPresent}, playerId: "${attendance.playerId}", sessionId: "$trainingId"}',
+        )
+        .join(', ');
+
+    print('[updateAttendance] inputListString: [$inputListString]');
+
+    // Construir la mutación con los valores inline
+    final mutation =
+        '''
+      mutation CreateAssistance {
+        createAssistance(inputList: [$inputListString]) {
+          id
+          assistance
+          date
+          player {
+            id
+            person {
+              name
+              surname
+            }
+          }
+        }
+      }
+    ''';
+
+    print('[updateAttendance] Ejecutando mutación');
+
+    final result = await _mutate(MutationOptions(document: gql(mutation)));
+
+    print('[updateAttendance] Mutación ejecutada');
+    print('[updateAttendance] hasException: ${result.hasException}');
+
+    if (result.hasException) {
+      print('[updateAttendance] ERROR: ${result.exception.toString()}');
+      print(
+        '[updateAttendance] GraphQL Errors: ${result.exception?.graphqlErrors}',
+      );
+      print(
+        '[updateAttendance] Link Exception: ${result.exception?.linkException}',
+      );
+      throw Exception(result.exception.toString());
+    }
+
+    print('[updateAttendance] Asistencia guardada exitosamente');
+
+    // Recargar el training actualizado
+    final updatedTraining = await getTrainingById(trainingId);
+    if (updatedTraining == null) {
+      throw Exception('No se pudo recargar el entrenamiento');
+    }
+
+    return updatedTraining;
   }
 
   Training _mapSessionFromBackend(Map<String, dynamic> data) {

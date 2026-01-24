@@ -63,6 +63,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   Future<void> _saveAttendance() async {
     if (_training == null || !_hasChanges || _isSaving) return;
 
+    print('[_saveAttendance] Iniciando guardado de asistencia');
     setState(() {
       _isSaving = true;
     });
@@ -73,18 +74,44 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         _training!.attendances,
       );
 
-      if (!mounted) return;
+      print('[_saveAttendance] Asistencia guardada, actualizando estado');
+
+      if (!mounted) {
+        print('[_saveAttendance] Widget no montado después de guardar');
+        return;
+      }
+
       setState(() {
         _hasChanges = false;
       });
+
+      print('[_saveAttendance] Mostrando SnackBar');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Asistencia guardada correctamente'),
           backgroundColor: context.tokens.green,
+          duration: const Duration(milliseconds: 1500),
         ),
       );
+
+      print('[_saveAttendance] Esperando antes de navegar');
+
+      // Navegar de vuelta al detalle del entrenamiento
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      print('[_saveAttendance] Verificando mounted antes de navegar');
+
+      if (!mounted) {
+        print('[_saveAttendance] Widget no montado antes de navegar');
+        return;
+      }
+
+      print('[_saveAttendance] Navegando a detalle del entrenamiento');
+      context.pushReplacement('/trainings/${widget.trainingId}');
+      print('[_saveAttendance] Navegación completada');
     } catch (e) {
+      print('[_saveAttendance] Error al guardar: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
