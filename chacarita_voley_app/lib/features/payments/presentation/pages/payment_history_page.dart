@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
-import '../../data/repositories/payment_repository.dart'; // Asumiendo que existe o crea uno similar a UserRepository
+import '../../domain/entities/pay.dart';
+import '../../data/repositories/pay_repository.dart'; // Asumiendo que existe o crea uno similar a UserRepository
+import '../../domain/entities/pay_state.dart';
 import '../widgets/payment_history_content_widget.dart'; // Import del nuevo widget
 
 class PaymentHistoryPage extends StatefulWidget {
@@ -23,24 +24,24 @@ class PaymentHistoryPage extends StatefulWidget {
 }
 
 class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
-  late final PaymentRepository _paymentRepository; // Similar a UserRepository
-  List<Payment> _payments = [];
+  late final PayRepository _payRepository; // Similar a UserRepository
+  List<Pay> _pay = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _paymentRepository = PaymentRepository();
-    _loadPayments();
+    _payRepository = PayRepository();
+    _loadPays();
   }
 
-  Future<void> _loadPayments() async {
+  Future<void> _loadPays() async {
     try {
       // Cargar pagos reales del repo por userId
-      final payments = _paymentRepository.getPaymentByUserId(widget.userId);
+      final pays = _payRepository.getPaymentByUserId(widget.userId);
       setState(() {
-        _payments = payments.isNotEmpty
-            ? payments
+        _pay = pays.isNotEmpty
+            ? pays
             : _getDummyPayments(); // Fallback a dummy si vacío
         _isLoading = false;
       });
@@ -54,16 +55,16 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         );
       }
       setState(() {
-        _payments = _getDummyPayments(); // Usar dummy en error
+        _pay = _getDummyPayments(); // Usar dummy en error
         _isLoading = false;
       });
     }
   }
 
   // Datos dummy para visualización (hardcodeados, ordenados por fecha descendente)
-  List<Payment> _getDummyPayments() {
+  List<Pay> _getDummyPayments() {
     return [
-      Payment(
+      Pay(
         id: '1',
         userId: widget.userId,
         userName: widget.userName,
@@ -71,10 +72,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 11, 9),
         sentDate: DateTime(2025, 11, 10),
         amount: 20000.0,
-        status: PaymentStatus.aprobado,
+        status: PayState.validated,
         comprobantePath: 'comprobante_nov9.pdf',
       ),
-      Payment(
+      Pay(
         id: '2',
         userId: widget.userId,
         userName: widget.userName,
@@ -82,10 +83,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 10, 15),
         sentDate: DateTime(2025, 10, 16),
         amount: 20000.0,
-        status: PaymentStatus.aprobado,
+        status: PayState.validated,
         comprobantePath: 'comprobante_oct15.pdf',
       ),
-      Payment(
+      Pay(
         id: '3',
         userId: widget.userId,
         userName: widget.userName,
@@ -93,10 +94,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 9, 20),
         sentDate: DateTime(2025, 9, 21),
         amount: 20000.0,
-        status: PaymentStatus.rechazado,
+        status: PayState.rejected,
         comprobantePath: 'comprobante_sep20.pdf',
       ),
-      Payment(
+      Pay(
         id: '4',
         userId: widget.userId,
         userName: widget.userName,
@@ -104,10 +105,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 8, 5),
         sentDate: DateTime(2025, 8, 6),
         amount: 20000.0,
-        status: PaymentStatus.pendiente,
+        status: PayState.pending,
         comprobantePath: 'comprobante_aug5.pdf',
       ),
-      Payment(
+      Pay(
         id: '5',
         userId: widget.userId,
         userName: widget.userName,
@@ -115,10 +116,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 7, 12),
         sentDate: DateTime(2025, 7, 13),
         amount: 20000.0,
-        status: PaymentStatus.aprobado,
+        status: PayState.validated,
         comprobantePath: 'comprobante_jul12.pdf',
       ),
-      Payment(
+      Pay(
         id: '6',
         userId: widget.userId,
         userName: widget.userName,
@@ -126,10 +127,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 6, 25),
         sentDate: DateTime(2025, 6, 26),
         amount: 20000.0,
-        status: PaymentStatus.aprobado,
+        status: PayState.validated,
         comprobantePath: 'comprobante_jun25.pdf',
       ),
-      Payment(
+      Pay(
         id: '7',
         userId: widget.userId,
         userName: widget.userName,
@@ -137,7 +138,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         paymentDate: DateTime(2025, 5, 1),
         sentDate: DateTime(2025, 5, 2),
         amount: 20000.0,
-        status: PaymentStatus.aprobado,
+        status: PayState.validated,
         comprobantePath: 'comprobante_may1.pdf',
       ),
     ];
@@ -175,10 +176,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: _loadPayments,
+              onRefresh: _loadPays,
               child: SingleChildScrollView(
                 child: PaymentHistoryContent(
-                  payments: _payments,
+                  payments: _pay,
                   userName: widget.userName,
                 ),
               ),

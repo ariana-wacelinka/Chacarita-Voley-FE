@@ -1,10 +1,11 @@
+import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
+import '../../domain/entities/pay.dart';
 
 class PaymentDetailContent extends StatelessWidget {
-  final Payment payment;
+  final Pay payment;
 
   const PaymentDetailContent({super.key, required this.payment});
 
@@ -125,12 +126,11 @@ class PaymentDetailContent extends StatelessWidget {
                 _buildStatusRow(
                   label: 'A validar',
                   subtitle: 'Pendiente de revisión',
-                  isSelected:
-                      payment.status ==
-                      PaymentStatus.pendiente, // Asumiendo basado en status
-                  context: context, //TODO es asi esto o se puede mejorar
+                  isSelected: payment.status == PayState.pending,
+                  context:
+                      context, //TODO es asi esto o se puede mejorar lo del context
                 ),
-                // Agrega más si necesitas mostrar todos, pero en imagen solo uno seleccionado
+                // Agrega más si hay que mostrar todos
               ],
             ),
           ),

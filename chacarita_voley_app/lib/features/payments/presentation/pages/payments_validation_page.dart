@@ -1,9 +1,12 @@
-import 'package:chacarita_voley_app/features/payments/data/repositories/payment_repository.dart';
+import 'dart:core';
+
+import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repository.dart';
+import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
+import '../../domain/entities/pay.dart';
 import '../widgets/payment_list_widget.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
@@ -15,53 +18,53 @@ class PaymentsValidationPage extends StatefulWidget {
 
 class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   // Data dummy (replace with API/DB)
-  late final List<Payment> initialPayments = [
-    Payment(
+  late final List<Pay> initialPayments = [
+    Pay(
       userId: '10',
       userName: 'Marcos Paz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20000.00,
-      status: PaymentStatus.pendiente,
+      status: PayState.pending,
     ),
-    Payment(
+    Pay(
       userId: '11',
       userName: 'Enrique Cruz',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20.00,
-      status: PaymentStatus.aprobado,
+      status: PayState.validated,
     ),
-    Payment(
+    Pay(
       userId: '12',
       userName: 'Mari Gonzales',
       dni: '12345678',
       paymentDate: DateTime(2025, 6, 12),
       sentDate: DateTime(2025, 6, 15),
       amount: 20.00,
-      status: PaymentStatus.rechazado,
+      status: PayState.rejected,
     ),
   ];
 
   //USe the repository for dummy
-  late final PaymentRepository _repository;
-  late List<Payment> _payments;
+  late final PayRepository _repository;
+  late List<Pay> _pays;
   bool _isLoading = true;
 
   void initState() {
     super.initState();
-    _repository = PaymentRepository();
-    _loadPayments();
+    _repository = PayRepository();
+    _loadPays();
   }
 
-  Future<void> _loadPayments() async {
+  Future<void> _loadPays() async {
     setState(() => _isLoading = true);
     try {
       final payments = _repository.getPayments();
       setState(() {
-        _payments = payments;
+        _pays = payments;
         _isLoading = false;
       });
     } catch (e) {
@@ -74,8 +77,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     }
   }
 
-  Filter
   String _dniFilter = '';
+  DateTime? _dateFilter;
+  TimeOfDay? _timeFilter;
   DateTime? _startDate;
   DateTime? _endDate;
   TimeOfDay? _startTime;
@@ -147,8 +151,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         _buildSummaryItem(
                           number: '30',
                           label: 'Rechazados',
-                          numberColor:tokens.redToRosita,
-                          labelColor:tokens.gray,
+                          numberColor: tokens.redToRosita,
+                          labelColor: tokens.gray,
                         ),
                         _buildSummaryItem(
                           number: '70',
@@ -213,7 +217,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                                 firstDate: DateTime(2000),
                                 lastDate: DateTime(2100),
                               );
-                              if (date != null) setState(() => _startDate = date);
+                              if (date != null)
+                                setState(() => _startDate = date);
                             },
                           ),
                         ),
@@ -245,14 +250,15 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                           child: _buildTimeField(
                             // 'Hora de inicio *',
                             // TimeOfDay.now(),
-                            label: 'Hora de inicio *',
-                            time: _startTime,
-                            onTap: () async {
+                            'Hora de inicio *',
+                            _startTime!,
+                            () async {
                               final time = await showTimePicker(
                                 context: context,
                                 initialTime: _startTime ?? TimeOfDay.now(),
                               );
-                              if (time != null) setState(() => _startTime = time);
+                              if (time != null)
+                                setState(() => _startTime = time);
                             },
                           ),
                         ),
@@ -261,9 +267,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                           child: _buildTimeField(
                             // 'Hora de fin *',
                             // TimeOfDay.now(),
-                            label: 'Hora de fin *',
-                            time: _endTime,
-                            onTap: () async {
+                            'Hora de fin *',
+                            _endTime!,
+                            () async {
                               final time = await showTimePicker(
                                 context: context,
                                 initialTime: _endTime ?? TimeOfDay.now(),
@@ -300,7 +306,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
             Expanded(
               // Inifity scroll label payment
-              child: PaymentListWidget(initialPayments: _payments), //initialPayments TODO
+              child: PaymentListWidget(
+                initialPayments: _pays,
+              ), //initialPayments TODO
             ),
           ],
         ),
@@ -363,21 +371,22 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         GestureDetector(
           onTap: onTap,
           child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: tokens.stroke),
-            borderRadius: BorderRadius.circular(8),
-            color: tokens.permanentWhite,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _dateFormat.format(date),
-                style: TextStyle(color: tokens.text),
-              ),
-              Icon(Icons.calendar_today_outlined, color: tokens.gray),
-            ],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: tokens.stroke),
+              borderRadius: BorderRadius.circular(8),
+              color: tokens.permanentWhite,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _dateFormat.format(date!),
+                  style: TextStyle(color: tokens.text),
+                ),
+                Icon(Icons.calendar_today_outlined, color: tokens.gray),
+              ],
+            ),
           ),
         ),
       ],
@@ -408,21 +417,22 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         GestureDetector(
           onTap: onTap,
           child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: tokens.stroke),
-            borderRadius: BorderRadius.circular(8),
-            color: tokens.permanentWhite,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(color: tokens.text),
-              ),
-              Icon(Icons.access_time_outlined, color: tokens.gray),
-            ],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: tokens.stroke),
+              borderRadius: BorderRadius.circular(8),
+              color: tokens.permanentWhite,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(color: tokens.text),
+                ),
+                Icon(Icons.access_time_outlined, color: tokens.gray),
+              ],
+            ),
           ),
         ),
       ],
@@ -461,7 +471,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
 // Widget reutilizable para cada card de validación de pago (usando GFCard, GFListTile, GFBadge, GFButton)
 class PaymentValidationCard extends StatelessWidget {
-  final Payment payment;
+  final Pay payment;
 
   const PaymentValidationCard({super.key, required this.payment});
 
@@ -470,17 +480,20 @@ class PaymentValidationCard extends StatelessWidget {
     final tokens = context.tokens;
     Color statusColor;
     GFButtonType buttonType;
-    switch (payment.status) {
+    switch (payment.status.displayName) {
       case 'Pendiente':
         statusColor = tokens.pending;
         buttonType = GFButtonType.outline;
         break;
-      case 'Vencida':
+      case 'Rechazado':
         statusColor = tokens.redToRosita;
         buttonType = GFButtonType.solid;
         break;
-      default:
+      case 'Aprobado':
         statusColor = tokens.green;
+        buttonType = GFButtonType.transparent;
+      default:
+        statusColor = tokens.gray;
         buttonType = GFButtonType.transparent;
     }
 
@@ -507,7 +520,7 @@ class PaymentValidationCard extends StatelessWidget {
           ],
         ),
         description: GFBadge(
-          text: payment.status,
+          text: payment.status.displayName,
           color: statusColor,
           shape: GFBadgeShape.pills,
         ),

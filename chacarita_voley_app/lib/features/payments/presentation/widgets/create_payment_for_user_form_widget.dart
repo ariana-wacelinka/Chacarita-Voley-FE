@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 
-// import '../../../users/domain/entities/user.dart';//TODO
-import '../../Temp/user.dart';
-import '../../domain/entities/payment.dart';
+import '../../../users/domain/entities/user.dart';
+import '../../domain/entities/pay.dart';
+import '../../domain/entities/pay_state.dart';
+
+//TODO atencion a los deprecated de esta pagina
 
 class CreatePaymentForUserForm extends StatefulWidget {
   final User user; // Usuario pre-seleccionado
-  final Function(Payment newPayment) onSave;
+  final Function(Pay newPayment) onSave;
   final bool isSaving;
 
   const CreatePaymentForUserForm({
@@ -28,7 +30,7 @@ class _CreatePaymentForUserFormState extends State<CreatePaymentForUserForm> {
   final TextEditingController _montoController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
   String? _comprobanteFileName; // Para upload simulado
-  PaymentStatus _selectedStatus = PaymentStatus.pendiente; // Default
+  PayState _selectedStatus = PayState.pending; // Default
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
@@ -127,7 +129,7 @@ class _CreatePaymentForUserFormState extends State<CreatePaymentForUserForm> {
                       );
                       return;
                     }
-                    final newPayment = Payment(
+                    final newPayment = Pay(
                       userId: widget.user.id!,
                       userName: widget.user.nombreCompleto,
                       dni: widget.user.dni,
@@ -372,8 +374,8 @@ class _CreatePaymentForUserFormState extends State<CreatePaymentForUserForm> {
   // Radios para estado
   Widget _buildStatusRadioGroup(AppTokens tokens) {
     return Column(
-      children: PaymentStatus.values.map((status) {
-        return RadioListTile<PaymentStatus>(
+      children: PayState.values.map((status) {
+        return RadioListTile<PayState>(
           title: Text(status.name.capitalize()),
           subtitle: Text(status.displayName),
           value: status,

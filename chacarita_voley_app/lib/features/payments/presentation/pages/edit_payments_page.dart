@@ -1,11 +1,12 @@
+import 'package:chacarita_voley_app/features/payments/domain/mappers/pay_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
-import '../../data/repositories/payment_repository.dart';
-import '../../domain/usecases/update_payment_usecase.dart';
+import '../../domain/entities/pay.dart';
+import '../../data/repositories/pay_repository.dart';
+import '../../domain/usecases/update_pay_usecase.dart';
 import '../widgets/payment_edit_form_widget.dart'; // Import del nuevo widget
 
 class EditPaymentsPage extends StatefulWidget {
@@ -19,8 +20,8 @@ class EditPaymentsPage extends StatefulWidget {
 
 class _EditPaymentsPageState extends State<EditPaymentsPage> {
   late final UpdatePaymentUseCase _updatePaymentUseCase;
-  late final PaymentRepository _repository;
-  Payment? _payment; // El pago a editar (null hasta cargar)
+  late final PayRepository _repository;
+  Pay? _payment; // El pago a editar (null hasta cargar)
   bool _isLoading = true;
 
   // Formato de fecha (puedes mover a un util si es global)
@@ -29,8 +30,8 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
   @override
   void initState() {
     super.initState();
-    _repository = PaymentRepository();
-    _updatePaymentUseCase = UpdatePaymentUseCase(PaymentRepository());
+    _repository = PayRepository();
+    _updatePaymentUseCase = UpdatePaymentUseCase(PayRepository());
     _loadPayment();
   }
 
@@ -95,14 +96,14 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
     }
   }
 
-  Future<void> _handleUpdatePayment(Payment updatedPayment) async {
+  Future<void> _handleUpdatePayment(Pay updatedPay) async {
     // setState(() {
     //   _isLoading = true;
     // });
     setState(() => _isLoading = true);
 
     try {
-      await _updatePaymentUseCase.execute(updatedPayment);
+      await _updatePaymentUseCase.execute(PayMapper.toUpdateInput(updatedPay));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

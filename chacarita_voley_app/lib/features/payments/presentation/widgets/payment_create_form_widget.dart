@@ -1,22 +1,18 @@
-// lib/features/payments/presentation/widgets/create_payment_form.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 
-// import '../../../users/domain/entities/user.dart'; // Para User entity
-// import '../../../users/data/repositories/user_repository.dart'; // Para buscar usuarios
-/*
-TODO se integra cuando se haga el merge fijarse donde estan los user
- */
-import '../../Temp/gender.dart';
-import '../../Temp/user.dart';
-import '../../Temp/user_repository.dart';
-import '../../domain/entities/payment.dart';
+import '../../../users/domain/entities/gender.dart';
+import '../../../users/domain/entities/user.dart'; // Para User entity
+import '../../../users/data/repositories/user_repository.dart'; // Para buscar usuarios
+
+import '../../domain/entities/pay.dart';
+import '../../domain/entities/pay_state.dart';
+//TODO review to deprecated into page
 
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
-  final Function(Payment newPayment) onSave;
+  final Function(Pay newPayment) onSave;
 
   const PaymentCreateForm({
     super.key,
@@ -33,7 +29,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   final TextEditingController _montoController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
   String? _comprobanteFileName; // Para upload simulado
-  PaymentStatus _selectedStatus = PaymentStatus.pendiente; // Default
+  PayState _selectedStatus = PayState.pending; // Default
 
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
@@ -42,23 +38,23 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
     _loadUsers();
     _searchController.addListener(_onSearchChanged);
     if (widget.initialUserId != null) {
       // Pre-cargar usuario si proporcionado
       final repo = UserRepository();
-      _selectedUser = repo.getUserById(widget.initialUserId!);
+      _selectedUser = await repo.getUserById(widget.initialUserId!);
       if (_selectedUser != null) {
         _searchController.text = _selectedUser!.nombreCompleto;
       }
     }
   }
 
-  void _loadUsers() {
+  Future<void> _loadUsers() async {
     final repo = UserRepository();
-    _allUsers = repo.getUsers(); // Usuarios reales
+    _allUsers = await repo.getUsers(); // Usuarios reales
     if (_allUsers.isEmpty) {
       _allUsers = _getDummyUsers(); // Fallback dummy
     }
@@ -234,7 +230,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 );
                 return;
               }
-              final newPayment = Payment(
+              final newPayment = Pay(
                 userId: _selectedUser!.id!,
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
@@ -398,8 +394,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   // Grupo de radios para estado
   Widget _buildStatusRadioGroup(AppTokens tokens) {
     return Column(
-      children: PaymentStatus.values.map((status) {
-        return RadioListTile<PaymentStatus>(
+      children: PayState.values.map((status) {
+        return RadioListTile<PayState>(
           title: Text(status.name.capitalize()),
           subtitle: Text(status.displayName),
           value: status,

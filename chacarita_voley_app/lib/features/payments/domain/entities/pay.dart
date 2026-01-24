@@ -1,10 +1,8 @@
-// lib/features/payments/domain/entities/payment.dart
-
+import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/foundation.dart'; // Para @immutable si quieres
-import 'dart:convert'; // Para JSON si necesitas, pero opcional
 
 @immutable
-class Payment {
+class Pay {
   final String? id; // ID único para editar/detalle/historial
   final String? userId;
   final String userName; // Nombre completo para display
@@ -14,12 +12,12 @@ class Payment {
   final DateTime?
   dueDate; // Fecha de vencimiento (para calcular estado cuota si derivado)
   final double amount; // Monto
-  final PaymentStatus status; // Estado del pago individual
+  final PayState status; // Estado del pago individual
   final String?
   comprobantePath; // Path/URL del archivo comprobante (PDF/imagen)
   final String? notes; // Notas opcionales (ej: razón de rechazo)
 
-  const Payment({
+  const Pay({
     this.id,
     required this.userId,
     required this.userName,
@@ -34,7 +32,7 @@ class Payment {
   });
 
   // Método copyWith para updates fáciles (útil en edición)
-  Payment copyWith({
+  Pay copyWith({
     String? id,
     String? userId,
     String? userName,
@@ -43,11 +41,11 @@ class Payment {
     DateTime? sentDate,
     DateTime? dueDate,
     double? amount,
-    PaymentStatus? status,
+    PayState? status,
     String? comprobantePath,
     String? notes,
   }) {
-    return Payment(
+    return Pay(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
@@ -63,8 +61,8 @@ class Payment {
   }
 
   // Factory fromJson (para persistencia, similar a User)
-  factory Payment.fromJson(Map<String, dynamic> json) {
-    return Payment(
+  factory Pay.fromJson(Map<String, dynamic> json) {
+    return Pay(
       id: json['id'] as String?,
       userId: json['userId'] as String?,
       userName: json['userName'] as String,
@@ -75,7 +73,7 @@ class Payment {
           ? DateTime.parse(json['dueDate'] as String)
           : null,
       amount: (json['amount'] as num).toDouble(),
-      status: PaymentStatus.values.firstWhere(
+      status: PayState.values.firstWhere(
         (e) => e.name == (json['status'] as String),
       ),
       comprobantePath: json['comprobantePath'] as String?,
@@ -103,25 +101,5 @@ class Payment {
   @override
   String toString() {
     return 'Payment(id: $id, userId: $userId, userName: $userName, dni: $dni, paymentDate: $paymentDate, sentDate: $sentDate, dueDate: $dueDate, amount: $amount, status: $status, comprobantePath: $comprobantePath, notes: $notes)';
-  }
-}
-
-// Enum para status del pago (similar a Gender o UserType)
-enum PaymentStatus {
-  pendiente,
-  aprobado,
-  rechazado,
-} // O validado si prefieres 'validado' en lugar de 'aprobado'
-
-extension PaymentStatusExtension on PaymentStatus {
-  String get displayName {
-    switch (this) {
-      case PaymentStatus.pendiente:
-        return 'Pendiente';
-      case PaymentStatus.aprobado:
-        return 'Aprobado';
-      case PaymentStatus.rechazado:
-        return 'Rechazado';
-    }
   }
 }

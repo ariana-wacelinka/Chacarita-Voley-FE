@@ -1,15 +1,14 @@
+import 'package:chacarita_voley_app/features/payments/domain/mappers/pay_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 
-// import '../../../users/domain/entities/user.dart'; //TODO atento al unir con el real de master
-// import '../../../users/data/repositories/user_repository.dart';
-import '../../Temp/user.dart';
-import '../../Temp/user_repository.dart';
-import '../../domain/entities/payment.dart';
-import '../../domain/usecases/create_payment_usecase.dart';
-import '../../data/repositories/payment_repository.dart';
+import '../../../users/domain/entities/user.dart';
+import '../../../users/data/repositories/user_repository.dart';
+import '../../domain/entities/pay.dart';
+import '../../domain/usecases/create_pay_usecase.dart';
+import '../../data/repositories/pay_repository.dart';
 import '../widgets/create_payment_for_user_form_widget.dart';
 
 class CreatePaymentForUserPage extends StatefulWidget {
@@ -23,14 +22,14 @@ class CreatePaymentForUserPage extends StatefulWidget {
 }
 
 class _CreatePaymentForUserPageState extends State<CreatePaymentForUserPage> {
-  late final CreatePaymentUseCase _createPaymentUseCase;
+  late final CreatePayUseCase _createPaymentUseCase;
   User? _user; // Usuario pre-cargado
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _createPaymentUseCase = CreatePaymentUseCase(PaymentRepository());
+    _createPaymentUseCase = CreatePayUseCase(PayRepository());
     _loadUser();
   }
 
@@ -39,8 +38,8 @@ class _CreatePaymentForUserPageState extends State<CreatePaymentForUserPage> {
       final repo = UserRepository();
       final user = repo.getUserById(widget.userId);
       if (user != null) {
-        setState(() {
-          _user = user;
+        setState(() async {
+          _user = await user;
           _isLoading = false;
         });
       } else {
@@ -63,13 +62,13 @@ class _CreatePaymentForUserPageState extends State<CreatePaymentForUserPage> {
     }
   }
 
-  Future<void> _handleCreatePayment(Payment newPayment) async {
+  Future<void> _handleCreatePayment(Pay newPay) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createPaymentUseCase.execute(newPayment);
+      await _createPaymentUseCase.execute(PayMapper.toCreateInput(newPay));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

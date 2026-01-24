@@ -1,9 +1,10 @@
+import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
-import '../../data/repositories/payment_repository.dart'; // Asumiendo repo
+import '../../domain/entities/pay.dart';
+import '../../data/repositories/pay_repository.dart'; // Asumiendo repo
 import '../widgets/payment_detail_content_widget.dart'; // Import del nuevo widget
 
 class PaymentDetailPage extends StatefulWidget {
@@ -17,14 +18,14 @@ class PaymentDetailPage extends StatefulWidget {
 }
 
 class _PaymentDetailPageState extends State<PaymentDetailPage> {
-  late final PaymentRepository _paymentRepository;
-  Payment? _payment;
+  late final PayRepository _paymentRepository;
+  Pay? _payment;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _paymentRepository = PaymentRepository();
+    _paymentRepository = PayRepository();
     _loadPayment();
   }
 
@@ -52,8 +53,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   }
 
   // Dummy data para visualización
-  Payment _getDummyPayment() {
-    return Payment(
+  Pay _getDummyPayment() {
+    return Pay(
       id: widget.paymentId,
       userId: 'dummy_user_id',
       userName: widget.userName ?? 'Juan Perez',
@@ -62,7 +63,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
       // Con hora para display
       sentDate: DateTime(2025, 6, 15),
       amount: 20000.0,
-      status: PaymentStatus.pendiente,
+      status: PayState.pending,
       comprobantePath: 'comprobante_dummy.pdf',
       notes: 'Pendiente de revisión',
     );

@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
+import '../../domain/entities/pay.dart';
 
 class PaymentHistoryContent extends StatefulWidget {
-  final List<Payment> payments;
+  final List<Pay> payments;
   final String userName;
 
   const PaymentHistoryContent({
@@ -23,7 +23,7 @@ class PaymentHistoryContent extends StatefulWidget {
 class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   DateTime? _startDate;
   DateTime? _endDate;
-  List<Payment> _filteredPayments = [];
+  List<Pay> _filteredPayments = [];
   int _currentPage = 0;
   static const int _itemsPerPage = 10; // Ajustable
 
@@ -273,7 +273,7 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   }
 
   // Item de lista de pago
-  Widget _buildPaymentItem(Payment payment, AppTokens tokens) {
+  Widget _buildPaymentItem(Pay payment, AppTokens tokens) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       title: Text(

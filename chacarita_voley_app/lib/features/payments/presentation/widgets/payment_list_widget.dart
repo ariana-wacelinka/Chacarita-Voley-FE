@@ -4,10 +4,11 @@ import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../domain/entities/payment.dart';
+import '../../domain/entities/pay.dart';
+import '../../domain/entities/pay_state.dart';
 
 class PaymentListWidget extends StatefulWidget {
-  final List<Payment> initialPayments;
+  final List<Pay> initialPayments;
 
   const PaymentListWidget({super.key, required this.initialPayments});
 
@@ -17,7 +18,7 @@ class PaymentListWidget extends StatefulWidget {
 
 class _PaymentListWidgetState extends State<PaymentListWidget> {
   final ScrollController _scrollController = ScrollController();
-  List<Payment> _payments = [];
+  List<Pay> _payments = [];
   int _currentPage = 0;
   bool _isLoading = false;
   final int _itemsPerPage = 3;
@@ -48,18 +49,18 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   }
 
   // Generate data dummy
-  List<Payment> _generateDummyPayments(int count) {
+  List<Pay> _generateDummyPayments(int count) {
     final now = DateTime.now();
     return List.generate(
       count,
-      (index) => Payment(
+      (index) => Pay(
         userId: '222',
         userName: 'Demas',
         dni: '12345678',
         paymentDate: now.subtract(Duration(days: index)),
         sentDate: now.subtract(Duration(days: index - 3)),
         amount: 20.00,
-        status: PaymentStatus.values[index % 3],
+        status: PayState.values[index % 3],
       ),
     );
   }
@@ -253,21 +254,21 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     );
   }
 
-  Icon _getStatusIcon(PaymentStatus status) {
+  Icon _getStatusIcon(PayState status) {
     switch (status) {
-      case PaymentStatus.aprobado:
+      case PayState.validated:
         return const Icon(
           Icons.check_circle_outline,
           color: Colors.white,
           size: 16, // Ajusta el tamaño según necesites
         );
-      case PaymentStatus.pendiente:
+      case PayState.pending:
         return const Icon(
           Icons.access_time_outlined,
           color: Colors.white,
           size: 16,
         );
-      case PaymentStatus.rechazado:
+      case PayState.rejected:
         return const Icon(Icons.cancel_outlined, color: Colors.white, size: 16);
       default:
         return const Icon(
@@ -278,14 +279,14 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     }
   }
 
-  Color _getStatusColor(PaymentStatus status, AppTheme tokens) {
+  Color _getStatusColor(PayState status, AppTheme tokens) {
     final tokens = context.tokens;
     switch (status) {
-      case PaymentStatus.aprobado:
+      case PayState.validated:
         return tokens.green;
-      case PaymentStatus.pendiente:
+      case PayState.pending:
         return tokens.pending ?? Colors.orange;
-      case PaymentStatus.rechazado:
+      case PayState.rejected:
         return tokens.redToRosita;
       default:
         return tokens.gray;
@@ -310,13 +311,9 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     );
   }
 
-  Widget _buildActionButtons(
-    PaymentStatus status,
-    AppTheme tokens,
-    Payment payment,
-  ) {
+  Widget _buildActionButtons(PayState status, AppTheme tokens, Pay payment) {
     final tokens = context.tokens;
-    if (status == PaymentStatus.aprobado) {
+    if (status == PayState.validated) {
       return OutlinedButton.icon(
         onPressed: () => context.go('/payments/edit/${payment.id}'),
         icon: const Icon(Icons.edit, size: 18),

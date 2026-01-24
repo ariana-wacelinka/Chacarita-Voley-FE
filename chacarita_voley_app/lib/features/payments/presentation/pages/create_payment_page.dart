@@ -1,12 +1,14 @@
 // lib/features/payments/presentation/pages/create_payment_page.dart
 
+import 'package:chacarita_voley_app/features/payments/domain/entities/create_pay_input.dart';
+import 'package:chacarita_voley_app/features/payments/domain/mappers/pay_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
-import '../../domain/usecases/create_payment_usecase.dart';
-import '../../data/repositories/payment_repository.dart';
+import '../../domain/entities/pay.dart';
+import '../../domain/usecases/create_pay_usecase.dart';
+import '../../data/repositories/pay_repository.dart';
 import '../widgets/payment_create_form_widget.dart'; // Import del nuevo widget
 
 class CreatePaymentPage extends StatefulWidget {
@@ -20,22 +22,22 @@ class CreatePaymentPage extends StatefulWidget {
 }
 
 class _CreatePaymentPageState extends State<CreatePaymentPage> {
-  late final CreatePaymentUseCase _createPaymentUseCase;
+  late final CreatePayUseCase _createPaymentUseCase;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _createPaymentUseCase = CreatePaymentUseCase(PaymentRepository());
+    _createPaymentUseCase = CreatePayUseCase(PayRepository());
   }
 
-  Future<void> _handleCreatePayment(Payment newPayment) async {
+  Future<void> _handleCreatePayment(Pay newPay) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createPaymentUseCase.execute(newPayment);
+      await _createPaymentUseCase.execute(PayMapper.toCreateInput(newPay));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -50,7 +52,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Pago registrado exitosamente para ${newPayment.userName}',
+                    'Pago registrado exitosamente para ${newPay.userName}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

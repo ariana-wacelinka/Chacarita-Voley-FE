@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../domain/entities/payment.dart';
+import '../../domain/entities/pay.dart';
+import '../../domain/entities/pay_state.dart';
 
 class PaymentEditFormWidget extends StatefulWidget {
-  final Payment payment;
+  final Pay payment;
   final DateFormat dateFormat;
-  final Function(Payment updatedPayment) onSave;
+  final Function(Pay updatedPayment) onSave;
   final bool isSaving;
 
   const PaymentEditFormWidget({
@@ -265,7 +266,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
 
     // Lógica para cambiar basado en estado (expande según necesites)
     switch (status) {
-      case PaymentStatus.aprobado:
+      case PayState.validated:
         bannerColor = tokens.green;
         title = 'Pago Aprobado';
         subtitle =
@@ -274,7 +275,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         icon = Icons.check_circle_outline;
         break;
 
-      case PaymentStatus.pendiente:
+      case PayState.pending:
         bannerColor = tokens.pending ?? Colors.orange;
         title = 'Pago Pendiente';
         subtitle =
@@ -283,7 +284,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         icon = Icons.hourglass_empty;
         break;
 
-      case PaymentStatus.rechazado:
+      case PayState.rejected:
         bannerColor = tokens.redToRosita;
         title = 'Pago Rechazado';
         subtitle = widget.payment.notes ?? 'Ver detalles';
@@ -291,8 +292,8 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         icon = Icons.error_outline;
         break;
     }
-    //
-    // if (status == PaymentStatus.aprobado) {
+    //TODO review this code
+    // if (status == PayState.aprobado) {
     //   bannerColor = tokens.green;
     //   title = 'Cuota al día / Pago Aprobado';
     //   subtitle =
@@ -300,7 +301,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
     //   description =
     //       'La cuota está pagada/ El pago ha sido validado exitosamente';
     //   icon = Icons.check_circle_outline;
-    // } else if (status == PaymentStatus.pendiente) {
+    // } else if (status == PayState.pendiente) {
     //   bannerColor = tokens.pending ?? Colors.orange;
     //   title = 'Cuota pendiente/ Pago Pendiente';
     //   subtitle = 'Esperando validación';
