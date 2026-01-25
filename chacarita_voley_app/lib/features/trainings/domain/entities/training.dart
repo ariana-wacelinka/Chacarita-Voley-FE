@@ -82,7 +82,7 @@ enum DayOfWeek {
 enum TrainingStatus {
   proximo('UPCOMING'),
   completado('COMPLETED'),
-  cancelado('CANCELLED');
+  cancelado('CANCELED');
 
   final String backendValue;
   const TrainingStatus(this.backendValue);
@@ -104,7 +104,7 @@ enum TrainingStatus {
         return TrainingStatus.proximo;
       case 'COMPLETED':
         return TrainingStatus.completado;
-      case 'CANCELLED':
+      case 'CANCELED':
         return TrainingStatus.cancelado;
       default:
         return TrainingStatus.proximo;

@@ -843,11 +843,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
       dayOfWeek: trainingData?['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
           : null,
-      startTime: data['startTime'] as String? ?? '',
-      endTime: data['endTime'] as String? ?? '',
-      location: data['location'] as String? ?? '',
+      startTime: trainingData?['startTime'] as String? ?? '',
+      endTime: trainingData?['endTime'] as String? ?? '',
+      location: trainingData?['location'] as String? ?? '',
       type: TrainingType.fromBackend(
-        data['trainingType'] as String? ?? 'PHYSICAL',
+        trainingData?['trainingType'] as String? ?? 'PHYSICAL',
       ),
       status: TrainingStatus.fromBackend(
         data['status'] as String? ?? 'UPCOMING',
