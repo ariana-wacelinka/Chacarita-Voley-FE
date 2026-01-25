@@ -769,6 +769,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
+      hasTraining: trainingData != null,
     );
   }
 
@@ -853,6 +854,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
+      hasTraining: trainingData != null,
     );
   }
 

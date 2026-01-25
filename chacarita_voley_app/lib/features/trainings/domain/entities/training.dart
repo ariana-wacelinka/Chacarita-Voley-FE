@@ -82,7 +82,7 @@ enum DayOfWeek {
 enum TrainingStatus {
   proximo('UPCOMING'),
   completado('COMPLETED'),
-  cancelado('CANCELED');
+  cancelado('CANCELLED');
 
   final String backendValue;
   const TrainingStatus(this.backendValue);
@@ -104,7 +104,7 @@ enum TrainingStatus {
         return TrainingStatus.proximo;
       case 'COMPLETED':
         return TrainingStatus.completado;
-      case 'CANCELED':
+      case 'CANCELLED':
         return TrainingStatus.cancelado;
       default:
         return TrainingStatus.proximo;
@@ -154,6 +154,7 @@ class Training {
   final TrainingStatus status;
   final List<PlayerAttendance> attendances;
   final String? trainingId;
+  final bool hasTraining;
 
   Training({
     required this.id,
@@ -173,6 +174,7 @@ class Training {
     required this.status,
     this.attendances = const [],
     this.trainingId,
+    this.hasTraining = true,
   });
 
   int get totalPlayers => attendances.length;

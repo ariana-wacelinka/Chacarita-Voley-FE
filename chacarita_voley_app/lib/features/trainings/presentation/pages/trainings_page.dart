@@ -450,13 +450,13 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   },
                   icon: Icon(
                     Symbols.close,
-                    color: context.tokens.text,
+                    color: context.tokens.redToRosita,
                     size: 18,
                   ),
                   label: Text(
                     'Limpiar filtros',
                     style: TextStyle(
-                      color: context.tokens.text,
+                      color: context.tokens.redToRosita,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -883,13 +883,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       decoration: BoxDecoration(
                         color: training.status == TrainingStatus.proximo
-                            ? context.tokens.green.withOpacity(0.1)
+                            ? Colors.amber.withOpacity(0.1)
                             : training.status == TrainingStatus.completado
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.1)
+                            ? context.tokens.green.withOpacity(0.1)
                             : training.status == TrainingStatus.cancelado
-                            ? context.tokens.placeholder.withOpacity(0.1)
+                            ? context.tokens.redToRosita.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -897,11 +895,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         training.status.displayName,
                         style: TextStyle(
                           color: training.status == TrainingStatus.proximo
-                              ? context.tokens.green
+                              ? Colors.amber.shade700
                               : training.status == TrainingStatus.completado
-                              ? Theme.of(context).colorScheme.primary
+                              ? context.tokens.green
                               : training.status == TrainingStatus.cancelado
-                              ? context.tokens.placeholder
+                              ? context.tokens.redToRosita
                               : context.tokens.placeholder,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -959,6 +957,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                             training.status == TrainingStatus.cancelado;
                         final isFuture =
                             training.status == TrainingStatus.proximo;
+                        final hasTraining = training.hasTraining;
 
                         return [
                           PopupMenuItem(
@@ -975,11 +974,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           ),
                           PopupMenuItem(
                             value: _TrainingMenuAction.edit,
-                            enabled: !isCancelled,
+                            enabled: !isCancelled && hasTraining,
                             child: Text(
                               'Modificar',
                               style: TextStyle(
-                                color: isCancelled
+                                color: (isCancelled || !hasTraining)
                                     ? context.tokens.placeholder
                                     : context.tokens.text,
                               ),
