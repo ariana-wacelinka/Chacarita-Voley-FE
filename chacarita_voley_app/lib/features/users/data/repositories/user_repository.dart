@@ -31,6 +31,16 @@ class UserRepository implements UserRepositoryInterface {
     name
     surname
     roles
+    player {
+      id
+      currentDue {
+        state
+      }
+      teams {
+        id
+        abbreviation
+      }
+    }
   ''';
 
   // Query para selección en equipos - Incluye IDs necesarios
@@ -496,12 +506,21 @@ class UserRepository implements UserRepositoryInterface {
 
     final professor = person['professor'] as Map<String, dynamic>?;
 
-    // Estado de cuota: default alDia (para listados sin player)
+    // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
     if (player != null) {
-      final dues = (player['dues'] as List<dynamic>?) ?? [];
-      if (dues.isNotEmpty) {
-        estadoCuota = EstadoCuota.alDia;
+      final currentDue = player['currentDue'] as Map<String, dynamic>?;
+      if (currentDue != null) {
+        final stateStr = currentDue['state'] as String?;
+        DueState? dueState;
+        if (stateStr != null) {
+          try {
+            dueState = DueState.values.firstWhere((e) => e.name == stateStr);
+          } catch (_) {
+            dueState = null;
+          }
+        }
+        estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
       }
     }
 

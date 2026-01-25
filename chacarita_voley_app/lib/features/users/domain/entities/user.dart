@@ -120,6 +120,8 @@ enum UserType { jugador, profesor, administrador }
 
 enum EstadoCuota { alDia, vencida, ultimoPago }
 
+enum DueState { PAID, PENDING, OVERDUE }
+
 extension UserTypeExtension on UserType {
   String get displayName {
     switch (this) {
@@ -142,6 +144,18 @@ extension EstadoCuotaExtension on EstadoCuota {
         return 'Vencida';
       case EstadoCuota.ultimoPago:
         return 'Último pago';
+    }
+  }
+
+  static EstadoCuota fromDueState(DueState? state) {
+    if (state == null) return EstadoCuota.alDia;
+    switch (state) {
+      case DueState.PAID:
+        return EstadoCuota.alDia;
+      case DueState.PENDING:
+        return EstadoCuota.ultimoPago;
+      case DueState.OVERDUE:
+        return EstadoCuota.vencida;
     }
   }
 }

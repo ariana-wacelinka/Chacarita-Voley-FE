@@ -293,6 +293,7 @@ class _UsersPageState extends State<UsersPage> {
                                 columns: const [
                                   DataColumn(label: Text('DNI')),
                                   DataColumn(label: Text('Nombre')),
+                                  DataColumn(label: Text('Equipo')),
                                   DataColumn(label: Text('Cuota')),
                                   DataColumn(label: SizedBox(width: 32)),
                                 ],
@@ -303,9 +304,17 @@ class _UsersPageState extends State<UsersPage> {
                                       DataCell(Text(user.nombreCompleto)),
                                       DataCell(
                                         Center(
+                                          child: _buildEquipoChip(
+                                            context,
+                                            user,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Center(
                                           child: _buildEstadoCuotaIcon(
                                             context,
-                                            user.estadoCuota,
+                                            user,
                                           ),
                                         ),
                                       ),
@@ -520,8 +529,45 @@ class _UsersPageState extends State<UsersPage> {
     );
   }
 
-  Widget _buildEstadoCuotaIcon(BuildContext context, EstadoCuota estado) {
-    switch (estado) {
+  Widget _buildEquipoChip(BuildContext context, User user) {
+    // Si no tiene equipos, mostrar "-"
+    if (user.equipos.isEmpty) {
+      return Text(
+        '-',
+        style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+      );
+    }
+
+    // Mostrar chip con la abreviación del primer equipo
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.tokens.card2,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke, width: 1),
+      ),
+      child: Text(
+        user.equipos.first.abbreviation,
+        style: TextStyle(
+          color: context.tokens.text,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEstadoCuotaIcon(BuildContext context, User user) {
+    // Si no tiene playerId (no es jugador), mostrar "-"
+    if (user.playerId == null || user.playerId!.isEmpty) {
+      return Text(
+        '-',
+        style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+      );
+    }
+
+    // Mostrar ícono según estado de cuota
+    switch (user.estadoCuota) {
       case EstadoCuota.alDia:
         return Icon(
           Symbols.check_circle,
