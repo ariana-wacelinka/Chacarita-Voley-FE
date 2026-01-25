@@ -130,6 +130,22 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  static const String _cancelSessionMutation = r'''
+    mutation CancelSession($id: ID!) {
+      cancelSession(id: $id) {
+        id
+      }
+    }
+  ''';
+
+  static const String _reactivateSessionMutation = r'''
+    mutation ReactivateSession($id: ID!) {
+      reactivateSession(id: $id) {
+        id
+      }
+    }
+  ''';
+
   static const String _createAssistanceMutation = r'''
     mutation CreateAssistance($inputList: [AssistanceInput!]!) {
       createAssistance(inputList: $inputList) {
@@ -606,6 +622,32 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   }
 
+  Future<void> cancelSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_cancelSessionMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  Future<void> reactivateSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_reactivateSessionMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
   @override
   Future<Training> updateAttendance(
     String trainingId,
@@ -691,7 +733,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 
@@ -750,7 +792,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 
@@ -784,7 +826,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
       return PlayerAttendance(
         playerId: player['id'] as String? ?? '',
-        playerName: '$name $surname'.trim(),
+        playerName: '$surname $name'.trim(),
         isPresent: isPresent,
       );
     }).toList();
@@ -826,7 +868,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 

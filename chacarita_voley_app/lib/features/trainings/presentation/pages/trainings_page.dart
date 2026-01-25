@@ -6,7 +6,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
-enum _TrainingMenuAction { view, edit, delete }
+enum _TrainingMenuAction { view, edit, delete, cancel, reactivate }
 
 class TrainingsPage extends StatefulWidget {
   final String? teamId;
@@ -756,7 +756,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                                 context,
                               ).colorScheme.primary.withOpacity(0.1)
                             : training.status == TrainingStatus.cancelado
-                            ? context.tokens.redToRosita.withOpacity(0.1)
+                            ? context.tokens.placeholder.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -768,7 +768,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                               : training.status == TrainingStatus.completado
                               ? Theme.of(context).colorScheme.primary
                               : training.status == TrainingStatus.cancelado
-                              ? context.tokens.redToRosita
+                              ? context.tokens.placeholder
                               : context.tokens.placeholder,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -794,33 +794,74 @@ class _TrainingsPageState extends State<TrainingsPage> {
                           case _TrainingMenuAction.delete:
                             _showDeleteDialog(context, training);
                             break;
+                          case _TrainingMenuAction.cancel:
+                            _showCancelDialog(context, training);
+                            break;
+                          case _TrainingMenuAction.reactivate:
+                            _showReactivateDialog(context, training);
+                            break;
                         }
                       },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.view,
-                          child: Text(
-                            'Ver',
-                            style: TextStyle(color: context.tokens.text),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.edit,
-                          child: Text(
-                            'Modificar',
-                            style: TextStyle(color: context.tokens.text),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.delete,
-                          child: Text(
-                            'Eliminar',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
+                      itemBuilder: (context) {
+                        final isCancelled =
+                            training.status == TrainingStatus.cancelado;
+                        final isFuture =
+                            training.status == TrainingStatus.proximo;
+
+                        return [
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.view,
+                            enabled: !isCancelled,
+                            child: Text(
+                              'Ver',
+                              style: TextStyle(
+                                color: isCancelled
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.edit,
+                            enabled: !isCancelled,
+                            child: Text(
+                              'Modificar',
+                              style: TextStyle(
+                                color: isCancelled
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
+                            ),
+                          ),
+                          if (isFuture && !isCancelled)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.cancel,
+                              child: Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  color: context.tokens.redToRosita,
+                                ),
+                              ),
+                            ),
+                          if (isCancelled)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.reactivate,
+                              child: Text(
+                                'Reactivar',
+                                style: TextStyle(color: context.tokens.green),
+                              ),
+                            ),
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.delete,
+                            child: Text(
+                              'Eliminar',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ];
+                      },
                     ),
                   ],
                 ),
@@ -1174,6 +1215,150 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     ScaffoldMessenger.of(parentContext).showSnackBar(
                       SnackBar(
                         content: Text('Error al eliminar el entrenamiento: $e'),
+                        backgroundColor: parentContext.tokens.redToRosita,
+                      ),
+                    );
+                  });
+                }
+              },
+              child: Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: Theme.of(parentContext).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCancelDialog(BuildContext context, Training training) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final parentContext = context;
+        return AlertDialog(
+          title: const Text('Cancelar Entrenamiento'),
+          content: const Text(
+            '¿Estás seguro de que querés cancelar este entrenamiento?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Volver'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+
+                try {
+                  await _repository.cancelSession(training.id);
+
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _currentPage = 0;
+                    });
+
+                    _loadTrainings();
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Entrenamiento cancelado exitosamente',
+                        ),
+                        backgroundColor: parentContext.tokens.green,
+                      ),
+                    );
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al cancelar el entrenamiento: $e'),
+                        backgroundColor: parentContext.tokens.redToRosita,
+                      ),
+                    );
+                  });
+                }
+              },
+              child: Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: Theme.of(parentContext).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showReactivateDialog(BuildContext context, Training training) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final parentContext = context;
+        return AlertDialog(
+          title: const Text('Reactivar Entrenamiento'),
+          content: const Text(
+            '¿Estás seguro de que querés reactivar este entrenamiento?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Volver'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+
+                try {
+                  await _repository.reactivateSession(training.id);
+
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _currentPage = 0;
+                    });
+
+                    _loadTrainings();
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Entrenamiento reactivado exitosamente',
+                        ),
+                        backgroundColor: parentContext.tokens.green,
+                      ),
+                    );
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Error al reactivar el entrenamiento: $e',
+                        ),
                         backgroundColor: parentContext.tokens.redToRosita,
                       ),
                     );
