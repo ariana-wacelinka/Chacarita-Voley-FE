@@ -338,12 +338,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   decoration: BoxDecoration(
                                     color: notification.deliveries.isNotEmpty
                                         ? Colors.green.withOpacity(0.15)
-                                        : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                        : Theme.of(context).colorScheme.primary
+                                              .withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: notification.deliveries.isNotEmpty
                                           ? Colors.green
-                                          : Theme.of(context).colorScheme.primary,
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                       width: 1,
                                     ),
                                   ),
@@ -354,7 +357,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     style: TextStyle(
                                       color: notification.deliveries.isNotEmpty
                                           ? Colors.green
-                                          : Theme.of(context).colorScheme.primary,
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -386,7 +391,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       onSelected: (value) async {
                         switch (value) {
                           case 'view':
-                            final result = await context.push('/notifications/${notification.id}');
+                            final result = await context.push(
+                              '/notifications/${notification.id}',
+                            );
                             if (result == true && mounted) {
                               _loadNotifications();
                             }
@@ -405,71 +412,74 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         }
                       },
                       itemBuilder: (context) {
-                        final canEdit = notification.sendMode == SendMode.SCHEDULED || 
-                                        notification.deliveries.isEmpty;
-                        
+                        final canEdit =
+                            notification.sendMode == SendMode.SCHEDULED ||
+                            notification.deliveries.isEmpty;
+
                         return [
-                        PopupMenuItem(
-                          value: 'view',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Symbols.visibility,
-                                size: 20,
-                                color: context.tokens.text,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Ver',
-                                style: TextStyle(color: context.tokens.text),
-                              ),
-                            ],
+                          PopupMenuItem(
+                            value: 'view',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Symbols.visibility,
+                                  size: 20,
+                                  color: context.tokens.text,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Ver',
+                                  style: TextStyle(color: context.tokens.text),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'edit',
-                          enabled: canEdit,
-                          child: Row(
-                            children: [
-                              Icon(
-                                Symbols.edit,
-                                size: 20,
-                                color: canEdit 
-                                    ? context.tokens.text 
-                                    : context.tokens.text.withOpacity(0.3),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Modificar',
-                                style: TextStyle(
-                                  color: canEdit 
-                                      ? context.tokens.text 
+                          PopupMenuItem(
+                            value: 'edit',
+                            enabled: canEdit,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Symbols.edit,
+                                  size: 20,
+                                  color: canEdit
+                                      ? context.tokens.text
                                       : context.tokens.text.withOpacity(0.3),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Modificar',
+                                  style: TextStyle(
+                                    color: canEdit
+                                        ? context.tokens.text
+                                        : context.tokens.text.withOpacity(0.3),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Symbols.delete,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Eliminar',
-                                style: TextStyle(
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Symbols.delete,
+                                  size: 20,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Eliminar',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ];
+                        ];
                       },
                     ),
                   ],
@@ -557,7 +567,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {},
+                onTap: () async {
+                  final result = await context.push(
+                    '/notifications/${notification.id}',
+                  );
+                  if (result == true && mounted) {
+                    _loadNotifications();
+                  }
+                },
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
