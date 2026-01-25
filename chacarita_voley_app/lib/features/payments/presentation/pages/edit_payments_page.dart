@@ -10,9 +10,9 @@ import '../../domain/usecases/update_pay_usecase.dart';
 import '../widgets/payment_edit_form_widget.dart'; // Import del nuevo widget
 
 class EditPaymentsPage extends StatefulWidget {
-  final String paymentId; // O pasa el Payment completo si prefieres
+  final String payId; // O pasa el Payment completo si prefieres
 
-  const EditPaymentsPage({super.key, required this.paymentId});
+  const EditPaymentsPage({super.key, required this.payId});
 
   @override
   State<EditPaymentsPage> createState() => _EditPaymentsPageState();
@@ -37,7 +37,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
 
   Future<void> _loadPayment() async {
     try {
-      final payment = _repository.getPaymentById(widget.paymentId);
+      final payment = _repository.getPaymentById(widget.payId);
 
       if (payment != null) {
         setState(() {
@@ -226,7 +226,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'ID: ${widget.paymentId}',
+                    'ID: ${widget.payId}',
                     style: TextStyle(color: tokens.gray, fontSize: 14),
                   ),
                   const SizedBox(height: 24),

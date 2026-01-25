@@ -208,8 +208,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         Expanded(
                           child: _buildDateField(
                             label: 'Fecha de inicio *',
-                            // DateTime.now(),
-                            date: _startDate,
+                            date: _startDate ?? DateTime.now(),
                             onTap: () async {
                               final date = await showDatePicker(
                                 context: context,
@@ -225,10 +224,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildDateField(
-                            // 'Fecha de fin *',
-                            // DateTime.now().add(const Duration(days: 30)),
                             label: 'Fecha de fin *',
-                            date: _endDate,
+                            date: _endDate ?? DateTime.now(),
                             onTap: () async {
                               final date = await showDatePicker(
                                 context: context,
@@ -248,10 +245,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       children: [
                         Expanded(
                           child: _buildTimeField(
-                            // 'Hora de inicio *',
-                            // TimeOfDay.now(),
                             'Hora de inicio *',
-                            _startTime!,
+                            _startTime ?? TimeOfDay.now(),
                             () async {
                               final time = await showTimePicker(
                                 context: context,
@@ -265,10 +260,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildTimeField(
-                            // 'Hora de fin *',
-                            // TimeOfDay.now(),
                             'Hora de fin *',
-                            _endTime!,
+                            _endTime ?? TimeOfDay.now(),
                             () async {
                               final time = await showTimePicker(
                                 context: context,
@@ -345,7 +338,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   Widget _buildDateField({
     required String label,
     required DateTime? date,
-    required VoidCallback onTap, //TODO que es el VoidCallback
+    VoidCallback? onTap, //TODO que es el VoidCallback
   }) {
     final tokens = context.tokens;
 

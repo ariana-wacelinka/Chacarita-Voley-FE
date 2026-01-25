@@ -89,12 +89,12 @@ final appRouter = GoRouter(
           builder: (_, __) => const SettingsPage(),
         ),
         //TODO Temporal
-        GoRoute(
-          path: '/payments_history',
-          name: 'history',
-          builder: (_, __) =>
-              const PaymentHistoryPage(userId: '01', userName: 'Prueba'),
-        ),
+        // GoRoute(
+        //   path: '/payments_history',
+        //   name: 'history',
+        //   builder: (_, __) =>
+        //       const PaymentHistoryPage(userId: '01', userName: 'Prueba'),
+        // ),
       ],
     ),
 
@@ -103,7 +103,7 @@ final appRouter = GoRouter(
       path: '/payments/edit/:id',
       name: 'payments-edit',
       builder: (_, state) =>
-          EditPaymentsPage(paymentId: state.pathParameters['id']!),
+          EditPaymentsPage(payId: state.pathParameters['id']!),
     ),
 
     GoRoute(
