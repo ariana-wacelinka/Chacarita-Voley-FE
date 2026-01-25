@@ -1,5 +1,6 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
+import '../../domain/entities/assistance.dart';
 import '../../domain/entities/gender.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository_interface.dart';
@@ -30,6 +31,16 @@ class UserRepository implements UserRepositoryInterface {
     name
     surname
     roles
+    player {
+      id
+      currentDue {
+        state
+      }
+      teams {
+        id
+        abbreviation
+      }
+    }
   ''';
 
   // Query para selección en equipos - Incluye IDs necesarios
@@ -211,7 +222,11 @@ class UserRepository implements UserRepositoryInterface {
 
     final result = await _query(
       QueryOptions(
-        document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
+        document: gql(
+          forTeamSelection
+              ? _getAllPersonsForTeamsQuery()
+              : _getAllPersonsQuery(),
+        ),
         variables: {'page': page ?? 0, 'size': size ?? 12, ...filters},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
@@ -235,7 +250,11 @@ class UserRepository implements UserRepositoryInterface {
       // Reintentar con surname
       final retryResult = await _query(
         QueryOptions(
-          document: gql(forTeamSelection ? _getAllPersonsForTeamsQuery() : _getAllPersonsQuery()),
+          document: gql(
+            forTeamSelection
+                ? _getAllPersonsForTeamsQuery()
+                : _getAllPersonsQuery(),
+          ),
           variables: {
             'page': page ?? 0,
             'size': size ?? 12,
@@ -487,12 +506,21 @@ class UserRepository implements UserRepositoryInterface {
 
     final professor = person['professor'] as Map<String, dynamic>?;
 
-    // Estado de cuota: default alDia (para listados sin player)
+    // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
     if (player != null) {
-      final dues = (player['dues'] as List<dynamic>?) ?? [];
-      if (dues.isNotEmpty) {
-        estadoCuota = EstadoCuota.alDia;
+      final currentDue = player['currentDue'] as Map<String, dynamic>?;
+      if (currentDue != null) {
+        final stateStr = currentDue['state'] as String?;
+        DueState? dueState;
+        if (stateStr != null) {
+          try {
+            dueState = DueState.values.firstWhere((e) => e.name == stateStr);
+          } catch (_) {
+            dueState = null;
+          }
+        }
+        estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
       }
     }
 
@@ -632,5 +660,67 @@ class UserRepository implements UserRepositoryInterface {
     if (tipos.contains(UserType.profesor)) roles.add('PROFESSOR');
     if (tipos.contains(UserType.jugador) || roles.isEmpty) roles.add('PLAYER');
     return roles.toList();
+  }
+
+  String _getAllAssistanceQuery() => '''
+    query GetAllAssistance(\$playerId: String!, \$startTimeFrom: String, \$endTimeTo: String, \$page: Int!, \$size: Int!) {
+      getAllAssistance(
+        filters: {playerId: \$playerId, startTimeFrom: \$startTimeFrom, endTimeTo: \$endTimeTo}
+        page: \$page
+        size: \$size
+      ) {
+        content {
+          id
+          date
+          assistance
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
+      }
+    }
+  ''';
+
+  @override
+  Future<AssistancePage> getAllAssistance({
+    required String playerId,
+    String? startTimeFrom,
+    String? endTimeTo,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(_getAllAssistanceQuery()),
+          variables: {
+            'playerId': playerId,
+            'startTimeFrom': startTimeFrom ?? '',
+            'endTimeTo': endTimeTo ?? '',
+            'page': page,
+            'size': size,
+          },
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(
+          'Error al cargar asistencias: ${result.exception.toString()}',
+        );
+      }
+
+      final data = result.data?['getAllAssistance'];
+      if (data == null) {
+        throw Exception('No se recibieron datos de asistencias');
+      }
+
+      return AssistancePage.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      rethrow;
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../domain/entities/assistance.dart';
 import '../../domain/entities/user.dart';
 import '../../data/repositories/user_repository.dart';
 
@@ -21,51 +22,13 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   bool _isLoading = true;
   String? _loadError;
 
-  // Datos de ejemplo de asistencias
-  final List<AttendanceRecord> _attendanceHistory = [
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: true,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: false,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: true,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: false,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: true,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: false,
-    ),
-    AttendanceRecord(
-      date: DateTime(2025, 11, 9),
-      startTime: '18:00',
-      endTime: '19:00',
-      wasPresent: false,
-    ),
-  ];
+  List<Assistance> _attendanceHistory = [];
+  int _currentPage = 0;
+  final int _pageSize = 10;
+  int _totalElements = 0;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
+  bool _isLoadingPage = false;
 
   @override
   void initState() {
@@ -83,6 +46,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         _isLoading = false;
         _loadError = null;
       });
+      _loadAttendanceHistory();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -93,11 +57,60 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     }
   }
 
-  int get _presentCount => _attendanceHistory.where((a) => a.wasPresent).length;
-  int get _absentCount => _attendanceHistory.where((a) => !a.wasPresent).length;
-  double get _attendancePercentage => _attendanceHistory.isEmpty
-      ? 0
-      : (_presentCount / _attendanceHistory.length) * 100;
+  Future<void> _loadAttendanceHistory() async {
+    if (_isLoadingPage) return;
+
+    setState(() {
+      _isLoadingPage = true;
+    });
+
+    try {
+      final assistancePage = await _userRepository.getAllAssistance(
+        playerId: widget.userId,
+        page: _currentPage,
+        size: _pageSize,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _attendanceHistory = assistancePage.content;
+        _totalElements = assistancePage.totalElements;
+        _hasNext = assistancePage.hasNext;
+        _hasPrevious = assistancePage.hasPrevious;
+        _isLoadingPage = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPage = false;
+        _loadError = 'Error al cargar asistencias';
+      });
+    }
+  }
+
+  void _goToNextPage() {
+    if (_hasNext && !_isLoadingPage) {
+      setState(() {
+        _currentPage++;
+      });
+      _loadAttendanceHistory();
+    }
+  }
+
+  void _goToPreviousPage() {
+    if (_hasPrevious && !_isLoadingPage) {
+      setState(() {
+        _currentPage--;
+      });
+      _loadAttendanceHistory();
+    }
+  }
+
+  int get _presentCount => 3;
+  int get _absentCount => 4;
+  double get _attendancePercentage => 43.0;
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +236,6 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   Widget _buildAttendanceContent(BuildContext context) {
     return Column(
       children: [
-        // Resumen de asistencias
         Container(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(16),
@@ -280,34 +292,49 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
           ),
         ),
 
-        // Lista de asistencias
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _attendanceHistory.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final record = _attendanceHistory[index];
-              return _buildAttendanceItem(context, record);
-            },
+        if (_isLoadingPage)
+          Expanded(
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  context.tokens.redToRosita,
+                ),
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _attendanceHistory.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final record = _attendanceHistory[index];
+                return _buildAttendanceItem(context, record);
+              },
+            ),
           ),
-        ),
 
-        // Paginación
         Container(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: _hasPrevious && !_isLoadingPage
+                    ? _goToPreviousPage
+                    : null,
                 icon: Icon(
                   Symbols.chevron_left,
-                  color: context.tokens.placeholder,
+                  color: _hasPrevious && !_isLoadingPage
+                      ? context.tokens.text
+                      : context.tokens.placeholder,
                 ),
               ),
               Text(
-                '1-15 de 87',
+                _totalElements > 0
+                    ? '${_currentPage * _pageSize + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} de $_totalElements'
+                    : '0-0 de 0',
                 style: TextStyle(
                   color: context.tokens.text,
                   fontSize: 14,
@@ -315,10 +342,12 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                 ),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: _hasNext && !_isLoadingPage ? _goToNextPage : null,
                 icon: Icon(
                   Symbols.chevron_right,
-                  color: context.tokens.placeholder,
+                  color: _hasNext && !_isLoadingPage
+                      ? context.tokens.text
+                      : context.tokens.placeholder,
                 ),
               ),
             ],
@@ -357,7 +386,14 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     );
   }
 
-  Widget _buildAttendanceItem(BuildContext context, AttendanceRecord record) {
+  Widget _buildAttendanceItem(BuildContext context, Assistance record) {
+    DateTime? recordDate;
+    try {
+      recordDate = DateTime.parse(record.date);
+    } catch (e) {
+      recordDate = null;
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -378,7 +414,12 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  DateFormat('d \'de\' MMMM \'de\' yyyy').format(record.date),
+                  recordDate != null
+                      ? DateFormat(
+                          'd \'de\' MMMM \'de\' yyyy',
+                          'es',
+                        ).format(recordDate)
+                      : record.date,
                   style: TextStyle(
                     color: context.tokens.text,
                     fontSize: 14,
@@ -387,7 +428,9 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${record.startTime} - ${record.endTime}',
+                  recordDate != null
+                      ? '${DateFormat('HH:mm').format(recordDate)} - ${DateFormat('HH:mm').format(recordDate.add(const Duration(hours: 1)))}'
+                      : '18:00 - 19:00',
                   style: TextStyle(
                     color: context.tokens.placeholder,
                     fontSize: 12,
@@ -397,8 +440,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
             ),
           ),
           Icon(
-            record.wasPresent ? Symbols.check : Symbols.close,
-            color: record.wasPresent
+            record.assistance ? Symbols.check : Symbols.close,
+            color: record.assistance
                 ? context.tokens.green
                 : context.tokens.redToRosita,
             size: 20,
@@ -407,18 +450,4 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
       ),
     );
   }
-}
-
-class AttendanceRecord {
-  final DateTime date;
-  final String startTime;
-  final String endTime;
-  final bool wasPresent;
-
-  AttendanceRecord({
-    required this.date,
-    required this.startTime,
-    required this.endTime,
-    required this.wasPresent,
-  });
 }

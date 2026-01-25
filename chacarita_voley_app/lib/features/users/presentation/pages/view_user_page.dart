@@ -695,7 +695,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.card2,
+              backgroundColor: context.tokens.secondaryButton,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

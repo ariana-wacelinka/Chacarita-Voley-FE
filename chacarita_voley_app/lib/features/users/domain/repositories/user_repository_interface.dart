@@ -1,3 +1,4 @@
+import '../entities/assistance.dart';
 import '../entities/user.dart';
 
 abstract class UserRepositoryInterface {
@@ -13,4 +14,11 @@ abstract class UserRepositoryInterface {
   Future<User> createUser(User user);
   Future<User> updateUser(User user);
   Future<void> deleteUser(String id);
+  Future<AssistancePage> getAllAssistance({
+    required String playerId,
+    String? startTimeFrom,
+    String? endTimeTo,
+    required int page,
+    required int size,
+  });
 }

@@ -73,9 +73,56 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_originalTraining == null) return;
 
+    final startTime = _startTimeController.text.trim();
+    final endTime = _endTimeController.text.trim();
+
+    if (startTime.isNotEmpty && endTime.isNotEmpty) {
+      final startParts = startTime.split(':');
+      final endParts = endTime.split(':');
+      if (startParts.length == 2 && endParts.length == 2) {
+        final startHour = int.tryParse(startParts[0]);
+        final startMinute = int.tryParse(startParts[1]);
+        final endHour = int.tryParse(endParts[0]);
+        final endMinute = int.tryParse(endParts[1]);
+
+        if (startHour != null &&
+            startMinute != null &&
+            endHour != null &&
+            endMinute != null) {
+          final now = DateTime.now();
+          final start = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            startHour,
+            startMinute,
+          );
+          final end = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            endHour,
+            endMinute,
+          );
+
+          if (end.isBefore(start) || end.isAtSameMomentAs(start)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'La hora de fin debe ser posterior a la hora de inicio',
+                ),
+                backgroundColor: context.tokens.redToRosita,
+              ),
+            );
+            return;
+          }
+        }
+      }
+    }
+
     final updated = _originalTraining!.copyWith(
-      startTime: _startTimeController.text.trim(),
-      endTime: _endTimeController.text.trim(),
+      startTime: startTime,
+      endTime: endTime,
       location: _locationController.text.trim(),
       type: _selectedType ?? _originalTraining!.type,
     );

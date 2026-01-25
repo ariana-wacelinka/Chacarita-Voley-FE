@@ -11,8 +11,9 @@ enum _TrainingMenuAction { view, edit, delete }
 class TrainingsPage extends StatefulWidget {
   final String? teamId;
   final String? teamName;
+  final String? refresh;
 
-  const TrainingsPage({super.key, this.teamId, this.teamName});
+  const TrainingsPage({super.key, this.teamId, this.teamName, this.refresh});
 
   @override
   State<TrainingsPage> createState() => _TrainingsPageState();
@@ -21,7 +22,6 @@ class TrainingsPage extends StatefulWidget {
 class _TrainingsPageState extends State<TrainingsPage> {
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
-  List<Training> _allTrainings = [];
   bool _isLoading = true;
 
   final _startDateController = TextEditingController();
@@ -33,12 +33,24 @@ class _TrainingsPageState extends State<TrainingsPage> {
 
   int _currentPage = 0;
   final int _itemsPerPage = 10;
-  int get _totalPages => (_allTrainings.length / _itemsPerPage).ceil();
+  int _totalPages = 0;
+  int _totalElements = 0;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
 
   @override
   void initState() {
     super.initState();
     _loadTrainings();
+  }
+
+  @override
+  void didUpdateWidget(TrainingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refresh != null && widget.refresh != oldWidget.refresh) {
+      _currentPage = 0;
+      _loadTrainings();
+    }
   }
 
   @override
@@ -50,15 +62,55 @@ class _TrainingsPageState extends State<TrainingsPage> {
     super.dispose();
   }
 
+  bool get _hasActiveFilters {
+    return _startDateController.text.isNotEmpty ||
+        _endDateController.text.isNotEmpty ||
+        _startTimeController.text.isNotEmpty ||
+        _endTimeController.text.isNotEmpty ||
+        _selectedStatus != null;
+  }
+
   Future<void> _loadTrainings() async {
     setState(() => _isLoading = true);
     try {
-      final trainings = await _repository.getTrainings(status: _selectedStatus);
+      // Convertir fechas de DD/MM/AAAA a AAAA-MM-DD para el backend
+      String? dateFrom;
+      String? dateTo;
+
+      if (_startDateController.text.isNotEmpty) {
+        final parts = _startDateController.text.split('/');
+        if (parts.length == 3) {
+          dateFrom = '${parts[2]}-${parts[1]}-${parts[0]}';
+        }
+      }
+
+      if (_endDateController.text.isNotEmpty) {
+        final parts = _endDateController.text.split('/');
+        if (parts.length == 3) {
+          dateTo = '${parts[2]}-${parts[1]}-${parts[0]}';
+        }
+      }
+
+      final result = await _repository.getTrainingsWithPagination(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        startTimeFrom: _startTimeController.text.isNotEmpty
+            ? _startTimeController.text
+            : null,
+        startTimeTo: _endTimeController.text.isNotEmpty
+            ? _endTimeController.text
+            : null,
+        status: _selectedStatus,
+        page: _currentPage,
+        size: _itemsPerPage,
+      );
       if (mounted) {
         setState(() {
-          _allTrainings = trainings;
-          _currentPage = 0;
-          _updatePagedTrainings();
+          _trainings = result['content'] as List<Training>;
+          _totalPages = result['totalPages'] as int;
+          _totalElements = result['totalElements'] as int;
+          _hasNext = result['hasNext'] as bool;
+          _hasPrevious = result['hasPrevious'] as bool;
           _isLoading = false;
         });
       }
@@ -69,21 +121,12 @@ class _TrainingsPageState extends State<TrainingsPage> {
     }
   }
 
-  void _updatePagedTrainings() {
-    final startIndex = _currentPage * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(
-      0,
-      _allTrainings.length,
-    );
-    _trainings = _allTrainings.sublist(startIndex, endIndex);
-  }
-
   void _goToPage(int page) {
     if (page >= 0 && page < _totalPages) {
       setState(() {
         _currentPage = page;
-        _updatePagedTrainings();
       });
+      _loadTrainings();
     }
   }
 
@@ -165,6 +208,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
       final hour = picked.hour.toString().padLeft(2, '0');
       final minute = picked.minute.toString().padLeft(2, '0');
       controller.text = '$hour:$minute';
+      _loadTrainings();
     }
   }
 
@@ -173,23 +217,24 @@ class _TrainingsPageState extends State<TrainingsPage> {
     return Scaffold(
       backgroundColor: context.tokens.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : _trainings.isEmpty
-                  ? _buildEmptyState(context)
-                  : _buildTrainingsList(context),
-            ),
-          ],
-        ),
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              )
+            : Column(
+                children: [
+                  Expanded(
+                    child: _trainings.isEmpty
+                        ? _buildEmptyStateWithFilters(context)
+                        : _buildTrainingsList(context),
+                  ),
+                  if (_totalPages > 1) _buildPagination(context),
+                ],
+              ),
       ),
       floatingActionButton: SizedBox(
         width: 56,
@@ -227,7 +272,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
 
   Widget _buildFilterSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.tokens.card1,
@@ -238,21 +282,59 @@ class _TrainingsPageState extends State<TrainingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Symbols.filter_alt,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
+              Row(
+                children: [
+                  Icon(
+                    Symbols.filter_alt,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Filtro',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Filtro',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+              if (_hasActiveFilters)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _startDateController.clear();
+                      _endDateController.clear();
+                      _startTimeController.clear();
+                      _endTimeController.clear();
+                      _selectedStatus = null;
+                      _currentPage = 0;
+                    });
+                    _loadTrainings();
+                  },
+                  icon: Icon(
+                    Symbols.close,
+                    color: context.tokens.text,
+                    size: 18,
+                  ),
+                  label: Text(
+                    'Limpiar filtros',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -284,6 +366,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         if (picked != null) {
                           _startDateController.text =
                               '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          _loadTrainings();
                         }
                       },
                       decoration: InputDecoration(
@@ -337,6 +420,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         if (picked != null) {
                           _endDateController.text =
                               '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          _loadTrainings();
                         }
                       },
                       decoration: InputDecoration(
@@ -457,15 +541,17 @@ class _TrainingsPageState extends State<TrainingsPage> {
             style: TextStyle(color: context.tokens.text, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _buildStatusChip(context, 'Próximos', TrainingStatus.proximo),
-              const SizedBox(width: 8),
               _buildStatusChip(
                 context,
                 'Completados',
                 TrainingStatus.completado,
               ),
+              _buildStatusChip(context, 'Cancelados', TrainingStatus.cancelado),
             ],
           ),
         ],
@@ -483,6 +569,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
       onTap: () {
         setState(() {
           _selectedStatus = isSelected ? null : status;
+          _currentPage = 0;
         });
         _loadTrainings();
       },
@@ -538,30 +625,40 @@ class _TrainingsPageState extends State<TrainingsPage> {
     );
   }
 
-  Widget _buildTrainingsList(BuildContext context) {
-    return Column(
+  Widget _buildEmptyStateWithFilters(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _trainings.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildFilterSection(context);
-              }
-
-              final trainingIndex = index - 1;
-              final training = _trainings[trainingIndex];
-              return _buildTrainingCard(context, training);
-            },
-          ),
-        ),
-        if (_totalPages > 1) _buildPagination(context),
+        _buildFilterSection(context),
+        const SizedBox(height: 100),
+        _buildEmptyState(context),
       ],
     );
   }
 
+  Widget _buildTrainingsList(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _trainings.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildFilterSection(context),
+          );
+        }
+
+        final trainingIndex = index - 1;
+        final training = _trainings[trainingIndex];
+        return _buildTrainingCard(context, training);
+      },
+    );
+  }
+
   Widget _buildPagination(BuildContext context) {
+    final startIndex = _currentPage * _itemsPerPage + 1;
+    final endIndex = (_currentPage * _itemsPerPage) + _trainings.length;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -572,22 +669,46 @@ class _TrainingsPageState extends State<TrainingsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: Icon(Symbols.chevron_left, color: context.tokens.text),
-            onPressed: _currentPage > 0
-                ? () => _goToPage(_currentPage - 1)
-                : null,
+            icon: Icon(
+              Symbols.keyboard_double_arrow_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(0) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.chevron_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(_currentPage - 1) : null,
           ),
           const SizedBox(width: 8),
           Text(
-            '${_allTrainings.isEmpty ? 0 : _currentPage * _itemsPerPage + 1}-${(_currentPage * _itemsPerPage) + _trainings.length} de ${_allTrainings.length}',
+            '$startIndex-$endIndex de $_totalElements',
             style: TextStyle(color: context.tokens.text, fontSize: 14),
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: Icon(Symbols.chevron_right, color: context.tokens.text),
-            onPressed: _currentPage < _totalPages - 1
-                ? () => _goToPage(_currentPage + 1)
-                : null,
+            icon: Icon(
+              Symbols.chevron_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_currentPage + 1) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.keyboard_double_arrow_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_totalPages - 1) : null,
           ),
         ],
       ),
@@ -634,6 +755,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                             ? Theme.of(
                                 context,
                               ).colorScheme.primary.withOpacity(0.1)
+                            : training.status == TrainingStatus.cancelado
+                            ? context.tokens.redToRosita.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -644,6 +767,8 @@ class _TrainingsPageState extends State<TrainingsPage> {
                               ? context.tokens.green
                               : training.status == TrainingStatus.completado
                               ? Theme.of(context).colorScheme.primary
+                              : training.status == TrainingStatus.cancelado
+                              ? context.tokens.redToRosita
                               : context.tokens.placeholder,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -658,14 +783,22 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       color: context.tokens.card1,
                       elevation: 4,
+                      onSelected: (action) {
+                        switch (action) {
+                          case _TrainingMenuAction.view:
+                            context.push('/trainings/${training.id}');
+                            break;
+                          case _TrainingMenuAction.edit:
+                            context.push('/trainings/${training.id}/edit');
+                            break;
+                          case _TrainingMenuAction.delete:
+                            _showDeleteDialog(context, training);
+                            break;
+                        }
+                      },
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           value: _TrainingMenuAction.view,
-                          onTap: () {
-                            Future.microtask(() {
-                              context.push('/trainings/${training.id}');
-                            });
-                          },
                           child: Text(
                             'Ver',
                             style: TextStyle(color: context.tokens.text),
@@ -673,11 +806,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         ),
                         PopupMenuItem(
                           value: _TrainingMenuAction.edit,
-                          onTap: () {
-                            Future.microtask(() {
-                              context.push('/trainings/${training.id}/edit');
-                            });
-                          },
                           child: Text(
                             'Modificar',
                             style: TextStyle(color: context.tokens.text),
@@ -685,11 +813,6 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         ),
                         PopupMenuItem(
                           value: _TrainingMenuAction.delete,
-                          onTap: () {
-                            Future.microtask(() {
-                              _showDeleteDialog(context, training);
-                            });
-                          },
                           child: Text(
                             'Eliminar',
                             style: TextStyle(
@@ -729,7 +852,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${training.startTime} - ${training.endTime}',
+                      '${training.startTimeFormatted} - ${training.endTimeFormatted}',
                       style: TextStyle(
                         color: context.tokens.text,
                         fontSize: 16,
@@ -819,9 +942,19 @@ class _TrainingsPageState extends State<TrainingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.tokens.card1,
-        content: Text(
-          '¿Estás seguro de que querés eliminar este entrenamiento?',
+        title: Text(
+          '¿Qué querés eliminar?',
           style: TextStyle(color: context.tokens.text),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Podés eliminar solo este entrenamiento o este y todos los posteriores.',
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -832,20 +965,231 @@ class _TrainingsPageState extends State<TrainingsPage> {
             ),
           ),
           TextButton(
-            onPressed: () async {
-              await _repository.deleteTraining(training.id);
-              if (context.mounted) {
-                Navigator.pop(context);
-                _loadTrainings();
-              }
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeleteSessionConfirmation(context, training);
             },
             child: Text(
-              'Eliminar',
+              'Solo este entrenamiento',
+              style: TextStyle(color: context.tokens.text),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeleteAllConfirmation(context, training);
+            },
+            child: Text(
+              'Este y todos los posteriores',
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteSessionConfirmation(
+    BuildContext parentContext,
+    Training training,
+  ) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: parentContext.tokens.card1,
+        title: Text(
+          'Eliminar entrenamiento',
+          style: TextStyle(color: parentContext.tokens.text),
+        ),
+        content: Text(
+          '¿Estás seguro de que querés eliminar este entrenamiento del ${training.dateFormatted}?',
+          style: TextStyle(color: parentContext.tokens.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: parentContext.tokens.placeholder),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+
+              try {
+                await _repository.deleteSession(training.id);
+
+                if (!mounted) return;
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+
+                  setState(() {
+                    _trainings = [];
+                    _currentPage = 0;
+                  });
+
+                  _loadTrainings();
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Entrenamiento eliminado exitosamente',
+                      ),
+                      backgroundColor: parentContext.tokens.green,
+                    ),
+                  );
+                });
+              } catch (e) {
+                if (!mounted) return;
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al eliminar el entrenamiento: $e'),
+                      backgroundColor: parentContext.tokens.redToRosita,
+                    ),
+                  );
+                });
+              }
+            },
+            child: Text(
+              'Eliminar',
+              style: TextStyle(
+                color: Theme.of(parentContext).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAllConfirmation(
+    BuildContext parentContext,
+    Training training,
+  ) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) {
+        final confirmController = TextEditingController();
+
+        return AlertDialog(
+          backgroundColor: parentContext.tokens.card1,
+          title: Text(
+            '¡Atención!',
+            style: TextStyle(
+              color: Theme.of(parentContext).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estás por eliminar este entrenamiento y todos los posteriores. Esta acción no se puede deshacer.',
+                style: TextStyle(color: parentContext.tokens.text),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Escribí "ELIMINAR" para confirmar:',
+                style: TextStyle(
+                  color: parentContext.tokens.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: 'ELIMINAR',
+                  hintStyle: TextStyle(color: parentContext.tokens.placeholder),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                style: TextStyle(color: parentContext.tokens.text),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: parentContext.tokens.placeholder),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (confirmController.text.trim().toUpperCase() != 'ELIMINAR') {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Debés escribir "ELIMINAR" para confirmar',
+                      ),
+                      backgroundColor: parentContext.tokens.redToRosita,
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(dialogContext);
+
+                try {
+                  final trainingId = training.trainingId ?? training.id;
+                  await _repository.deleteTraining(trainingId);
+
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _trainings = [];
+                      _currentPage = 0;
+                    });
+
+                    _loadTrainings();
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Entrenamiento eliminado exitosamente',
+                        ),
+                        backgroundColor: parentContext.tokens.green,
+                      ),
+                    );
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al eliminar el entrenamiento: $e'),
+                        backgroundColor: parentContext.tokens.redToRosita,
+                      ),
+                    );
+                  });
+                }
+              },
+              child: Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: Theme.of(parentContext).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

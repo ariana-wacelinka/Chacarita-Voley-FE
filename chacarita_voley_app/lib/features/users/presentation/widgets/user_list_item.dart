@@ -158,6 +158,21 @@ class UserListItem extends StatelessWidget {
   }
 
   Widget _buildEstadoCuotaIcon(BuildContext context) {
+    // Si no tiene playerId, no paga cuota - mostrar "-"
+    if (user.playerId == null || user.playerId!.isEmpty) {
+      return Center(
+        child: Text(
+          '-',
+          style: TextStyle(
+            color: context.tokens.placeholder,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    // Usuario con playerId: mostrar estado de cuota
     IconData icon;
     Color color;
 

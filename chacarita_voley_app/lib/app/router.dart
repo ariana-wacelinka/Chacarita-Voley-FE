@@ -78,6 +78,7 @@ final appRouter = GoRouter(
           builder: (_, state) => TrainingsPage(
             teamId: state.uri.queryParameters['teamId'],
             teamName: state.uri.queryParameters['teamName'],
+            refresh: state.uri.queryParameters['refresh'],
           ),
         ),
         GoRoute(
