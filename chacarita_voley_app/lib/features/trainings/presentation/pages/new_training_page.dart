@@ -365,16 +365,34 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
     } catch (e) {
       if (!mounted) return;
 
+      String errorMessage = 'Error al registrar entrenamiento';
+
+      final errorString = e.toString();
+      if (errorString.contains('START_DATE_AND_END_DATE_REQUIRED')) {
+        errorMessage = 'Las fechas de inicio y fin son obligatorias';
+      } else if (errorString.contains('START_DATE_CANNOT_BE_AFTER_END_DATE')) {
+        errorMessage =
+            'La fecha de inicio no puede ser posterior a la fecha de fin';
+      } else if (errorString.contains('CANNOT_CREATE_SESSIONS_IN_THE_PAST')) {
+        errorMessage = 'No se pueden crear entrenamientos en fechas pasadas';
+      } else if (errorString.contains('TRAINING_TEMPLATE_MISSING_TIME')) {
+        errorMessage = 'Falta especificar horario de inicio o fin';
+      } else if (errorString.contains(
+        'TRAINING_START_TIME_MUST_BE_BEFORE_END_TIME',
+      )) {
+        errorMessage = 'La hora de inicio debe ser anterior a la hora de fin';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 20),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Error al registrar entrenamiento',
-                  style: TextStyle(
+                  errorMessage,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -610,10 +628,11 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                       readOnly: true,
                       onTap: () async {
                         final now = DateTime.now();
+                        final today = DateTime(now.year, now.month, now.day);
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: now,
-                          firstDate: DateTime(2000),
+                          initialDate: today,
+                          firstDate: today,
                           lastDate: DateTime(2100),
                         );
                         if (picked != null) {
@@ -656,10 +675,11 @@ class _NewTrainingPageState extends State<NewTrainingPage> {
                       readOnly: true,
                       onTap: () async {
                         final now = DateTime.now();
+                        final today = DateTime(now.year, now.month, now.day);
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: now,
-                          firstDate: DateTime(2000),
+                          initialDate: today,
+                          firstDate: today,
                           lastDate: DateTime(2100),
                         );
                         if (picked != null) {
