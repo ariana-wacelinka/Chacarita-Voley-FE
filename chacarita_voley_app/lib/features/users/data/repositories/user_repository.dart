@@ -663,7 +663,7 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   String _getAllAssistanceQuery() => '''
-    query GetAllAssistance(\$playerId: String!, \$startTimeFrom: String, \$endTimeTo: String, \$page: Int!, \$size: Int!) {
+    query GetAllAssistance(\$playerId: ID!, \$startTimeFrom: String, \$endTimeTo: String, \$page: Int!, \$size: Int!) {
       getAllAssistance(
         filters: {playerId: \$playerId, startTimeFrom: \$startTimeFrom, endTimeTo: \$endTimeTo}
         page: \$page
@@ -673,6 +673,10 @@ class UserRepository implements UserRepositoryInterface {
           id
           date
           assistance
+          session {
+            startTime
+            endTime
+          }
         }
         hasNext
         hasPrevious

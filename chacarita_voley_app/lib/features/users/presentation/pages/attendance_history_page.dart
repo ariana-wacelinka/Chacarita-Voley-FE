@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/assistance.dart';
 import '../../domain/entities/user.dart';
@@ -30,10 +31,15 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   bool _hasPrevious = false;
   bool _isLoadingPage = false;
 
+  // Estadísticas totales
+  int _totalPresent = 0;
+  int _totalAbsent = 0;
+
   @override
   void initState() {
     super.initState();
     _userRepository = UserRepository();
+    initializeDateFormatting('es');
     _loadUser();
   }
 
@@ -81,12 +87,41 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         _isLoadingPage = false;
         _loadError = null;
       });
+
+      // Cargar estadísticas totales solo la primera vez
+      if (_currentPage == 0) {
+        _loadTotalStatistics();
+      }
     } catch (e) {
+      print('Error al cargar asistencias: $e');
       if (!mounted) return;
       setState(() {
         _isLoadingPage = false;
-        _loadError = 'Error al cargar asistencias';
+        _loadError = 'Error al cargar asistencias: $e';
       });
+    }
+  }
+
+  Future<void> _loadTotalStatistics() async {
+    try {
+      // Obtener todas las asistencias para calcular estadísticas
+      final allAssistances = await _userRepository.getAllAssistance(
+        playerId: widget.userId,
+        page: 0,
+        size: _totalElements > 0 ? _totalElements : 1000, // Traer todas
+      );
+
+      if (!mounted) return;
+
+      final present = allAssistances.content.where((a) => a.assistance).length;
+      final absent = allAssistances.content.where((a) => !a.assistance).length;
+
+      setState(() {
+        _totalPresent = present;
+        _totalAbsent = absent;
+      });
+    } catch (e) {
+      print('Error al cargar estadísticas totales: $e');
     }
   }
 
@@ -108,9 +143,19 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     }
   }
 
-  int get _presentCount => 3;
-  int get _absentCount => 4;
-  double get _attendancePercentage => 43.0;
+  int get _presentCount {
+    return _totalPresent;
+  }
+
+  int get _absentCount {
+    return _totalAbsent;
+  }
+
+  double get _attendancePercentage {
+    final total = _totalPresent + _totalAbsent;
+    if (total == 0) return 0.0;
+    return (_totalPresent / total) * 100;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,8 +473,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  recordDate != null
-                      ? '${DateFormat('HH:mm').format(recordDate)} - ${DateFormat('HH:mm').format(recordDate.add(const Duration(hours: 1)))}'
+                  record.startTime != null && record.endTime != null
+                      ? '${record.startTime!.substring(0, 5)} - ${record.endTime!.substring(0, 5)}'
                       : '18:00 - 19:00',
                   style: TextStyle(
                     color: context.tokens.placeholder,
