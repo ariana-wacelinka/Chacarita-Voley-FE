@@ -118,6 +118,20 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  static const String _updateSessionMutation = r'''
+    mutation UpdateSession($id: ID!, $trainingType: TrainingType!, $startTime: String!, $endTime: String!, $location: String!, $date: String!) {
+      updateSession(id: $id, input: {trainingType: $trainingType, startTime: $startTime, endTime: $endTime, location: $location, date: $date}) {
+        id
+        date
+        startTime
+        endTime
+        location
+        trainingType
+        status
+      }
+    }
+  ''';
+
   static const String _deleteTrainingMutation = r'''
     mutation DeleteTraining($id: ID!) {
       deleteTraining(id: $id)
@@ -601,6 +615,66 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
     print('[updateTraining] Training actualizado exitosamente: ${data['id']}');
     return _mapTrainingFromBackend(data);
+  }
+
+  Future<Training> updateSession(Training session) async {
+    print('[updateSession] Iniciando actualización de sesión');
+    print('[updateSession] id: ${session.id}');
+    print('[updateSession] date: ${session.date}');
+    print('[updateSession] startTime: ${session.startTime}');
+    print('[updateSession] endTime: ${session.endTime}');
+    print('[updateSession] location: ${session.location}');
+    print('[updateSession] type: ${session.type.backendValue}');
+
+    final variables = {
+      'id': session.id,
+      'trainingType': session.type.backendValue,
+      'startTime': session.startTime,
+      'endTime': session.endTime,
+      'location': session.location,
+      'date': session.date?.toIso8601String().split('T')[0],
+    };
+
+    print('[updateSession] Variables de mutación:');
+    print('  - variables: $variables');
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_updateSessionMutation),
+        variables: variables,
+      ),
+    );
+
+    print('[updateSession] Mutación ejecutada');
+    print('[updateSession] hasException: ${result.hasException}');
+
+    if (result.hasException) {
+      print('[updateSession] ERROR: ${result.exception.toString()}');
+      print(
+        '[updateSession] GraphQL Errors: ${result.exception?.graphqlErrors}',
+      );
+      print(
+        '[updateSession] Link Exception: ${result.exception?.linkException}',
+      );
+      throw Exception(result.exception.toString());
+    }
+
+    print('[updateSession] result.data: ${result.data}');
+
+    final data = result.data?['updateSession'] as Map<String, dynamic>?;
+    if (data == null) {
+      print('[updateSession] ERROR: data es null en updateSession');
+      throw Exception('Respuesta inválida de updateSession');
+    }
+
+    print('[updateSession] Sesión actualizada exitosamente: ${data['id']}');
+
+    final updatedSession = await getTrainingById(session.id);
+    if (updatedSession == null) {
+      throw Exception('No se pudo recargar la sesión');
+    }
+
+    return updatedSession;
   }
 
   @override

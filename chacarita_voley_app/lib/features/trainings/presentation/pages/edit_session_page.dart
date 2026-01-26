@@ -1,0 +1,637 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../../../../app/theme/app_theme.dart';
+import '../../domain/entities/training.dart';
+import '../../data/repositories/training_repository.dart';
+
+class EditSessionPage extends StatefulWidget {
+  final String sessionId;
+
+  const EditSessionPage({super.key, required this.sessionId});
+
+  @override
+  State<EditSessionPage> createState() => _EditSessionPageState();
+}
+
+class _EditSessionPageState extends State<EditSessionPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _repository = TrainingRepository();
+
+  final _dateController = TextEditingController();
+  final _startTimeController = TextEditingController();
+  final _endTimeController = TextEditingController();
+  final _locationController = TextEditingController();
+
+  TrainingType? _selectedType;
+  Training? _originalSession;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSession();
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _startTimeController.dispose();
+    _endTimeController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSession() async {
+    setState(() => _isLoading = true);
+    try {
+      final session = await _repository.getTrainingById(widget.sessionId);
+      print('[EditSession] Sesión cargada: ${session?.id}');
+      print('[EditSession] date: ${session?.date}');
+      print('[EditSession] startTime: ${session?.startTime}');
+      print('[EditSession] endTime: ${session?.endTime}');
+
+      if (!mounted) return;
+
+      if (session != null) {
+        _originalSession = session;
+
+        if (session.date != null) {
+          final date = session.date!;
+          final formattedDate =
+              '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+          _dateController.text = formattedDate;
+          print('[EditSession] dateController.text = $formattedDate');
+        } else {
+          print('[EditSession] date es null');
+        }
+
+        _startTimeController.text = session.startTime;
+        _endTimeController.text = session.endTime;
+        _locationController.text = session.location;
+        _selectedType = session.type;
+      } else {
+        print('[EditSession] session es null');
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('[EditSession] Error al cargar sesión: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _originalSession?.date ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  Future<void> _selectStartTime() async {
+    final currentTime = _parseTime(_startTimeController.text);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: currentTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startTimeController.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  Future<void> _selectEndTime() async {
+    final currentTime = _parseTime(_endTimeController.text);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: currentTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endTimeController.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  TimeOfDay _parseTime(String time) {
+    if (time.isEmpty) return TimeOfDay.now();
+    final parts = time.split(':');
+    if (parts.length != 2) return TimeOfDay.now();
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  DateTime? _parseDate(String dateStr) {
+    if (dateStr.isEmpty) return null;
+    final parts = dateStr.split('/');
+    if (parts.length != 3) return null;
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return null;
+    return DateTime(year, month, day);
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_originalSession == null) return;
+
+    final startTime = _startTimeController.text.trim();
+    final endTime = _endTimeController.text.trim();
+
+    if (startTime.isNotEmpty && endTime.isNotEmpty) {
+      final startParts = startTime.split(':');
+      final endParts = endTime.split(':');
+      if (startParts.length == 2 && endParts.length == 2) {
+        final startHour = int.tryParse(startParts[0]);
+        final startMinute = int.tryParse(startParts[1]);
+        final endHour = int.tryParse(endParts[0]);
+        final endMinute = int.tryParse(endParts[1]);
+
+        if (startHour != null &&
+            startMinute != null &&
+            endHour != null &&
+            endMinute != null) {
+          final now = DateTime.now();
+          final start = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            startHour,
+            startMinute,
+          );
+          final end = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            endHour,
+            endMinute,
+          );
+
+          if (end.isBefore(start) || end.isAtSameMomentAs(start)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'La hora de fin debe ser posterior a la hora de inicio',
+                ),
+                backgroundColor: context.tokens.redToRosita,
+              ),
+            );
+            return;
+          }
+        }
+      }
+    }
+
+    final date = _parseDate(_dateController.text);
+    if (date == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Fecha inválida'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+      return;
+    }
+
+    final updated = _originalSession!.copyWith(
+      date: date,
+      startTime: startTime,
+      endTime: endTime,
+      location: _locationController.text.trim(),
+      type: _selectedType ?? _originalSession!.type,
+    );
+
+    try {
+      await _repository.updateSession(updated);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Entrenamiento actualizado exitosamente',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: context.tokens.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      context.pop(true);
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Error al actualizar el entrenamiento',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: context.tokens.redToRosita,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.tokens.background,
+      appBar: AppBar(
+        backgroundColor: context.tokens.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Editar entrenamiento',
+          style: TextStyle(
+            color: context.tokens.text,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _originalSession == null
+          ? _buildNotFound(context)
+          : _buildForm(context),
+    );
+  }
+
+  Widget _buildNotFound(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Symbols.error, size: 64, color: context.tokens.placeholder),
+          const SizedBox(height: 16),
+          Text(
+            'Entrenamiento no encontrado',
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildTeamSummaryCard(context),
+          const SizedBox(height: 16),
+          _buildDateTimeCard(context),
+          const SizedBox(height: 16),
+          _buildDetailsCard(context),
+          const SizedBox(height: 24),
+          _buildSubmitButton(context),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeamSummaryCard(BuildContext context) {
+    final session = _originalSession!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Symbols.sports_volleyball,
+                color: context.tokens.text,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Equipo',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Equipo: ${session.teamName}',
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateTimeCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Symbols.calendar_month,
+                color: context.tokens.text,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Fecha y horario',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Fecha *',
+            style: TextStyle(color: context.tokens.text, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          TextFormField(
+            controller: _dateController,
+            decoration: InputDecoration(
+              hintText: 'DD/MM/AAAA',
+              suffixIcon: Icon(
+                Symbols.calendar_month,
+                color: context.tokens.placeholder,
+              ),
+            ),
+            readOnly: true,
+            onTap: _selectDate,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Ingresá una fecha';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hora de inicio *',
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      controller: _startTimeController,
+                      decoration: InputDecoration(
+                        hintText: 'HH:MM',
+                        suffixIcon: Icon(
+                          Symbols.schedule,
+                          color: context.tokens.placeholder,
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: _selectStartTime,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Requerido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hora de fin *',
+                      style: TextStyle(
+                        color: context.tokens.text,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      controller: _endTimeController,
+                      decoration: InputDecoration(
+                        hintText: 'HH:MM',
+                        suffixIcon: Icon(
+                          Symbols.schedule,
+                          color: context.tokens.placeholder,
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: _selectEndTime,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Requerido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Symbols.sports, color: context.tokens.text, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Detalles del entrenamiento',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Tipo de entrenamiento *',
+            style: TextStyle(color: context.tokens.text, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          DropdownButtonFormField<TrainingType>(
+            value: _selectedType,
+            decoration: InputDecoration(
+              hintText: 'Seleccioná el tipo',
+              prefixIcon: Icon(
+                Symbols.fitness_center,
+                color: context.tokens.placeholder,
+              ),
+            ),
+            items: TrainingType.values.map((type) {
+              return DropdownMenuItem<TrainingType>(
+                value: type,
+                child: Text(type.displayName),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedType = value;
+              });
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Seleccioná un tipo';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ubicación *',
+            style: TextStyle(color: context.tokens.text, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          TextFormField(
+            controller: _locationController,
+            decoration: InputDecoration(
+              hintText: 'Ej: Gimnasio principal',
+              prefixIcon: Icon(
+                Symbols.location_on,
+                color: context.tokens.placeholder,
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Ingresá una ubicación';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: _submit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text(
+          'Guardar cambios',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}

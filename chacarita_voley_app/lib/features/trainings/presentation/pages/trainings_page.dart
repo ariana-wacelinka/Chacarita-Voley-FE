@@ -6,7 +6,14 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
-enum _TrainingMenuAction { view, edit, delete, cancel, reactivate }
+enum _TrainingMenuAction {
+  view,
+  editSession,
+  editTraining,
+  delete,
+  cancel,
+  reactivate,
+}
 
 class TrainingsPage extends StatefulWidget {
   final String? teamId;
@@ -932,7 +939,19 @@ class _TrainingsPageState extends State<TrainingsPage>
                           case _TrainingMenuAction.view:
                             context.push('/trainings/${training.id}');
                             break;
-                          case _TrainingMenuAction.edit:
+                          case _TrainingMenuAction.editSession:
+                            final updated = await context.push<bool>(
+                              '/sessions/${training.id}/edit',
+                            );
+                            if (updated == true && mounted) {
+                              setState(() {
+                                _currentPage = 0;
+                                _trainings = [];
+                              });
+                              _loadTrainings();
+                            }
+                            break;
+                          case _TrainingMenuAction.editTraining:
                             final updated = await context.push<bool>(
                               '/trainings/${training.id}/edit',
                             );
@@ -995,10 +1014,22 @@ class _TrainingsPageState extends State<TrainingsPage>
                             ),
                           ),
                           PopupMenuItem(
-                            value: _TrainingMenuAction.edit,
+                            value: _TrainingMenuAction.editSession,
+                            enabled: !isCancelled,
+                            child: Text(
+                              'Modificar este entrenamiento',
+                              style: TextStyle(
+                                color: isCancelled
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.editTraining,
                             enabled: !isCancelled && hasTraining,
                             child: Text(
-                              'Modificar este entrenamiento y todos los posteriores',
+                              'Modificar este y posteriores',
                               style: TextStyle(
                                 color: (isCancelled || !hasTraining)
                                     ? context.tokens.placeholder
