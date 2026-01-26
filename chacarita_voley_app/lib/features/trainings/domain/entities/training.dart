@@ -81,6 +81,7 @@ enum DayOfWeek {
 
 enum TrainingStatus {
   proximo('UPCOMING'),
+  enCurso('IN_PROGRESS'),
   completado('COMPLETED'),
   cancelado('CANCELLED');
 
@@ -91,6 +92,8 @@ enum TrainingStatus {
     switch (this) {
       case TrainingStatus.proximo:
         return 'Próximo';
+      case TrainingStatus.enCurso:
+        return 'En curso';
       case TrainingStatus.completado:
         return 'Completado';
       case TrainingStatus.cancelado:
@@ -102,6 +105,8 @@ enum TrainingStatus {
     switch (value) {
       case 'UPCOMING':
         return TrainingStatus.proximo;
+      case 'IN_PROGRESS':
+        return TrainingStatus.enCurso;
       case 'COMPLETED':
         return TrainingStatus.completado;
       case 'CANCELLED':

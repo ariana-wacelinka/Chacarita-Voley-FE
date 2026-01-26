@@ -904,6 +904,8 @@ class _TrainingsPageState extends State<TrainingsPage>
                       decoration: BoxDecoration(
                         color: training.status == TrainingStatus.proximo
                             ? Colors.amber.withOpacity(0.1)
+                            : training.status == TrainingStatus.enCurso
+                            ? Colors.blue.withOpacity(0.1)
                             : training.status == TrainingStatus.completado
                             ? context.tokens.green.withOpacity(0.1)
                             : training.status == TrainingStatus.cancelado
@@ -916,6 +918,8 @@ class _TrainingsPageState extends State<TrainingsPage>
                         style: TextStyle(
                           color: training.status == TrainingStatus.proximo
                               ? Colors.amber.shade700
+                              : training.status == TrainingStatus.enCurso
+                              ? Colors.blue.shade700
                               : training.status == TrainingStatus.completado
                               ? context.tokens.green
                               : training.status == TrainingStatus.cancelado
