@@ -16,6 +16,7 @@ import '../features/trainings/presentation/pages/attendance_training_page.dart';
 import '../features/trainings/presentation/pages/new_training_page.dart';
 import '../features/trainings/presentation/pages/view_training_page.dart';
 import '../features/trainings/presentation/pages/edit_training_page.dart';
+import '../features/trainings/presentation/pages/edit_session_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 import '../features/notifications/presentation/pages/new_notification_page.dart';
 import '../features/notifications/presentation/pages/new_notification_for_user_page.dart';
@@ -158,6 +159,12 @@ final appRouter = GoRouter(
       name: 'trainings-edit',
       builder: (_, state) =>
           EditTrainingPage(trainingId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/sessions/:id/edit',
+      name: 'sessions-edit',
+      builder: (_, state) =>
+          EditSessionPage(sessionId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/trainings/:id/attendance',

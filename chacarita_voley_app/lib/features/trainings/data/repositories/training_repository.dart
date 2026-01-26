@@ -77,8 +77,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
   static const String _createTrainingMutation = _addTrainingsToTeamMutation;
 
   static const String _updateTrainingMutation = r'''
-    mutation UpdateTraining($id: ID!, $input: TrainingUpdateInput!) {
-      updateTraining(id: $id, input: $input) {
+    mutation UpdateTraining($id: ID!, $dayOfWeek: DayOfWeek!, $startTime: String!, $endTime: String!, $trainingType: TrainingType!, $location: String!, $startDate: String, $endDate: String) {
+      updateTraining(id: $id, input: {dayOfWeek: $dayOfWeek, startTime: $startTime, endTime: $endTime, trainingType: $trainingType, location: $location, startDate: $startDate, endDate: $endDate}) {
         id
         dayOfWeek
         startTime
@@ -118,6 +118,20 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  static const String _updateSessionMutation = r'''
+    mutation UpdateSession($id: ID!, $trainingType: TrainingType!, $startTime: String!, $endTime: String!, $location: String!, $date: String!) {
+      updateSession(id: $id, input: {trainingType: $trainingType, startTime: $startTime, endTime: $endTime, location: $location, date: $date}) {
+        id
+        date
+        startTime
+        endTime
+        location
+        trainingType
+        status
+      }
+    }
+  ''';
+
   static const String _deleteTrainingMutation = r'''
     mutation DeleteTraining($id: ID!) {
       deleteTraining(id: $id)
@@ -127,6 +141,22 @@ class TrainingRepository implements TrainingRepositoryInterface {
   static const String _deleteSessionMutation = r'''
     mutation DeleteSession($id: ID!) {
       deleteSession(id: $id)
+    }
+  ''';
+
+  static const String _cancelSessionMutation = r'''
+    mutation CancelSession($id: ID!) {
+      cancelSession(id: $id) {
+        id
+      }
+    }
+  ''';
+
+  static const String _reactivateSessionMutation = r'''
+    mutation ReactivateSession($id: ID!) {
+      reactivateSession(id: $id) {
+        id
+      }
     }
   ''';
 
@@ -239,6 +269,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
           startTime
           endTime
           location
+          startDate
+          endDate
         }
       }
     }
@@ -528,28 +560,34 @@ class TrainingRepository implements TrainingRepositoryInterface {
   Future<Training> updateTraining(Training training) async {
     print('[updateTraining] Iniciando actualización de training');
     print('[updateTraining] id: ${training.id}');
+    print('[updateTraining] trainingId: ${training.trainingId}');
     print('[updateTraining] dayOfWeek: ${training.dayOfWeek?.backendValue}');
     print('[updateTraining] startTime: ${training.startTime}');
     print('[updateTraining] endTime: ${training.endTime}');
     print('[updateTraining] location: ${training.location}');
     print('[updateTraining] type: ${training.type.backendValue}');
 
-    final input = {
+    final trainingId = training.trainingId ?? training.id;
+    print('[updateTraining] Usando trainingId: $trainingId');
+
+    final variables = {
+      'id': trainingId,
       'dayOfWeek': training.dayOfWeek?.backendValue ?? 'MONDAY',
       'startTime': training.startTime,
       'endTime': training.endTime,
       'trainingType': training.type.backendValue,
       'location': training.location,
+      'startDate': training.startDate?.toIso8601String().split('T')[0],
+      'endDate': training.endDate?.toIso8601String().split('T')[0],
     };
 
     print('[updateTraining] Variables de mutación:');
-    print('  - id: ${training.id}');
-    print('  - input: $input');
+    print('  - variables: $variables');
 
     final result = await _mutate(
       MutationOptions(
         document: gql(_updateTrainingMutation),
-        variables: {'id': training.id, 'input': input},
+        variables: variables,
       ),
     );
 
@@ -579,6 +617,66 @@ class TrainingRepository implements TrainingRepositoryInterface {
     return _mapTrainingFromBackend(data);
   }
 
+  Future<Training> updateSession(Training session) async {
+    print('[updateSession] Iniciando actualización de sesión');
+    print('[updateSession] id: ${session.id}');
+    print('[updateSession] date: ${session.date}');
+    print('[updateSession] startTime: ${session.startTime}');
+    print('[updateSession] endTime: ${session.endTime}');
+    print('[updateSession] location: ${session.location}');
+    print('[updateSession] type: ${session.type.backendValue}');
+
+    final variables = {
+      'id': session.id,
+      'trainingType': session.type.backendValue,
+      'startTime': session.startTime,
+      'endTime': session.endTime,
+      'location': session.location,
+      'date': session.date?.toIso8601String().split('T')[0],
+    };
+
+    print('[updateSession] Variables de mutación:');
+    print('  - variables: $variables');
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_updateSessionMutation),
+        variables: variables,
+      ),
+    );
+
+    print('[updateSession] Mutación ejecutada');
+    print('[updateSession] hasException: ${result.hasException}');
+
+    if (result.hasException) {
+      print('[updateSession] ERROR: ${result.exception.toString()}');
+      print(
+        '[updateSession] GraphQL Errors: ${result.exception?.graphqlErrors}',
+      );
+      print(
+        '[updateSession] Link Exception: ${result.exception?.linkException}',
+      );
+      throw Exception(result.exception.toString());
+    }
+
+    print('[updateSession] result.data: ${result.data}');
+
+    final data = result.data?['updateSession'] as Map<String, dynamic>?;
+    if (data == null) {
+      print('[updateSession] ERROR: data es null en updateSession');
+      throw Exception('Respuesta inválida de updateSession');
+    }
+
+    print('[updateSession] Sesión actualizada exitosamente: ${data['id']}');
+
+    final updatedSession = await getTrainingById(session.id);
+    if (updatedSession == null) {
+      throw Exception('No se pudo recargar la sesión');
+    }
+
+    return updatedSession;
+  }
+
   @override
   Future<void> deleteTraining(String id) async {
     final result = await _mutate(
@@ -597,6 +695,32 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql(_deleteSessionMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  Future<void> cancelSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_cancelSessionMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  Future<void> reactivateSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_reactivateSessionMutation),
         variables: {'id': id},
       ),
     );
@@ -691,7 +815,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 
@@ -727,6 +851,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
+      hasTraining: trainingData != null,
     );
   }
 
@@ -750,7 +875,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 
@@ -784,14 +909,36 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
       return PlayerAttendance(
         playerId: player['id'] as String? ?? '',
-        playerName: '$name $surname'.trim(),
+        playerName: '$surname $name'.trim(),
         isPresent: isPresent,
       );
     }).toList();
 
+    // Parse startDate and endDate from training
+    DateTime? trainingStartDate;
+    DateTime? trainingEndDate;
+
+    if (trainingData?['startDate'] != null) {
+      trainingStartDate = DateTime.tryParse(
+        trainingData!['startDate'] as String,
+      );
+      print(
+        '[Repository] trainingData startDate: ${trainingData['startDate']}, parsed: $trainingStartDate',
+      );
+    }
+
+    if (trainingData?['endDate'] != null) {
+      trainingEndDate = DateTime.tryParse(trainingData!['endDate'] as String);
+      print(
+        '[Repository] trainingData endDate: ${trainingData['endDate']}, parsed: $trainingEndDate',
+      );
+    }
+
     return Training(
       id: data['id'] as String? ?? '',
       date: sessionDate,
+      startDate: trainingStartDate,
+      endDate: trainingEndDate,
       teamId: teamData?['id'] as String?,
       teamName:
           teamData?['abbreviation'] as String? ?? teamData?['name'] as String?,
@@ -801,16 +948,17 @@ class TrainingRepository implements TrainingRepositoryInterface {
       dayOfWeek: trainingData?['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
           : null,
-      startTime: data['startTime'] as String? ?? '',
-      endTime: data['endTime'] as String? ?? '',
-      location: data['location'] as String? ?? '',
+      startTime: trainingData?['startTime'] as String? ?? '',
+      endTime: trainingData?['endTime'] as String? ?? '',
+      location: trainingData?['location'] as String? ?? '',
       type: TrainingType.fromBackend(
-        data['trainingType'] as String? ?? 'PHYSICAL',
+        trainingData?['trainingType'] as String? ?? 'PHYSICAL',
       ),
       status: TrainingStatus.fromBackend(
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
+      hasTraining: trainingData != null,
     );
   }
 
@@ -826,7 +974,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       if (personData != null) {
         final name = personData['name'] as String? ?? '';
         final surname = personData['surname'] as String? ?? '';
-        professorName = '$name $surname'.trim();
+        professorName = '$surname $name'.trim();
       }
     }
 

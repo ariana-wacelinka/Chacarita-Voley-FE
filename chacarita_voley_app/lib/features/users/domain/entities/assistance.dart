@@ -2,19 +2,35 @@ class Assistance {
   final String id;
   final String date;
   final bool assistance;
+  final String? startTime;
+  final String? endTime;
 
-  Assistance({required this.id, required this.date, required this.assistance});
+  Assistance({
+    required this.id,
+    required this.date,
+    required this.assistance,
+    this.startTime,
+    this.endTime,
+  });
 
   factory Assistance.fromJson(Map<String, dynamic> json) {
+    final sessionData = json['session'] as Map<String, dynamic>?;
     return Assistance(
       id: json['id'] as String,
       date: json['date'] as String,
       assistance: json['assistance'] as bool,
+      startTime: sessionData?['startTime'] as String?,
+      endTime: sessionData?['endTime'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'date': date, 'assistance': assistance};
+    return {
+      'id': id,
+      'date': date,
+      'assistance': assistance,
+      'session': {'startTime': startTime, 'endTime': endTime},
+    };
   }
 }
 

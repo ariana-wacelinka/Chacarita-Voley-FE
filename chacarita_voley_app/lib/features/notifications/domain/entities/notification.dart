@@ -220,15 +220,10 @@ class NotificationSender {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'surname': surname,
-      'dni': dni,
-    };
+    return {'id': id, 'name': name, 'surname': surname, 'dni': dni};
   }
 
-  String get fullName => '$name $surname';
+  String get fullName => '$surname $name';
 }
 
 class NotificationModel {

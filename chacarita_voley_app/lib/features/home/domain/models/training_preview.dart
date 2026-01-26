@@ -30,7 +30,7 @@ class TrainingPreview {
       final person = firstProf['person'] as Map<String, dynamic>;
       final name = person['name'] as String? ?? '';
       final surname = person['surname'] as String? ?? '';
-      professorName = '$name $surname'.trim();
+      professorName = '$surname $name'.trim();
     }
 
     // Calcular asistencia del día

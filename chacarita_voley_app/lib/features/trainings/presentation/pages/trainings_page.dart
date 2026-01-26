@@ -6,7 +6,14 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
-enum _TrainingMenuAction { view, edit, delete }
+enum _TrainingMenuAction {
+  view,
+  editSession,
+  editTraining,
+  delete,
+  cancel,
+  reactivate,
+}
 
 class TrainingsPage extends StatefulWidget {
   final String? teamId;
@@ -19,7 +26,8 @@ class TrainingsPage extends StatefulWidget {
   State<TrainingsPage> createState() => _TrainingsPageState();
 }
 
-class _TrainingsPageState extends State<TrainingsPage> {
+class _TrainingsPageState extends State<TrainingsPage>
+    with AutomaticKeepAliveClientMixin {
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
   bool _isLoading = true;
@@ -42,6 +50,141 @@ class _TrainingsPageState extends State<TrainingsPage> {
   void initState() {
     super.initState();
     _loadTrainings();
+  }
+
+  Future<void> _handleDeleteSession(Training training) async {
+    setState(() => _isLoading = true);
+
+    try {
+      await _repository.deleteSession(training.id);
+
+      if (!mounted) return;
+
+      setState(() {
+        _trainings = [];
+        _currentPage = 0;
+      });
+
+      await _loadTrainings();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Entrenamiento eliminado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el entrenamiento: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleDeleteTraining(Training training) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final trainingId = training.trainingId ?? training.id;
+      await _repository.deleteTraining(trainingId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _trainings = [];
+        _currentPage = 0;
+      });
+
+      await _loadTrainings();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Entrenamiento eliminado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el entrenamiento: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleCancelSession(Training training) async {
+    setState(() => _isLoading = true);
+
+    try {
+      await _repository.cancelSession(training.id);
+
+      if (!mounted) return;
+
+      setState(() => _currentPage = 0);
+
+      await _loadTrainings();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Entrenamiento cancelado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cancelar el entrenamiento: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleReactivateSession(Training training) async {
+    setState(() => _isLoading = true);
+
+    try {
+      await _repository.reactivateSession(training.id);
+
+      if (!mounted) return;
+
+      setState(() => _currentPage = 0);
+
+      await _loadTrainings();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Entrenamiento reactivado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al reactivar el entrenamiento: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    }
   }
 
   @override
@@ -122,12 +265,10 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   void _goToPage(int page) {
-    if (page >= 0 && page < _totalPages) {
-      setState(() {
-        _currentPage = page;
-      });
-      _loadTrainings();
-    }
+    setState(() {
+      _currentPage = page;
+    });
+    _loadTrainings();
   }
 
   Future<void> _pickTime(TextEditingController controller) async {
@@ -213,7 +354,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: context.tokens.background,
       body: SafeArea(
@@ -240,14 +385,22 @@ class _TrainingsPageState extends State<TrainingsPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () {
+          onPressed: () async {
+            bool? created;
             if (widget.teamId != null && widget.teamName != null) {
               final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
-              context.push(
+              created = await context.push<bool>(
                 '/trainings/create?teamId=${widget.teamId}&teamName=$teamNameEncoded',
               );
             } else {
-              context.push('/trainings/create');
+              created = await context.push<bool>('/trainings/create');
+            }
+            if (created == true && mounted) {
+              setState(() {
+                _currentPage = 0;
+                _trainings = [];
+              });
+              _loadTrainings();
             }
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -317,13 +470,13 @@ class _TrainingsPageState extends State<TrainingsPage> {
                   },
                   icon: Icon(
                     Symbols.close,
-                    color: context.tokens.text,
+                    color: context.tokens.redToRosita,
                     size: 18,
                   ),
                   label: Text(
                     'Limpiar filtros',
                     style: TextStyle(
-                      color: context.tokens.text,
+                      color: context.tokens.redToRosita,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -750,11 +903,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       decoration: BoxDecoration(
                         color: training.status == TrainingStatus.proximo
-                            ? context.tokens.green.withOpacity(0.1)
+                            ? Colors.amber.withOpacity(0.1)
+                            : training.status == TrainingStatus.enCurso
+                            ? Colors.blue.withOpacity(0.1)
                             : training.status == TrainingStatus.completado
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.1)
+                            ? context.tokens.green.withOpacity(0.1)
                             : training.status == TrainingStatus.cancelado
                             ? context.tokens.redToRosita.withOpacity(0.1)
                             : context.tokens.placeholder.withOpacity(0.1),
@@ -764,9 +917,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
                         training.status.displayName,
                         style: TextStyle(
                           color: training.status == TrainingStatus.proximo
-                              ? context.tokens.green
+                              ? Colors.amber.shade700
+                              : training.status == TrainingStatus.enCurso
+                              ? Colors.blue.shade700
                               : training.status == TrainingStatus.completado
-                              ? Theme.of(context).colorScheme.primary
+                              ? context.tokens.green
                               : training.status == TrainingStatus.cancelado
                               ? context.tokens.redToRosita
                               : context.tokens.placeholder,
@@ -783,44 +938,138 @@ class _TrainingsPageState extends State<TrainingsPage> {
                       ),
                       color: context.tokens.card1,
                       elevation: 4,
-                      onSelected: (action) {
+                      onSelected: (action) async {
                         switch (action) {
                           case _TrainingMenuAction.view:
                             context.push('/trainings/${training.id}');
                             break;
-                          case _TrainingMenuAction.edit:
-                            context.push('/trainings/${training.id}/edit');
+                          case _TrainingMenuAction.editSession:
+                            final updated = await context.push<bool>(
+                              '/sessions/${training.id}/edit',
+                            );
+                            if (updated == true && mounted) {
+                              setState(() {
+                                _currentPage = 0;
+                                _trainings = [];
+                              });
+                              _loadTrainings();
+                            }
+                            break;
+                          case _TrainingMenuAction.editTraining:
+                            final updated = await context.push<bool>(
+                              '/trainings/${training.id}/edit',
+                            );
+                            if (updated == true && mounted) {
+                              setState(() {
+                                _currentPage = 0;
+                                _trainings = [];
+                              });
+                              _loadTrainings();
+                            }
                             break;
                           case _TrainingMenuAction.delete:
-                            _showDeleteDialog(context, training);
+                            final result = await _showDeleteDialog(
+                              context,
+                              training,
+                            );
+                            if (result != null && result && mounted) {
+                              // _showDeleteDialog ya maneja la confirmación interna
+                              // No necesitamos hacer nada aquí
+                            }
+                            break;
+                          case _TrainingMenuAction.cancel:
+                            final confirmed = await _showCancelDialog(
+                              context,
+                              training,
+                            );
+                            if (confirmed == true && mounted) {
+                              await _handleCancelSession(training);
+                            }
+                            break;
+                          case _TrainingMenuAction.reactivate:
+                            final confirmed = await _showReactivateDialog(
+                              context,
+                              training,
+                            );
+                            if (confirmed == true && mounted) {
+                              await _handleReactivateSession(training);
+                            }
                             break;
                         }
                       },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.view,
-                          child: Text(
-                            'Ver',
-                            style: TextStyle(color: context.tokens.text),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.edit,
-                          child: Text(
-                            'Modificar',
-                            style: TextStyle(color: context.tokens.text),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: _TrainingMenuAction.delete,
-                          child: Text(
-                            'Eliminar',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
+                      itemBuilder: (context) {
+                        final isCancelled =
+                            training.status == TrainingStatus.cancelado;
+                        final isFuture =
+                            training.status == TrainingStatus.proximo;
+                        final hasTraining = training.hasTraining;
+
+                        return [
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.view,
+                            enabled: !isCancelled,
+                            child: Text(
+                              'Ver',
+                              style: TextStyle(
+                                color: isCancelled
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.editSession,
+                            enabled: !isCancelled,
+                            child: Text(
+                              'Modificar este entrenamiento',
+                              style: TextStyle(
+                                color: isCancelled
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.editTraining,
+                            enabled: !isCancelled && hasTraining,
+                            child: Text(
+                              'Modificar este y posteriores',
+                              style: TextStyle(
+                                color: (isCancelled || !hasTraining)
+                                    ? context.tokens.placeholder
+                                    : context.tokens.text,
+                              ),
+                            ),
+                          ),
+                          if (isFuture && !isCancelled)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.cancel,
+                              child: Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  color: context.tokens.redToRosita,
+                                ),
+                              ),
+                            ),
+                          if (isCancelled)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.reactivate,
+                              child: Text(
+                                'Reactivar',
+                                style: TextStyle(color: context.tokens.green),
+                              ),
+                            ),
+                          PopupMenuItem(
+                            value: _TrainingMenuAction.delete,
+                            child: Text(
+                              'Eliminar',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ];
+                      },
                     ),
                   ],
                 ),
@@ -937,10 +1186,13 @@ class _TrainingsPageState extends State<TrainingsPage> {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, Training training) {
-    showDialog(
+  Future<bool?> _showDeleteDialog(
+    BuildContext context,
+    Training training,
+  ) async {
+    final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: context.tokens.card1,
         title: Text(
           '¿Qué querés eliminar?',
@@ -958,27 +1210,21 @@ class _TrainingsPageState extends State<TrainingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext, null),
             child: Text(
               'Cancelar',
               style: TextStyle(color: context.tokens.placeholder),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showDeleteSessionConfirmation(context, training);
-            },
+            onPressed: () => Navigator.pop(dialogContext, 'session'),
             child: Text(
               'Solo este entrenamiento',
               style: TextStyle(color: context.tokens.text),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showDeleteAllConfirmation(context, training);
-            },
+            onPressed: () => Navigator.pop(dialogContext, 'all'),
             child: Text(
               'Este y todos los posteriores',
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
@@ -987,13 +1233,28 @@ class _TrainingsPageState extends State<TrainingsPage> {
         ],
       ),
     );
+
+    if (result == 'session') {
+      final confirmed = await _showDeleteSessionConfirmation(context, training);
+      if (confirmed == true && mounted) {
+        await _handleDeleteSession(training);
+        return true;
+      }
+    } else if (result == 'all') {
+      final confirmed = await _showDeleteAllConfirmation(context, training);
+      if (confirmed == true && mounted) {
+        await _handleDeleteTraining(training);
+        return true;
+      }
+    }
+    return null;
   }
 
-  void _showDeleteSessionConfirmation(
+  Future<bool?> _showDeleteSessionConfirmation(
     BuildContext parentContext,
     Training training,
   ) {
-    showDialog(
+    return showDialog<bool>(
       context: parentContext,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: parentContext.tokens.card1,
@@ -1007,54 +1268,14 @@ class _TrainingsPageState extends State<TrainingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(
               'Cancelar',
               style: TextStyle(color: parentContext.tokens.placeholder),
             ),
           ),
           TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-
-              try {
-                await _repository.deleteSession(training.id);
-
-                if (!mounted) return;
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-
-                  setState(() {
-                    _trainings = [];
-                    _currentPage = 0;
-                  });
-
-                  _loadTrainings();
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Entrenamiento eliminado exitosamente',
-                      ),
-                      backgroundColor: parentContext.tokens.green,
-                    ),
-                  );
-                });
-              } catch (e) {
-                if (!mounted) return;
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al eliminar el entrenamiento: $e'),
-                      backgroundColor: parentContext.tokens.redToRosita,
-                    ),
-                  );
-                });
-              }
-            },
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
               'Eliminar',
               style: TextStyle(
@@ -1067,129 +1288,142 @@ class _TrainingsPageState extends State<TrainingsPage> {
     );
   }
 
-  void _showDeleteAllConfirmation(
+  Future<bool?> _showDeleteAllConfirmation(
     BuildContext parentContext,
     Training training,
   ) {
-    showDialog(
+    return showDialog<bool>(
       context: parentContext,
       builder: (dialogContext) {
         final confirmController = TextEditingController();
 
-        return AlertDialog(
-          backgroundColor: parentContext.tokens.card1,
-          title: Text(
-            '¡Atención!',
-            style: TextStyle(
-              color: Theme.of(parentContext).colorScheme.primary,
-              fontWeight: FontWeight.bold,
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: parentContext.tokens.card1,
+            title: Text(
+              '¡Atención!',
+              style: TextStyle(
+                color: Theme.of(parentContext).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Estás por eliminar este entrenamiento y todos los posteriores. Esta acción no se puede deshacer.',
-                style: TextStyle(color: parentContext.tokens.text),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Escribí "ELIMINAR" para confirmar:',
-                style: TextStyle(
-                  color: parentContext.tokens.text,
-                  fontWeight: FontWeight.w600,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estás por eliminar este entrenamiento y todos los posteriores. Esta acción no se puede deshacer.',
+                  style: TextStyle(color: parentContext.tokens.text),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: confirmController,
-                decoration: InputDecoration(
-                  hintText: 'ELIMINAR',
-                  hintStyle: TextStyle(color: parentContext.tokens.placeholder),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 16),
+                Text(
+                  'Escribí "ELIMINAR" para confirmar:',
+                  style: TextStyle(
+                    color: parentContext.tokens.text,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                style: TextStyle(color: parentContext.tokens.text),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: Text(
-                'Cancelar',
-                style: TextStyle(color: parentContext.tokens.placeholder),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (confirmController.text.trim().toUpperCase() != 'ELIMINAR') {
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Debés escribir "ELIMINAR" para confirmar',
-                      ),
-                      backgroundColor: parentContext.tokens.redToRosita,
+                const SizedBox(height: 8),
+                TextField(
+                  controller: confirmController,
+                  decoration: InputDecoration(
+                    hintText: 'ELIMINAR',
+                    hintStyle: TextStyle(
+                      color: parentContext.tokens.placeholder,
                     ),
-                  );
-                  return;
-                }
-
-                Navigator.pop(dialogContext);
-
-                try {
-                  final trainingId = training.trainingId ?? training.id;
-                  await _repository.deleteTraining(trainingId);
-
-                  if (!mounted) return;
-
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-
-                    setState(() {
-                      _trainings = [];
-                      _currentPage = 0;
-                    });
-
-                    _loadTrainings();
-                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  style: TextStyle(color: parentContext.tokens.text),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(color: parentContext.tokens.placeholder),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (confirmController.text.trim().toUpperCase() !=
+                      'ELIMINAR') {
+                    ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
-                          'Entrenamiento eliminado exitosamente',
+                          'Debés escribir "ELIMINAR" para confirmar',
                         ),
-                        backgroundColor: parentContext.tokens.green,
-                      ),
-                    );
-                  });
-                } catch (e) {
-                  if (!mounted) return;
-
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-
-                    ScaffoldMessenger.of(parentContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al eliminar el entrenamiento: $e'),
                         backgroundColor: parentContext.tokens.redToRosita,
                       ),
                     );
-                  });
-                }
-              },
-              child: Text(
-                'Confirmar',
-                style: TextStyle(
-                  color: Theme.of(parentContext).colorScheme.primary,
+                    return;
+                  }
+                  Navigator.pop(dialogContext, true);
+                },
+                child: Text(
+                  'Confirmar',
+                  style: TextStyle(
+                    color: Theme.of(parentContext).colorScheme.primary,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Future<bool?> _showCancelDialog(BuildContext context, Training training) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancelar Entrenamiento'),
+        content: const Text(
+          '¿Estás seguro de que querés cancelar este entrenamiento?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Volver'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Confirmar',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showReactivateDialog(BuildContext context, Training training) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reactivar Entrenamiento'),
+        content: const Text(
+          '¿Estás seguro de que querés reactivar este entrenamiento?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Volver'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Confirmar',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
