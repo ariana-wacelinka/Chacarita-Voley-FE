@@ -19,7 +19,8 @@ class TrainingsPage extends StatefulWidget {
   State<TrainingsPage> createState() => _TrainingsPageState();
 }
 
-class _TrainingsPageState extends State<TrainingsPage> {
+class _TrainingsPageState extends State<TrainingsPage>
+    with AutomaticKeepAliveClientMixin {
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
   bool _isLoading = true;
@@ -346,7 +347,11 @@ class _TrainingsPageState extends State<TrainingsPage> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: context.tokens.background,
       body: SafeArea(
@@ -373,14 +378,22 @@ class _TrainingsPageState extends State<TrainingsPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () {
+          onPressed: () async {
+            bool? created;
             if (widget.teamId != null && widget.teamName != null) {
               final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
-              context.push(
+              created = await context.push<bool>(
                 '/trainings/create?teamId=${widget.teamId}&teamName=$teamNameEncoded',
               );
             } else {
-              context.push('/trainings/create');
+              created = await context.push<bool>('/trainings/create');
+            }
+            if (created == true && mounted) {
+              setState(() {
+                _currentPage = 0;
+                _trainings = [];
+              });
+              _loadTrainings();
             }
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -920,7 +933,16 @@ class _TrainingsPageState extends State<TrainingsPage> {
                             context.push('/trainings/${training.id}');
                             break;
                           case _TrainingMenuAction.edit:
-                            context.push('/trainings/${training.id}/edit');
+                            final updated = await context.push<bool>(
+                              '/trainings/${training.id}/edit',
+                            );
+                            if (updated == true && mounted) {
+                              setState(() {
+                                _currentPage = 0;
+                                _trainings = [];
+                              });
+                              _loadTrainings();
+                            }
                             break;
                           case _TrainingMenuAction.delete:
                             final result = await _showDeleteDialog(

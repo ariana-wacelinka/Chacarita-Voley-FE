@@ -269,7 +269,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
         ),
       );
 
-      context.go('/trainings');
+      context.pop(true);
     } catch (_) {
       if (!mounted) return;
 
