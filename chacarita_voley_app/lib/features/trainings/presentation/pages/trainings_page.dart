@@ -976,7 +976,7 @@ class _TrainingsPageState extends State<TrainingsPage> {
                             value: _TrainingMenuAction.edit,
                             enabled: !isCancelled && hasTraining,
                             child: Text(
-                              'Modificar',
+                              'Modificar este entrenamiento y todos los posteriores',
                               style: TextStyle(
                                 color: (isCancelled || !hasTraining)
                                     ? context.tokens.placeholder

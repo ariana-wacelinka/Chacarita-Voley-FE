@@ -77,8 +77,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
   static const String _createTrainingMutation = _addTrainingsToTeamMutation;
 
   static const String _updateTrainingMutation = r'''
-    mutation UpdateTraining($id: ID!, $input: TrainingUpdateInput!) {
-      updateTraining(id: $id, input: $input) {
+    mutation UpdateTraining($id: ID!, $dayOfWeek: DayOfWeek!, $startTime: String!, $endTime: String!, $trainingType: TrainingType!, $location: String!, $startDate: String, $endDate: String) {
+      updateTraining(id: $id, input: {dayOfWeek: $dayOfWeek, startTime: $startTime, endTime: $endTime, trainingType: $trainingType, location: $location, startDate: $startDate, endDate: $endDate}) {
         id
         dayOfWeek
         startTime
@@ -255,6 +255,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
           startTime
           endTime
           location
+          startDate
+          endDate
         }
       }
     }
@@ -544,28 +546,34 @@ class TrainingRepository implements TrainingRepositoryInterface {
   Future<Training> updateTraining(Training training) async {
     print('[updateTraining] Iniciando actualización de training');
     print('[updateTraining] id: ${training.id}');
+    print('[updateTraining] trainingId: ${training.trainingId}');
     print('[updateTraining] dayOfWeek: ${training.dayOfWeek?.backendValue}');
     print('[updateTraining] startTime: ${training.startTime}');
     print('[updateTraining] endTime: ${training.endTime}');
     print('[updateTraining] location: ${training.location}');
     print('[updateTraining] type: ${training.type.backendValue}');
 
-    final input = {
+    final trainingId = training.trainingId ?? training.id;
+    print('[updateTraining] Usando trainingId: $trainingId');
+
+    final variables = {
+      'id': trainingId,
       'dayOfWeek': training.dayOfWeek?.backendValue ?? 'MONDAY',
       'startTime': training.startTime,
       'endTime': training.endTime,
       'trainingType': training.type.backendValue,
       'location': training.location,
+      'startDate': training.startDate?.toIso8601String().split('T')[0],
+      'endDate': training.endDate?.toIso8601String().split('T')[0],
     };
 
     print('[updateTraining] Variables de mutación:');
-    print('  - id: ${training.id}');
-    print('  - input: $input');
+    print('  - variables: $variables');
 
     final result = await _mutate(
       MutationOptions(
         document: gql(_updateTrainingMutation),
-        variables: {'id': training.id, 'input': input},
+        variables: variables,
       ),
     );
 
@@ -832,9 +840,31 @@ class TrainingRepository implements TrainingRepositoryInterface {
       );
     }).toList();
 
+    // Parse startDate and endDate from training
+    DateTime? trainingStartDate;
+    DateTime? trainingEndDate;
+
+    if (trainingData?['startDate'] != null) {
+      trainingStartDate = DateTime.tryParse(
+        trainingData!['startDate'] as String,
+      );
+      print(
+        '[Repository] trainingData startDate: ${trainingData['startDate']}, parsed: $trainingStartDate',
+      );
+    }
+
+    if (trainingData?['endDate'] != null) {
+      trainingEndDate = DateTime.tryParse(trainingData!['endDate'] as String);
+      print(
+        '[Repository] trainingData endDate: ${trainingData['endDate']}, parsed: $trainingEndDate',
+      );
+    }
+
     return Training(
       id: data['id'] as String? ?? '',
       date: sessionDate,
+      startDate: trainingStartDate,
+      endDate: trainingEndDate,
       teamId: teamData?['id'] as String?,
       teamName:
           teamData?['abbreviation'] as String? ?? teamData?['name'] as String?,

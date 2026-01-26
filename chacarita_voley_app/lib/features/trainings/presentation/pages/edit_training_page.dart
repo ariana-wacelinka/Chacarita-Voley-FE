@@ -26,6 +26,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
   final _locationController = TextEditingController();
 
   TrainingType? _selectedType;
+  DayOfWeek? _selectedDayOfWeek;
   Training? _originalTraining;
   bool _isLoading = true;
 
@@ -49,24 +50,129 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
     setState(() => _isLoading = true);
     try {
       final training = await _repository.getTrainingById(widget.trainingId);
+      print('[EditTraining] Training cargado: ${training?.id}');
+      print('[EditTraining] startDate: ${training?.startDate}');
+      print('[EditTraining] endDate: ${training?.endDate}');
+      print('[EditTraining] startTime: ${training?.startTime}');
+      print('[EditTraining] endTime: ${training?.endTime}');
+
       if (!mounted) return;
 
       if (training != null) {
         _originalTraining = training;
+
+        // Cargar fechas de inicio y fin si existen
+        if (training.startDate != null) {
+          final startDate = training.startDate!;
+          final formattedStartDate =
+              '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}/${startDate.year}';
+          _startDateController.text = formattedStartDate;
+          print(
+            '[EditTraining] startDateController.text = $formattedStartDate',
+          );
+        } else {
+          print('[EditTraining] startDate es null');
+        }
+
+        if (training.endDate != null) {
+          final endDate = training.endDate!;
+          final formattedEndDate =
+              '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}';
+          _endDateController.text = formattedEndDate;
+          print('[EditTraining] endDateController.text = $formattedEndDate');
+        } else {
+          print('[EditTraining] endDate es null');
+        }
+
         _startTimeController.text = training.startTime;
         _endTimeController.text = training.endTime;
         _locationController.text = training.location;
         _selectedType = training.type;
+        _selectedDayOfWeek = training.dayOfWeek;
+      } else {
+        print('[EditTraining] training es null');
       }
 
       setState(() {
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      print('[EditTraining] Error al cargar training: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _originalTraining?.startDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _originalTraining?.endDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endDateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  Future<void> _selectStartTime() async {
+    final currentTime = _parseTime(_startTimeController.text);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: currentTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startTimeController.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  Future<void> _selectEndTime() async {
+    final currentTime = _parseTime(_endTimeController.text);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: currentTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endTimeController.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  TimeOfDay _parseTime(String time) {
+    if (time.isEmpty) return TimeOfDay.now();
+    final parts = time.split(':');
+    if (parts.length != 2) return TimeOfDay.now();
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
   }
 
   Future<void> _submit() async {
@@ -121,6 +227,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
     }
 
     final updated = _originalTraining!.copyWith(
+      dayOfWeek: _selectedDayOfWeek ?? _originalTraining!.dayOfWeek,
       startTime: startTime,
       endTime: endTime,
       location: _locationController.text.trim(),
@@ -364,6 +471,39 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
             ],
           ),
           const SizedBox(height: 16),
+          Text(
+            'Día de la semana *',
+            style: TextStyle(color: context.tokens.text, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          DropdownButtonFormField<DayOfWeek>(
+            value: _selectedDayOfWeek,
+            decoration: InputDecoration(
+              hintText: 'Seleccioná el día',
+              prefixIcon: Icon(
+                Symbols.calendar_today,
+                color: context.tokens.placeholder,
+              ),
+            ),
+            items: DayOfWeek.values.map((day) {
+              return DropdownMenuItem<DayOfWeek>(
+                value: day,
+                child: Text(day.displayName),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedDayOfWeek = value;
+              });
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Seleccioná un día';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -387,7 +527,8 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: _selectStartDate,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una fecha';
@@ -420,7 +561,8 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: _selectEndDate,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una fecha';
@@ -457,7 +599,8 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: _selectStartTime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una hora';
@@ -490,7 +633,8 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
                           color: context.tokens.placeholder,
                         ),
                       ),
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: _selectEndTime,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Ingresá una hora';
