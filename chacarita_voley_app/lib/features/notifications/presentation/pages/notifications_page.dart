@@ -353,7 +353,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   child: Text(
                                     notification.deliveries.isNotEmpty
                                         ? 'Enviado'
-                                        : 'Próximamente',
+                                        : 'Programado',
                                     style: TextStyle(
                                       color: notification.deliveries.isNotEmpty
                                           ? Colors.green

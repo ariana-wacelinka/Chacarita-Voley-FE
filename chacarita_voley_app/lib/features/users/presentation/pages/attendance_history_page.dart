@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/assistance.dart';
+import '../../domain/entities/assistance_stats.dart';
 import '../../domain/entities/user.dart';
 import '../../data/repositories/user_repository.dart';
 
@@ -31,40 +32,73 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   bool _hasPrevious = false;
   bool _isLoadingPage = false;
 
-  // Estadísticas totales
-  int _totalPresent = 0;
-  int _totalAbsent = 0;
+  // Estadísticas desde el backend
+  AssistanceStats? _stats;
 
   @override
   void initState() {
     super.initState();
     _userRepository = UserRepository();
     initializeDateFormatting('es');
-    _loadUser();
+    _loadInitialData();
   }
 
-  Future<void> _loadUser() async {
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
     try {
+      // Primero cargar el usuario para obtener el playerId
       final user = await _userRepository.getUserById(widget.userId);
+
       if (!mounted) return;
+
+      if (user?.playerId == null) {
+        setState(() {
+          _isLoading = false;
+          _loadError = 'Usuario no es un jugador';
+        });
+        return;
+      }
+
+      // Luego cargar asistencias y estadísticas en paralelo con el playerId
+      final results = await Future.wait([
+        _userRepository.getAllAssistance(
+          playerId: user!.playerId!,
+          page: _currentPage,
+          size: _pageSize,
+        ),
+        _userRepository.getAssistanceStatsByPlayerId(user.playerId!),
+      ]);
+
+      if (!mounted) return;
+
+      final assistancePage = results[0] as AssistancePage;
+      final stats = results[1] as AssistanceStats;
+
       setState(() {
         _user = user;
+        _attendanceHistory = assistancePage.content;
+        _totalElements = assistancePage.totalElements;
+        _hasNext = assistancePage.hasNext;
+        _hasPrevious = assistancePage.hasPrevious;
+        _stats = stats;
         _isLoading = false;
         _loadError = null;
       });
-      _loadAttendanceHistory();
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _user = null;
         _isLoading = false;
-        _loadError = 'Error al cargar usuario';
+        _loadError = 'Error al cargar datos: $e';
       });
     }
   }
 
   Future<void> _loadAttendanceHistory() async {
-    if (_isLoadingPage) return;
+    if (_isLoadingPage || _user?.playerId == null) return;
 
     setState(() {
       _isLoadingPage = true;
@@ -72,7 +106,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
 
     try {
       final assistancePage = await _userRepository.getAllAssistance(
-        playerId: widget.userId,
+        playerId: _user!.playerId!,
         page: _currentPage,
         size: _pageSize,
       );
@@ -87,41 +121,12 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         _isLoadingPage = false;
         _loadError = null;
       });
-
-      // Cargar estadísticas totales solo la primera vez
-      if (_currentPage == 0) {
-        _loadTotalStatistics();
-      }
     } catch (e) {
-      print('Error al cargar asistencias: $e');
       if (!mounted) return;
       setState(() {
         _isLoadingPage = false;
         _loadError = 'Error al cargar asistencias: $e';
       });
-    }
-  }
-
-  Future<void> _loadTotalStatistics() async {
-    try {
-      // Obtener todas las asistencias para calcular estadísticas
-      final allAssistances = await _userRepository.getAllAssistance(
-        playerId: widget.userId,
-        page: 0,
-        size: _totalElements > 0 ? _totalElements : 1000, // Traer todas
-      );
-
-      if (!mounted) return;
-
-      final present = allAssistances.content.where((a) => a.assistance).length;
-      final absent = allAssistances.content.where((a) => !a.assistance).length;
-
-      setState(() {
-        _totalPresent = present;
-        _totalAbsent = absent;
-      });
-    } catch (e) {
-      print('Error al cargar estadísticas totales: $e');
     }
   }
 
@@ -143,20 +148,6 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     }
   }
 
-  int get _presentCount {
-    return _totalPresent;
-  }
-
-  int get _absentCount {
-    return _totalAbsent;
-  }
-
-  double get _attendancePercentage {
-    final total = _totalPresent + _totalAbsent;
-    if (total == 0) return 0.0;
-    return (_totalPresent / total) * 100;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -170,7 +161,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
             onPressed: () => context.pop(),
           ),
           title: Text(
-            'Cargando...',
+            'Historial de Asistencias',
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 18,
@@ -315,19 +306,19 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                 children: [
                   _buildSummaryItem(
                     context,
-                    '$_presentCount',
+                    '${_stats?.assisted ?? 0}',
                     'Presentes',
                     context.tokens.green,
                   ),
                   _buildSummaryItem(
                     context,
-                    '$_absentCount',
+                    '${_stats?.notAssisted ?? 0}',
                     'Ausentes',
                     context.tokens.redToRosita,
                   ),
                   _buildSummaryItem(
                     context,
-                    '${_attendancePercentage.round()}%',
+                    '${_stats?.assistedPercentage.round() ?? 0}%',
                     'Asistencia',
                     Colors.blue,
                   ),

@@ -1,6 +1,7 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/assistance.dart';
+import '../../domain/entities/assistance_stats.dart';
 import '../../domain/entities/gender.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository_interface.dart';
@@ -688,6 +689,16 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  String _getAssistanceStatsByPlayerIdQuery() => '''
+    query GetAssistanceStatsByPlayerId(\$id: ID!) {
+      getAssistanceStatsByPlayerId(id: \$id) {
+        assisted
+        notAssisted
+        assistedPercentage
+      }
+    }
+  ''';
+
   @override
   Future<AssistancePage> getAllAssistance({
     required String playerId,
@@ -723,6 +734,34 @@ class UserRepository implements UserRepositoryInterface {
       }
 
       return AssistancePage.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AssistanceStats> getAssistanceStatsByPlayerId(String playerId) async {
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(_getAssistanceStatsByPlayerIdQuery()),
+          variables: {'id': playerId},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(
+          'Error al cargar estadísticas de asistencia: ${result.exception.toString()}',
+        );
+      }
+
+      final data = result.data?['getAssistanceStatsByPlayerId'];
+      if (data == null) {
+        throw Exception('No se recibieron datos de estadísticas');
+      }
+
+      return AssistanceStats.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
     }

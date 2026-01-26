@@ -1,4 +1,5 @@
 import '../entities/assistance.dart';
+import '../entities/assistance_stats.dart';
 import '../entities/user.dart';
 
 abstract class UserRepositoryInterface {
@@ -21,4 +22,5 @@ abstract class UserRepositoryInterface {
     required int page,
     required int size,
   });
+  Future<AssistanceStats> getAssistanceStatsByPlayerId(String playerId);
 }

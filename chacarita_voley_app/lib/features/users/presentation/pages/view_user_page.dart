@@ -546,14 +546,15 @@ class _ViewUserPageState extends State<ViewUserPage> {
             },
           ),
           const SizedBox(height: 8),
-          _buildActionItem(
-            context,
-            icon: Symbols.check_circle,
-            title: 'Historial de asistencias',
-            onTap: () {
-              context.push('/users/${widget.userId}/attendance');
-            },
-          ),
+          if (_user?.tipos.contains(UserType.jugador) ?? false)
+            _buildActionItem(
+              context,
+              icon: Symbols.check_circle,
+              title: 'Historial de asistencias',
+              onTap: () {
+                context.push('/users/${widget.userId}/attendance');
+              },
+            ),
         ],
       ),
     );
