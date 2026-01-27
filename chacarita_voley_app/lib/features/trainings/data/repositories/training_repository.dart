@@ -201,6 +201,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
           location
           trainingType
           status
+          countOfPlayers
+          countOfAssisted
           team {
             id
             abbreviation
@@ -852,6 +854,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
       attendances: attendances,
       hasTraining: trainingData != null,
+      countOfPlayers: data['countOfPlayers'] as int?,
+      countOfAssisted: data['countOfAssisted'] as int?,
     );
   }
 
