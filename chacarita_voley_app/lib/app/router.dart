@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
+import '../features/auth/presentation/pages/login_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/users/presentation/pages/users_page.dart';
 import '../features/users/presentation/pages/register_user_page.dart';
@@ -26,8 +27,13 @@ import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/login',
   routes: [
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (_, __) => const LoginPage(),
+    ),
     ShellRoute(
       builder: (context, state, child) {
         final title = _titleForLocation(state.uri.path);

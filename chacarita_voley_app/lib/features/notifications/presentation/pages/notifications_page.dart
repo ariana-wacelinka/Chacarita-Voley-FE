@@ -21,6 +21,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _isLoading = true;
   int _currentPage = 1;
   final int _itemsPerPage = 10;
+  // ignore: unused_field
   int _totalPages = 1;
   int _totalElements = 0;
   bool _hasNext = false;

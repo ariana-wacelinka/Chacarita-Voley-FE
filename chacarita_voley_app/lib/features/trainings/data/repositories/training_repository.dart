@@ -160,23 +160,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
-  static const String _createAssistanceMutation = r'''
-    mutation CreateAssistance($inputList: [AssistanceInput!]!) {
-      createAssistance(inputList: $inputList) {
-        id
-        assistance
-        date
-        player {
-          id
-          person {
-            name
-            surname
-          }
-        }
-      }
-    }
-  ''';
-
   String _getAllSessionsQuery({
     String? dateFrom,
     String? dateTo,
@@ -287,28 +270,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
     int page = 0,
     int size = 10,
   }) async {
-    print('[getTrainingsWithPagination] Iniciando con filtros:');
-    print('  dateFrom: $dateFrom');
-    print('  dateTo: $dateTo');
-    print('  startTimeFrom: $startTimeFrom');
-    print('  startTimeTo: $startTimeTo');
-    print('  status: ${status?.backendValue}');
-    print('  page: $page, size: $size');
-
-    final Map<String, dynamic> variables = {
-      'page': page,
-      'size': size,
-      'filters': {
-        'dateFrom': dateFrom ?? '',
-        'dateTo': dateTo ?? '',
-        'startTimeFrom': startTimeFrom ?? '',
-        'startTimeTo': startTimeTo ?? '',
-        'statuses': status?.backendValue,
-      },
-    };
-
-    print('[getTrainingsWithPagination] Variables: $variables');
-
     final result = await _query(
       QueryOptions(
         document: gql(
@@ -325,22 +286,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
     );
 
-    print(
-      '[getTrainingsWithPagination] Result hasException: ${result.hasException}',
-    );
-
     if (result.hasException) {
-      print('[getTrainingsWithPagination] Exception: ${result.exception}');
-      print(
-        '[getTrainingsWithPagination] GraphQL Errors: ${result.exception?.graphqlErrors}',
-      );
-      print(
-        '[getTrainingsWithPagination] Link Exception: ${result.exception?.linkException}',
-      );
       throw Exception(result.exception.toString());
     }
-
-    print('[getTrainingsWithPagination] Data recibida exitosamente');
 
     final sessionsData = result.data?['getAllSessions'];
     if (sessionsData == null) {
@@ -425,23 +373,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
   @override
   Future<Training> createTraining(Training training) async {
-    print('[createTraining] Iniciando creación de training');
-    print('[createTraining] teamId: ${training.teamId}');
-    print('[createTraining] teamName: ${training.teamName}');
-    print('[createTraining] dayOfWeek: ${training.dayOfWeek?.backendValue}');
-    print(
-      '[createTraining] daysOfWeek: ${training.daysOfWeek?.map((d) => d.backendValue).toList()}',
-    );
-    print('[createTraining] startTime: ${training.startTime}');
-    print('[createTraining] endTime: ${training.endTime}');
-    print('[createTraining] location: ${training.location}');
-    print('[createTraining] type: ${training.type.backendValue}');
-    print('[createTraining] date: ${training.date}');
-    print('[createTraining] startDate: ${training.startDate}');
-    print('[createTraining] endDate: ${training.endDate}');
-
     if (training.teamId == null || training.teamId!.isEmpty) {
-      print('[createTraining] ERROR: teamId es nulo o vacío');
       throw Exception('teamId es requerido para crear un training');
     }
 
@@ -451,13 +383,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
     if (training.startDate != null && training.endDate != null) {
       startDate = training.startDate!.toIso8601String().split('T')[0];
       endDate = training.endDate!.toIso8601String().split('T')[0];
-      print(
-        '[createTraining] Usando fechas del formulario: startDate=$startDate, endDate=$endDate',
-      );
     } else if (training.date != null) {
       startDate = training.date!.toIso8601String().split('T')[0];
       endDate = training.date!.toIso8601String().split('T')[0];
-      print('[createTraining] Usando fecha única: $startDate');
     } else {
       final now = DateTime.now();
       final dayOfWeekValue =
@@ -488,22 +416,13 @@ class TrainingRepository implements TrainingRepositoryInterface {
           .split('T')[0];
     }
 
-    print(
-      '[createTraining] Fechas a enviar: startDate=$startDate, endDate=$endDate',
-    );
-
     final daysToCreate =
         training.daysOfWeek ??
         (training.dayOfWeek != null
             ? [training.dayOfWeek!]
             : [DayOfWeek.monday]);
 
-    print(
-      '[createTraining] Creando training(s) para ${daysToCreate.length} día(s)',
-    );
-
     final daysOfWeekValues = daysToCreate.map((d) => d.backendValue).toList();
-    print('[createTraining] Días a enviar: $daysOfWeekValues');
 
     final variables = {
       'teamId': training.teamId,
@@ -516,8 +435,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
       'endDate': endDate,
     };
 
-    print('[createTraining] Variables: $variables');
-
     final result = await _mutate(
       MutationOptions(
         document: gql(_createTrainingMutation),
@@ -525,52 +442,22 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
     );
 
-    print('[createTraining] Mutación ejecutada');
-    print('[createTraining] hasException: ${result.hasException}');
-
     if (result.hasException) {
-      print('[createTraining] ERROR: ${result.exception.toString()}');
-      print(
-        '[createTraining] GraphQL Errors: ${result.exception?.graphqlErrors}',
-      );
-      print(
-        '[createTraining] Link Exception: ${result.exception?.linkException}',
-      );
       throw Exception(result.exception.toString());
     }
 
     final dataList = result.data?['addTrainingsToTeam'] as List<dynamic>?;
     if (dataList == null || dataList.isEmpty) {
-      print(
-        '[createTraining] ERROR: data es null o vacío en addTrainingsToTeam',
-      );
       throw Exception('No se recibieron trainings del backend');
     }
-
-    print(
-      '[createTraining] Training(s) creado(s): ${dataList.length} session(s)',
-    );
-
     final firstTraining = dataList.first as Map<String, dynamic>;
     final createdTraining = _mapTrainingFromBackend(firstTraining);
-
-    print('[createTraining] Finalizado exitosamente');
     return createdTraining;
   }
 
   @override
   Future<Training> updateTraining(Training training) async {
-    print('[updateTraining] Iniciando actualización de training');
-    print('[updateTraining] id: ${training.id}');
-    print('[updateTraining] trainingId: ${training.trainingId}');
-    print('[updateTraining] dayOfWeek: ${training.dayOfWeek?.backendValue}');
-    print('[updateTraining] startTime: ${training.startTime}');
-    print('[updateTraining] endTime: ${training.endTime}');
-    print('[updateTraining] location: ${training.location}');
-    print('[updateTraining] type: ${training.type.backendValue}');
-
     final trainingId = training.trainingId ?? training.id;
-    print('[updateTraining] Usando trainingId: $trainingId');
 
     final variables = {
       'id': trainingId,
@@ -583,9 +470,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
       'endDate': training.endDate?.toIso8601String().split('T')[0],
     };
 
-    print('[updateTraining] Variables de mutación:');
-    print('  - variables: $variables');
-
     final result = await _mutate(
       MutationOptions(
         document: gql(_updateTrainingMutation),
@@ -593,40 +477,18 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
     );
 
-    print('[updateTraining] Mutación ejecutada');
-    print('[updateTraining] hasException: ${result.hasException}');
-
     if (result.hasException) {
-      print('[updateTraining] ERROR: ${result.exception.toString()}');
-      print(
-        '[updateTraining] GraphQL Errors: ${result.exception?.graphqlErrors}',
-      );
-      print(
-        '[updateTraining] Link Exception: ${result.exception?.linkException}',
-      );
       throw Exception(result.exception.toString());
     }
 
-    print('[updateTraining] result.data: ${result.data}');
-
     final data = result.data?['updateTraining'] as Map<String, dynamic>?;
     if (data == null) {
-      print('[updateTraining] ERROR: data es null en updateTraining');
       throw Exception('Respuesta inválida de updateTraining');
     }
-
-    print('[updateTraining] Training actualizado exitosamente: ${data['id']}');
     return _mapTrainingFromBackend(data);
   }
 
   Future<Training> updateSession(Training session) async {
-    print('[updateSession] Iniciando actualización de sesión');
-    print('[updateSession] id: ${session.id}');
-    print('[updateSession] date: ${session.date}');
-    print('[updateSession] startTime: ${session.startTime}');
-    print('[updateSession] endTime: ${session.endTime}');
-    print('[updateSession] location: ${session.location}');
-    print('[updateSession] type: ${session.type.backendValue}');
 
     final variables = {
       'id': session.id,
@@ -637,9 +499,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
       'date': session.date?.toIso8601String().split('T')[0],
     };
 
-    print('[updateSession] Variables de mutación:');
-    print('  - variables: $variables');
-
     final result = await _mutate(
       MutationOptions(
         document: gql(_updateSessionMutation),
@@ -647,29 +506,14 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
     );
 
-    print('[updateSession] Mutación ejecutada');
-    print('[updateSession] hasException: ${result.hasException}');
-
     if (result.hasException) {
-      print('[updateSession] ERROR: ${result.exception.toString()}');
-      print(
-        '[updateSession] GraphQL Errors: ${result.exception?.graphqlErrors}',
-      );
-      print(
-        '[updateSession] Link Exception: ${result.exception?.linkException}',
-      );
       throw Exception(result.exception.toString());
     }
 
-    print('[updateSession] result.data: ${result.data}');
-
     final data = result.data?['updateSession'] as Map<String, dynamic>?;
     if (data == null) {
-      print('[updateSession] ERROR: data es null en updateSession');
       throw Exception('Respuesta inválida de updateSession');
     }
-
-    print('[updateSession] Sesión actualizada exitosamente: ${data['id']}');
 
     final updatedSession = await getTrainingById(session.id);
     if (updatedSession == null) {
@@ -737,10 +581,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String trainingId,
     List<PlayerAttendance> attendances,
   ) async {
-    print('[updateAttendance] Iniciando actualización de asistencia');
-    print('[updateAttendance] sessionId: $trainingId');
-    print('[updateAttendance] attendances: ${attendances.length} jugadores');
-
     // Construir la lista de inputs como strings para la mutación
     final inputListString = attendances
         .map(
@@ -748,9 +588,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
               '{assistance: ${attendance.isPresent}, playerId: "${attendance.playerId}", sessionId: "$trainingId"}',
         )
         .join(', ');
-
-    print('[updateAttendance] inputListString: [$inputListString]');
-
     // Construir la mutación con los valores inline
     final mutation =
         '''
@@ -770,25 +607,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
       }
     ''';
 
-    print('[updateAttendance] Ejecutando mutación');
-
     final result = await _mutate(MutationOptions(document: gql(mutation)));
 
-    print('[updateAttendance] Mutación ejecutada');
-    print('[updateAttendance] hasException: ${result.hasException}');
-
     if (result.hasException) {
-      print('[updateAttendance] ERROR: ${result.exception.toString()}');
-      print(
-        '[updateAttendance] GraphQL Errors: ${result.exception?.graphqlErrors}',
-      );
-      print(
-        '[updateAttendance] Link Exception: ${result.exception?.linkException}',
-      );
       throw Exception(result.exception.toString());
     }
-
-    print('[updateAttendance] Asistencia guardada exitosamente');
 
     // Recargar el training actualizado
     final updatedTraining = await getTrainingById(trainingId);
@@ -926,16 +749,10 @@ class TrainingRepository implements TrainingRepositoryInterface {
       trainingStartDate = DateTime.tryParse(
         trainingData!['startDate'] as String,
       );
-      print(
-        '[Repository] trainingData startDate: ${trainingData['startDate']}, parsed: $trainingStartDate',
-      );
     }
 
     if (trainingData?['endDate'] != null) {
       trainingEndDate = DateTime.tryParse(trainingData!['endDate'] as String);
-      print(
-        '[Repository] trainingData endDate: ${trainingData['endDate']}, parsed: $trainingEndDate',
-      );
     }
 
     return Training(
