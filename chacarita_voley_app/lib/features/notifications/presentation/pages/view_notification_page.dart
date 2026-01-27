@@ -5,9 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../../teams/data/repositories/team_repository.dart';
-import '../../../teams/domain/entities/team_list_item.dart';
 import '../../../users/data/repositories/user_repository.dart';
-import '../../../users/domain/entities/user.dart';
 
 class ViewNotificationPage extends StatefulWidget {
   final String notificationId;

@@ -19,7 +19,6 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
   final _repository = TrainingRepository();
   Training? _training;
   bool _isLoading = true;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -41,75 +40,6 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Future<void> _saveAttendance() async {
-    if (_training == null || _isSaving) return;
-
-    print('[_saveAttendance] Iniciando guardado de asistencia');
-    setState(() => _isSaving = true);
-
-    try {
-      final updatedTraining = await _repository.updateAttendance(
-        widget.trainingId,
-        _training!.attendances,
-      );
-
-      print('[_saveAttendance] Asistencia actualizada en backend');
-
-      if (!mounted) {
-        print('[_saveAttendance] Widget no montado después de actualizar');
-        return;
-      }
-
-      setState(() {
-        _training = updatedTraining;
-        _isSaving = false;
-      });
-
-      print('[_saveAttendance] Estado actualizado, mostrando SnackBar');
-
-      if (!mounted) {
-        print('[_saveAttendance] Widget no montado antes de SnackBar');
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Asistencia guardada exitosamente'),
-          backgroundColor: context.tokens.green,
-          duration: const Duration(milliseconds: 1500),
-        ),
-      );
-
-      print('[_saveAttendance] SnackBar mostrado, esperando 400ms');
-
-      // Navegar de vuelta al detalle del entrenamiento
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      print('[_saveAttendance] Delay completado, verificando mounted');
-
-      if (!mounted) {
-        print('[_saveAttendance] Widget no montado antes de pop');
-        return;
-      }
-
-      print('[_saveAttendance] Ejecutando context.pop()');
-      context.pop();
-      print('[_saveAttendance] context.pop() ejecutado');
-    } catch (e) {
-      print('[_saveAttendance] Error: $e');
-      if (!mounted) return;
-
-      setState(() => _isSaving = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al guardar asistencia: $e'),
-          backgroundColor: context.tokens.redToRosita,
-        ),
-      );
     }
   }
 

@@ -64,6 +64,7 @@ class NotificationRepository {
           frequency
           createdAt
           countOfPlayers
+          status
           sender {
             id
             name
@@ -236,6 +237,12 @@ class NotificationRepository {
       );
     }
 
+    NotificationStatus? status;
+    final statusStr = data['status'] as String?;
+    if (statusStr != null) {
+      status = NotificationStatus.fromString(statusStr);
+    }
+
     return NotificationModel(
       id: data['id'] as String? ?? '',
       title: data['title'] as String? ?? '',
@@ -249,6 +256,7 @@ class NotificationRepository {
       deliveries: deliveries,
       countOfPlayers: data['countOfPlayers'] as int? ?? 0,
       sender: sender,
+      status: status,
     );
   }
 
@@ -349,7 +357,9 @@ class NotificationRepository {
       throw Exception('No se pudo crear la notificación');
     }
 
-    print('✅ Notification created successfully with id: ${notificationData['id']}');
+    print(
+      '✅ Notification created successfully with id: ${notificationData['id']}',
+    );
 
     return _mapNotificationFromBackend(
       notificationData as Map<String, dynamic>,
@@ -443,13 +453,15 @@ class NotificationRepository {
     if (result.hasException) {
       print('❌ Update exception: ${result.exception}');
       final exceptionStr = result.exception.toString();
-      
+
       // Detectar errores específicos del backend
-      if (exceptionStr.contains('ILLEGAL_STATE') || 
+      if (exceptionStr.contains('ILLEGAL_STATE') ||
           exceptionStr.contains('already been sent')) {
-        throw Exception('No se puede editar una notificación que ya fue enviada');
+        throw Exception(
+          'No se puede editar una notificación que ya fue enviada',
+        );
       }
-      
+
       throw Exception(result.exception.toString());
     }
 

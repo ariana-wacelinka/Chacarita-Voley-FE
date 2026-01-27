@@ -21,6 +21,9 @@ class _UsersPageState extends State<UsersPage> {
   Future<List<User>>? _usersFuture;
   Future<int>? _totalElementsFuture;
   String _searchQuery = '';
+  String? _selectedRole;
+  String? _selectedDueState;
+  bool _showFilters = false;
   Timer? _debounceTimer;
 
   static const int _usersPerPage = 12;
@@ -29,8 +32,7 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    _usersFuture = _repository.getUsers(page: 0, size: _usersPerPage);
-    _totalElementsFuture = _repository.getTotalUsers();
+    _loadUsers();
   }
 
   @override
@@ -40,6 +42,23 @@ class _UsersPageState extends State<UsersPage> {
     super.dispose();
   }
 
+  void _loadUsers() {
+    setState(() {
+      _usersFuture = _repository.getUsers(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        role: _selectedRole,
+        statusCurrentDue: _selectedDueState,
+        page: _currentPage,
+        size: _usersPerPage,
+      );
+      _totalElementsFuture = _repository.getTotalUsers(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        role: _selectedRole,
+        statusCurrentDue: _selectedDueState,
+      );
+    });
+  }
+
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
 
@@ -47,40 +66,34 @@ class _UsersPageState extends State<UsersPage> {
       setState(() {
         _searchQuery = value;
         _currentPage = 0;
-        _usersFuture = _repository.getUsers(
-          searchQuery: value.isEmpty ? null : value,
-          page: 0,
-          size: _usersPerPage,
-        );
-        _totalElementsFuture = _repository.getTotalUsers(
-          searchQuery: value.isEmpty ? null : value,
-        );
       });
+      _loadUsers();
     });
   }
 
   void _nextPage() {
     setState(() {
       _currentPage++;
-      _usersFuture = _repository.getUsers(
-        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        page: _currentPage,
-        size: _usersPerPage,
-      );
     });
+    _loadUsers();
   }
 
   void _previousPage() {
     if (_currentPage > 0) {
       setState(() {
         _currentPage--;
-        _usersFuture = _repository.getUsers(
-          searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-          page: _currentPage,
-          size: _usersPerPage,
-        );
       });
+      _loadUsers();
     }
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedRole = null;
+      _selectedDueState = null;
+      _currentPage = 0;
+    });
+    _loadUsers();
   }
 
   void _showDeleteDialog(User user) {
@@ -89,13 +102,7 @@ class _UsersPageState extends State<UsersPage> {
       builder: (context) => DeleteUserDialog(
         user: user,
         onConfirm: () {
-          setState(() {
-            _usersFuture = _repository.getUsers(
-              searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-              page: _currentPage,
-              size: _usersPerPage,
-            );
-          });
+          _loadUsers();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -194,13 +201,222 @@ class _UsersPageState extends State<UsersPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Symbols.tune, color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          _showFilters = !_showFilters;
+                        });
+                      },
+                      icon: Icon(
+                        Symbols.tune,
+                        color: Colors.white,
+                        fill:
+                            (_selectedRole != null || _selectedDueState != null)
+                            ? 1
+                            : 0,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+
+            if (_showFilters)
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                decoration: BoxDecoration(
+                  color: context.tokens.card1,
+                  border: Border(
+                    bottom: BorderSide(color: context.tokens.stroke),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Rol',
+                          style: TextStyle(
+                            color: context.tokens.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: context.tokens.stroke),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String?>(
+                              value: _selectedRole,
+                              isExpanded: true,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              dropdownColor: context.tokens.card1,
+                              items: [
+                                DropdownMenuItem(
+                                  value: null,
+                                  child: Text(
+                                    'Todos',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'PLAYER',
+                                  child: Text(
+                                    'Jugador',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'PROFESSOR',
+                                  child: Text(
+                                    'Profesor',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'ADMIN',
+                                  child: Text(
+                                    'Admin',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedRole = value;
+                                  _currentPage = 0;
+                                });
+                                _loadUsers();
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Estado de Cuota',
+                          style: TextStyle(
+                            color: context.tokens.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: context.tokens.stroke),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String?>(
+                              value: _selectedDueState,
+                              isExpanded: true,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              dropdownColor: context.tokens.card1,
+                              items: [
+                                DropdownMenuItem(
+                                  value: null,
+                                  child: Text(
+                                    'Todos',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'PAID',
+                                  child: Text(
+                                    'Pagada',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'PENDING',
+                                  child: Text(
+                                    'Pendiente',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'OVERDUE',
+                                  child: Text(
+                                    'Vencida',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedDueState = value;
+                                  _currentPage = 0;
+                                });
+                                _loadUsers();
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_selectedRole != null || _selectedDueState != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _clearFilters,
+                            icon: Icon(
+                              Symbols.close,
+                              color: context.tokens.redToRosita,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Limpiar filtros',
+                              style: TextStyle(
+                                color: context.tokens.redToRosita,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
 
             Expanded(
               child: FutureBuilder<List<User>>(

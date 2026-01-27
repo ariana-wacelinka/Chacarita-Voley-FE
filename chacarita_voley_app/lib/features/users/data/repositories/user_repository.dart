@@ -1,6 +1,8 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/assistance.dart';
+import '../../domain/entities/assistance_stats.dart';
+import '../../domain/entities/due.dart';
 import '../../domain/entities/gender.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository_interface.dart';
@@ -34,7 +36,9 @@ class UserRepository implements UserRepositoryInterface {
     player {
       id
       currentDue {
+        id
         state
+        period
       }
       teams {
         id
@@ -85,6 +89,20 @@ class UserRepository implements UserRepositoryInterface {
       teams { id isCompetitive name abbreviation }
       dues { id }
       assistances { id }
+      currentDue {
+        state
+        period
+        pay {
+          time
+          state
+          id
+          fileUrl
+          fileName
+          date
+          amount
+        }
+        id
+      }
     }
     professor {
       id
@@ -93,8 +111,8 @@ class UserRepository implements UserRepositoryInterface {
 
   String _getAllPersonsQuery() =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
-      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$search: String, \$role: Role, \$statusCurrentDue: DuesState) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: \$role, statusCurrentDue: \$statusCurrentDue}) {
         content {
           $_personFieldsMinimal
         }
@@ -176,49 +194,34 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
-  /// Mapea el input de búsqueda del usuario a filtros para el backend
-  /// IMPORTANTE: El backend usa AND implícito entre filtros.
-  /// NUNCA enviar el mismo valor en múltiples campos (genera AND imposible).
-  /// Enviar SOLO UN filtro a la vez.
-  Map<String, dynamic> _buildFilters(String? query, String? role) {
-    if (query == null || query.trim().isEmpty) {
-      return {'dni': '', 'name': '', 'surname': '', 'role': role};
-    }
-
-    final q = query.trim();
-
-    // DNI numérico → buscar SOLO por DNI
-    if (RegExp(r'^\d+$').hasMatch(q)) {
-      return {'dni': q, 'name': '', 'surname': '', 'role': role};
-    }
-
-    final parts = q.split(RegExp(r'\s+'));
-
-    // Nombre + Apellido (múltiples palabras)
-    // Backend aplicará AND: name LIKE '%Juan%' AND surname LIKE '%Perez%'
-    if (parts.length >= 2) {
-      return {
-        'dni': '',
-        'name': parts.first,
-        'surname': parts.sublist(1).join(' '),
-        'role': role,
-      };
-    }
-
-    // Texto simple → buscar SOLO por name (no enviar en surname)
-    // Si el backend necesita OR, debe implementarlo del lado del servidor
-    return {'dni': '', 'name': q, 'surname': '', 'role': role};
+  /// Construye los filtros para el backend
+  /// Ahora el backend maneja la búsqueda con OR en un solo parámetro 'search'
+  Map<String, dynamic> _buildFilters({
+    String? searchQuery,
+    String? role,
+    String? statusCurrentDue,
+  }) {
+    return {
+      'search': searchQuery?.trim() ?? '',
+      'role': role,
+      'statusCurrentDue': statusCurrentDue,
+    };
   }
 
   @override
   Future<List<User>> getUsers({
     String? role,
     String? searchQuery,
+    String? statusCurrentDue,
     int? page,
     int? size,
     bool forTeamSelection = false,
   }) async {
-    final filters = _buildFilters(searchQuery, role);
+    final filters = _buildFilters(
+      searchQuery: searchQuery,
+      role: role,
+      statusCurrentDue: statusCurrentDue,
+    );
 
     final result = await _query(
       QueryOptions(
@@ -239,45 +242,6 @@ class UserRepository implements UserRepositoryInterface {
     final content =
         (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
         const [];
-
-    // Si no hay resultados y la búsqueda es texto simple (no DNI ni nombre+apellido),
-    // reintentar buscando por surname en lugar de name
-    if (content.isEmpty &&
-        searchQuery != null &&
-        searchQuery.trim().isNotEmpty &&
-        !RegExp(r'^\d+$').hasMatch(searchQuery.trim()) &&
-        searchQuery.trim().split(RegExp(r'\s+')).length == 1) {
-      // Reintentar con surname
-      final retryResult = await _query(
-        QueryOptions(
-          document: gql(
-            forTeamSelection
-                ? _getAllPersonsForTeamsQuery()
-                : _getAllPersonsQuery(),
-          ),
-          variables: {
-            'page': page ?? 0,
-            'size': size ?? 12,
-            'dni': '',
-            'name': '',
-            'surname': searchQuery.trim(),
-            'role': role,
-          },
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
-
-      if (!retryResult.hasException) {
-        final retryContent =
-            (retryResult.data?['getAllPersons']?['content']
-                as List<dynamic>?) ??
-            const [];
-        return retryContent
-            .whereType<Map<String, dynamic>>()
-            .map(_mapPersonToUser)
-            .toList();
-      }
-    }
 
     return content
         .whereType<Map<String, dynamic>>()
@@ -311,8 +275,16 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   @override
-  Future<int> getTotalUsers({String? role, String? searchQuery}) async {
-    final filters = _buildFilters(searchQuery, role);
+  Future<int> getTotalUsers({
+    String? role,
+    String? searchQuery,
+    String? statusCurrentDue,
+  }) async {
+    final filters = _buildFilters(
+      searchQuery: searchQuery,
+      role: role,
+      statusCurrentDue: statusCurrentDue,
+    );
 
     final result = await _query(
       QueryOptions(
@@ -508,19 +480,20 @@ class UserRepository implements UserRepositoryInterface {
 
     // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
+    CurrentDue? currentDue;
     if (player != null) {
-      final currentDue = player['currentDue'] as Map<String, dynamic>?;
-      if (currentDue != null) {
-        final stateStr = currentDue['state'] as String?;
-        DueState? dueState;
-        if (stateStr != null) {
-          try {
-            dueState = DueState.values.firstWhere((e) => e.name == stateStr);
-          } catch (_) {
-            dueState = null;
-          }
+      final currentDueData = player['currentDue'] as Map<String, dynamic>?;
+      if (currentDueData != null) {
+        print('🔍 currentDueData: $currentDueData');
+        try {
+          currentDue = CurrentDue.fromJson(currentDueData);
+          print('✅ currentDue parsed: state=${currentDue.state}');
+          estadoCuota = EstadoCuotaExtension.fromDueState(currentDue.state);
+          print('✅ estadoCuota mapped: $estadoCuota');
+        } catch (e) {
+          print('❌ Error parsing currentDue: $e');
+          estadoCuota = EstadoCuota.alDia;
         }
-        estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
       }
     }
 
@@ -541,6 +514,7 @@ class UserRepository implements UserRepositoryInterface {
       equipos: equipos,
       tipos: tipos,
       estadoCuota: estadoCuota,
+      currentDue: currentDue,
     );
   }
 
@@ -688,6 +662,16 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  String _getAssistanceStatsByPlayerIdQuery() => '''
+    query GetAssistanceStatsByPlayerId(\$id: ID!) {
+      getAssistanceStatsByPlayerId(id: \$id) {
+        assisted
+        notAssisted
+        assistedPercentage
+      }
+    }
+  ''';
+
   @override
   Future<AssistancePage> getAllAssistance({
     required String playerId,
@@ -723,6 +707,34 @@ class UserRepository implements UserRepositoryInterface {
       }
 
       return AssistancePage.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AssistanceStats> getAssistanceStatsByPlayerId(String playerId) async {
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(_getAssistanceStatsByPlayerIdQuery()),
+          variables: {'id': playerId},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(
+          'Error al cargar estadísticas de asistencia: ${result.exception.toString()}',
+        );
+      }
+
+      final data = result.data?['getAssistanceStatsByPlayerId'];
+      if (data == null) {
+        throw Exception('No se recibieron datos de estadísticas');
+      }
+
+      return AssistanceStats.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
     }

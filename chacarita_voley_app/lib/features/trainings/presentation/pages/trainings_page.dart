@@ -1004,6 +1004,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                             training.status == TrainingStatus.proximo;
                         final hasTraining = training.hasTraining;
 
+                        final isCompleted =
+                            training.status == TrainingStatus.completado;
+
                         return [
                           PopupMenuItem(
                             value: _TrainingMenuAction.view,
@@ -1019,11 +1022,11 @@ class _TrainingsPageState extends State<TrainingsPage>
                           ),
                           PopupMenuItem(
                             value: _TrainingMenuAction.editSession,
-                            enabled: !isCancelled,
+                            enabled: !isCancelled && !isCompleted,
                             child: Text(
                               'Modificar este entrenamiento',
                               style: TextStyle(
-                                color: isCancelled
+                                color: (isCancelled || isCompleted)
                                     ? context.tokens.placeholder
                                     : context.tokens.text,
                               ),
@@ -1031,11 +1034,13 @@ class _TrainingsPageState extends State<TrainingsPage>
                           ),
                           PopupMenuItem(
                             value: _TrainingMenuAction.editTraining,
-                            enabled: !isCancelled && hasTraining,
+                            enabled:
+                                !isCancelled && !isCompleted && hasTraining,
                             child: Text(
                               'Modificar este y posteriores',
                               style: TextStyle(
-                                color: (isCancelled || !hasTraining)
+                                color:
+                                    (isCancelled || isCompleted || !hasTraining)
                                     ? context.tokens.placeholder
                                     : context.tokens.text,
                               ),
@@ -1138,8 +1143,10 @@ class _TrainingsPageState extends State<TrainingsPage>
                 ),
                 const SizedBox(height: 16),
                 InkWell(
-                  onTap: () =>
-                      context.push('/trainings/${training.id}/attendance'),
+                  onTap: training.status != TrainingStatus.cancelado
+                      ? () =>
+                            context.push('/trainings/${training.id}/attendance')
+                      : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -1147,7 +1154,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: context.tokens.card1,
+                      color: training.status != TrainingStatus.cancelado
+                          ? context.tokens.card1
+                          : context.tokens.card1.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: context.tokens.stroke),
                     ),
@@ -1156,14 +1165,18 @@ class _TrainingsPageState extends State<TrainingsPage>
                         Icon(
                           Symbols.check_circle,
                           size: 20,
-                          color: context.tokens.text,
+                          color: training.status != TrainingStatus.cancelado
+                              ? context.tokens.text
+                              : context.tokens.placeholder,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Pasar asistencia',
                             style: TextStyle(
-                              color: context.tokens.text,
+                              color: training.status != TrainingStatus.cancelado
+                                  ? context.tokens.text
+                                  : context.tokens.placeholder,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),

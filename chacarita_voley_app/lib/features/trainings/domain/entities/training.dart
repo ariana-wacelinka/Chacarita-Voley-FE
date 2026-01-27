@@ -160,6 +160,8 @@ class Training {
   final List<PlayerAttendance> attendances;
   final String? trainingId;
   final bool hasTraining;
+  final int? countOfPlayers;
+  final int? countOfAssisted;
 
   Training({
     required this.id,
@@ -180,11 +182,14 @@ class Training {
     this.attendances = const [],
     this.trainingId,
     this.hasTraining = true,
+    this.countOfPlayers,
+    this.countOfAssisted,
   });
 
-  int get totalPlayers => attendances.length;
-  int get presentCount => attendances.where((a) => a.isPresent).length;
-  int get absentCount => attendances.where((a) => !a.isPresent).length;
+  int get totalPlayers => countOfPlayers ?? attendances.length;
+  int get presentCount =>
+      countOfAssisted ?? attendances.where((a) => a.isPresent).length;
+  int get absentCount => totalPlayers - presentCount;
 
   String get dateFormatted {
     if (date != null) {
@@ -245,6 +250,8 @@ class Training {
     TrainingStatus? status,
     List<PlayerAttendance>? attendances,
     String? trainingId,
+    int? countOfPlayers,
+    int? countOfAssisted,
   }) {
     return Training(
       id: id ?? this.id,
@@ -264,6 +271,8 @@ class Training {
       status: status ?? this.status,
       attendances: attendances ?? this.attendances,
       trainingId: trainingId ?? this.trainingId,
+      countOfPlayers: countOfPlayers ?? this.countOfPlayers,
+      countOfAssisted: countOfAssisted ?? this.countOfAssisted,
     );
   }
 }
