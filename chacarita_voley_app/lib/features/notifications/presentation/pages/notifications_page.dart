@@ -445,8 +445,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       },
                       itemBuilder: (context) {
                         final canEdit =
-                            notification.sendMode == SendMode.SCHEDULED ||
-                            notification.deliveries.isEmpty;
+                            (notification.sendMode == SendMode.SCHEDULED ||
+                                notification.deliveries.isEmpty) &&
+                            notification.status != NotificationStatus.SENT;
 
                         return [
                           PopupMenuItem(
