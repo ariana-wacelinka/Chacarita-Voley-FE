@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../users/domain/entities/user.dart' show EstadoCuota;
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
@@ -475,6 +476,13 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8),
+          if (attendance.estadoCuota != null)
+            Icon(
+              Symbols.credit_card,
+              size: 20,
+              color: _getPaymentStatusColor(attendance.estadoCuota!, context),
+            ),
           const SizedBox(width: 12),
           InkWell(
             onTap: () =>
@@ -484,11 +492,11 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
               height: 24,
               decoration: BoxDecoration(
                 color: attendance.isPresent
-                    ? context.tokens.redToRosita
+                    ? context.tokens.green
                     : Colors.transparent,
                 border: Border.all(
                   color: attendance.isPresent
-                      ? context.tokens.redToRosita
+                      ? context.tokens.green
                       : context.tokens.stroke,
                   width: 2,
                 ),
@@ -553,5 +561,16 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         ),
       ),
     );
+  }
+
+  Color _getPaymentStatusColor(EstadoCuota estado, BuildContext context) {
+    switch (estado) {
+      case EstadoCuota.alDia:
+        return context.tokens.green;
+      case EstadoCuota.vencida:
+        return context.tokens.redToRosita;
+      case EstadoCuota.ultimoPago:
+        return context.tokens.pending;
+    }
   }
 }
