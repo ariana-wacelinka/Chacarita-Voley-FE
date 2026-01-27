@@ -1028,7 +1028,10 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                           ),
                           InkWell(
                             onTap: () {
-                              // TODO: Implementar enviar notificación
+                              if (_team == null) return;
+                              context.push(
+                                '/teams/${widget.teamId}/notification?teamName=${Uri.encodeComponent(_team!.nombre)}',
+                              );
                             },
                             borderRadius: const BorderRadius.vertical(
                               bottom: Radius.circular(12),

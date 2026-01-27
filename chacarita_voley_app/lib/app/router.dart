@@ -21,6 +21,7 @@ import '../features/trainings/presentation/pages/edit_session_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 import '../features/notifications/presentation/pages/new_notification_page.dart';
 import '../features/notifications/presentation/pages/new_notification_for_user_page.dart';
+import '../features/notifications/presentation/pages/new_notification_for_team_page.dart';
 import '../features/notifications/presentation/pages/view_notification_page.dart';
 import '../features/notifications/presentation/pages/edit_notification_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
@@ -136,6 +137,14 @@ final appRouter = GoRouter(
       builder: (_, state) => ViewTeamPage(
         key: ValueKey('team-view-${state.pathParameters['id']}'),
         teamId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/teams/:id/notification',
+      name: 'teams-notification',
+      builder: (_, state) => NewNotificationForTeamPage(
+        teamId: state.pathParameters['id']!,
+        teamName: state.uri.queryParameters['teamName'] ?? 'Equipo',
       ),
     ),
     GoRoute(

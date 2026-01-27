@@ -5,23 +5,23 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
 
-class NewNotificationForUserPage extends StatefulWidget {
-  final String userId;
-  final String userName;
+class NewNotificationForTeamPage extends StatefulWidget {
+  final String teamId;
+  final String teamName;
 
-  const NewNotificationForUserPage({
+  const NewNotificationForTeamPage({
     super.key,
-    required this.userId,
-    required this.userName,
+    required this.teamId,
+    required this.teamName,
   });
 
   @override
-  State<NewNotificationForUserPage> createState() =>
-      _NewNotificationForUserPageState();
+  State<NewNotificationForTeamPage> createState() =>
+      _NewNotificationForTeamPageState();
 }
 
-class _NewNotificationForUserPageState
-    extends State<NewNotificationForUserPage> {
+class _NewNotificationForTeamPageState
+    extends State<NewNotificationForTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _repository = NotificationRepository();
   final _titleController = TextEditingController();
@@ -146,8 +146,8 @@ class _NewNotificationForUserPageState
             : null,
         destinations: [
           NotificationDestinationInput(
-            type: DestinationType.PLAYER,
-            referenceId: widget.userId,
+            type: DestinationType.TEAM,
+            referenceId: widget.teamId,
           ),
         ],
       );
@@ -234,7 +234,7 @@ class _NewNotificationForUserPageState
                 border: Border.all(color: context.tokens.stroke),
               ),
               child: Text(
-                'Destinatario: ${widget.userName}',
+                'Destinatario: Equipo ${widget.teamName}',
                 style: TextStyle(
                   color: context.tokens.text,
                   fontSize: 14,
