@@ -244,6 +244,7 @@ class _TrainingsPageState extends State<TrainingsPage>
             ? _endTimeController.text
             : null,
         status: _selectedStatus,
+        teamId: widget.teamId,
         page: _currentPage,
         size: _itemsPerPage,
       );
