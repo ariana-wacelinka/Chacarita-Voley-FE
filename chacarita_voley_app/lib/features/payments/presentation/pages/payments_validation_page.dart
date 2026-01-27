@@ -77,9 +77,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     }
   }
 
-  String _dniFilter = '';
-  DateTime? _dateFilter;
-  TimeOfDay? _timeFilter;
   DateTime? _startDate;
   DateTime? _endDate;
   TimeOfDay? _startTime;
@@ -88,19 +85,19 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
   // Format
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
-  final DateFormat _timeFormat = DateFormat('HH:mm');
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    // Filtered Payments
-    final filteredPayments = initialPayments.where((p) {
-      bool matchesDni = _dniFilter.isEmpty || p.dni.contains(_dniFilter);
-      bool matchesDate = _dateFilter == null || p.sentDate.day == _dateFilter;
-      bool matchesTime =
-          _timeFilter == null || p.paymentDate.hour == _timeFilter;
-      return matchesDni && matchesDate && matchesTime;
-    }).toList();
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: tokens.background,
+        body: Center(
+          child: CircularProgressIndicator(color: tokens.redToRosita),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: tokens.background,
@@ -251,7 +248,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                             // 'Hora de inicio *',
                             // TimeOfDay.now(),
                             'Hora de inicio *',
-                            _startTime!,
+                            _startTime,
                             () async {
                               final time = await showTimePicker(
                                 context: context,
@@ -268,7 +265,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                             // 'Hora de fin *',
                             // TimeOfDay.now(),
                             'Hora de fin *',
-                            _endTime!,
+                            _endTime,
                             () async {
                               final time = await showTimePicker(
                                 context: context,
@@ -381,8 +378,10 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _dateFormat.format(date!),
-                  style: TextStyle(color: tokens.text),
+                  date != null ? _dateFormat.format(date) : 'Seleccionar fecha',
+                  style: TextStyle(
+                    color: date != null ? tokens.text : tokens.placeholder,
+                  ),
                 ),
                 Icon(Icons.calendar_today_outlined, color: tokens.gray),
               ],
@@ -393,7 +392,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     );
   }
 
-  Widget _buildTimeField(String label, TimeOfDay time, VoidCallback onTap) {
+  Widget _buildTimeField(String label, TimeOfDay? time, VoidCallback onTap) {
     final tokens = context.tokens;
     bool hasAsterisk = label.endsWith(' *');
     String textPart = hasAsterisk
@@ -427,8 +426,12 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                  style: TextStyle(color: tokens.text),
+                  time != null
+                      ? '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
+                      : 'Seleccionar hora',
+                  style: TextStyle(
+                    color: time != null ? tokens.text : tokens.placeholder,
+                  ),
                 ),
                 Icon(Icons.access_time_outlined, color: tokens.gray),
               ],
@@ -492,6 +495,7 @@ class PaymentValidationCard extends StatelessWidget {
       case 'Aprobado':
         statusColor = tokens.green;
         buttonType = GFButtonType.transparent;
+        break;
       default:
         statusColor = tokens.gray;
         buttonType = GFButtonType.transparent;
