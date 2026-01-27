@@ -1,4 +1,7 @@
+import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
 import 'package:go_router/go_router.dart';
+import '../features/payments/presentation/pages/payments_validation_page.dart';
+import '../features/payments/presentation/pages/payment_history_page.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login_page.dart';
@@ -68,7 +71,7 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/payments',
           name: 'payments',
-          builder: (_, __) => const _Page(text: 'Gestión de Cuotas'),
+          builder: (_, __) => const PaymentsValidationPage(),
         ),
         GoRoute(
           path: '/teams',
@@ -94,7 +97,22 @@ final appRouter = GoRouter(
           name: 'settings',
           builder: (_, __) => const SettingsPage(),
         ),
+        //TODO Temporal
+        GoRoute(
+          path: '/payments_history',
+          name: 'history',
+          builder: (_, __) =>
+              const PaymentHistoryPage(userId: '01', userName: 'Prueba'),
+        ),
       ],
+    ),
+
+    //Ruta persnalizada de Payments
+    GoRoute(
+      path: '/payments/edit/:id',
+      name: 'payments-edit',
+      builder: (_, state) =>
+          EditPaymentsPage(paymentId: state.pathParameters['id']!),
     ),
 
     GoRoute(
