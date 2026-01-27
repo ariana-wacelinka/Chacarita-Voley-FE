@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../users/domain/entities/user.dart' show EstadoCuota;
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
@@ -380,6 +381,16 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (attendance.estadoCuota != null)
+                  Icon(
+                    Symbols.credit_card,
+                    size: 20,
+                    color: _getPaymentStatusColor(
+                      attendance.estadoCuota!,
+                      context,
+                    ),
+                  ),
+                const SizedBox(width: 8),
                 Icon(
                   attendance.isPresent ? Symbols.check : Symbols.close,
                   color: attendance.isPresent
@@ -500,5 +511,16 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
         ],
       ),
     );
+  }
+
+  Color _getPaymentStatusColor(EstadoCuota estado, BuildContext context) {
+    switch (estado) {
+      case EstadoCuota.alDia:
+        return context.tokens.green;
+      case EstadoCuota.vencida:
+        return context.tokens.redToRosita;
+      case EstadoCuota.ultimoPago:
+        return context.tokens.pending;
+    }
   }
 }

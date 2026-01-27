@@ -1,5 +1,8 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
+import '../../../users/domain/entities/due.dart' show DueState;
+import '../../../users/domain/entities/user.dart'
+    show EstadoCuota, EstadoCuotaExtension;
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/training_repository_interface.dart';
 
@@ -245,6 +248,10 @@ class TrainingRepository implements TrainingRepositoryInterface {
               id
               date
               assistance
+            }
+            currentDue {
+              id
+              state
             }
           }
         }
@@ -736,10 +743,24 @@ class TrainingRepository implements TrainingRepositoryInterface {
         }
       }
 
+      EstadoCuota? estadoCuota;
+      final currentDueData = player['currentDue'] as Map<String, dynamic>?;
+      if (currentDueData != null) {
+        final stateString = currentDueData['state'] as String?;
+        if (stateString != null) {
+          final dueState = DueState.values.firstWhere(
+            (e) => e.name == stateString,
+            orElse: () => DueState.PENDING,
+          );
+          estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
+        }
+      }
+
       return PlayerAttendance(
         playerId: player['id'] as String? ?? '',
         playerName: '$surname $name'.trim(),
         isPresent: isPresent,
+        estadoCuota: estadoCuota,
       );
     }).toList();
 
