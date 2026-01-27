@@ -2,6 +2,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/assistance.dart';
 import '../../domain/entities/assistance_stats.dart';
+import '../../domain/entities/due.dart';
 import '../../domain/entities/gender.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository_interface.dart';
@@ -35,7 +36,9 @@ class UserRepository implements UserRepositoryInterface {
     player {
       id
       currentDue {
+        id
         state
+        period
       }
       teams {
         id
@@ -86,6 +89,20 @@ class UserRepository implements UserRepositoryInterface {
       teams { id isCompetitive name abbreviation }
       dues { id }
       assistances { id }
+      currentDue {
+        state
+        period
+        pay {
+          time
+          state
+          id
+          fileUrl
+          fileName
+          date
+          amount
+        }
+        id
+      }
     }
     professor {
       id
@@ -509,19 +526,20 @@ class UserRepository implements UserRepositoryInterface {
 
     // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
+    CurrentDue? currentDue;
     if (player != null) {
-      final currentDue = player['currentDue'] as Map<String, dynamic>?;
-      if (currentDue != null) {
-        final stateStr = currentDue['state'] as String?;
-        DueState? dueState;
-        if (stateStr != null) {
-          try {
-            dueState = DueState.values.firstWhere((e) => e.name == stateStr);
-          } catch (_) {
-            dueState = null;
-          }
+      final currentDueData = player['currentDue'] as Map<String, dynamic>?;
+      if (currentDueData != null) {
+        print('🔍 currentDueData: $currentDueData');
+        try {
+          currentDue = CurrentDue.fromJson(currentDueData);
+          print('✅ currentDue parsed: state=${currentDue.state}');
+          estadoCuota = EstadoCuotaExtension.fromDueState(currentDue.state);
+          print('✅ estadoCuota mapped: $estadoCuota');
+        } catch (e) {
+          print('❌ Error parsing currentDue: $e');
+          estadoCuota = EstadoCuota.alDia;
         }
-        estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
       }
     }
 
@@ -542,6 +560,7 @@ class UserRepository implements UserRepositoryInterface {
       equipos: equipos,
       tipos: tipos,
       estadoCuota: estadoCuota,
+      currentDue: currentDue,
     );
   }
 

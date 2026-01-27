@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chacarita_voley_app/features/users/domain/entities/due.dart';
 import 'package:chacarita_voley_app/features/users/domain/entities/user.dart';
 
 void main() {

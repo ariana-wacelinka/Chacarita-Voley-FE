@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../domain/entities/due.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/gender.dart';
 import '../../data/repositories/user_repository.dart';
@@ -62,17 +63,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
         return 'Femenino';
       case Gender.otro:
         return 'Otro';
-    }
-  }
-
-  Color _getEstadoCuotaColor(BuildContext context, EstadoCuota estado) {
-    switch (estado) {
-      case EstadoCuota.alDia:
-        return context.tokens.green;
-      case EstadoCuota.vencida:
-        return Theme.of(context).colorScheme.primary;
-      case EstadoCuota.ultimoPago:
-        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -275,9 +265,24 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 .map((tipo) => _buildUserTypeItem(context, tipo))
                 .toList(),
           ),
-          const SizedBox(height: 16),
-          Divider(color: context.tokens.stroke, height: 1),
-          const SizedBox(height: 16),
+          if (_user!.tipos.contains(UserType.jugador)) ...[
+            const SizedBox(height: 16),
+            Divider(color: context.tokens.stroke, height: 1),
+            const SizedBox(height: 16),
+            _buildDueSection(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDueSection(BuildContext context) {
+    final currentDue = _user!.currentDue;
+
+    if (currentDue == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             'Estado de cuota:',
             style: TextStyle(
@@ -291,65 +296,212 @@ class _ViewUserPageState extends State<ViewUserPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _user!.estadoCuota == EstadoCuota.alDia
-                  ? context.tokens.green.withOpacity(0.1)
-                  : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: context.tokens.card2,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _getEstadoCuotaColor(context, _user!.estadoCuota),
-                width: 1,
-              ),
+              border: Border.all(color: context.tokens.stroke),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      _user!.estadoCuota.displayName,
+            child: Text(
+              'No hay información de cuota disponible',
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final dueState = currentDue.state;
+    final pay = currentDue.pay;
+
+    Color bgColor;
+    Color borderColor;
+    Color textColor;
+    IconData iconData;
+    String statusTitle;
+    String statusMessage;
+
+    switch (dueState) {
+      case DueState.PAID:
+        bgColor = context.tokens.green.withOpacity(0.1);
+        borderColor = context.tokens.green;
+        textColor = context.tokens.green;
+        iconData = Symbols.check_circle;
+        statusTitle = 'Cuota pagada';
+        statusMessage = 'La cuota está al día';
+        break;
+      case DueState.OVERDUE:
+        bgColor = context.tokens.redToRosita.withOpacity(0.1);
+        borderColor = context.tokens.redToRosita;
+        textColor = context.tokens.redToRosita;
+        iconData = Symbols.error;
+        statusTitle = 'Cuota vencida';
+        statusMessage = 'La cuota mensual está vencida';
+        break;
+      case DueState.PENDING:
+        if (pay?.state == PayState.REJECTED) {
+          bgColor = context.tokens.redToRosita.withOpacity(0.1);
+          borderColor = context.tokens.redToRosita;
+          textColor = context.tokens.redToRosita;
+          iconData = Symbols.cancel;
+          statusTitle = 'Pago rechazado';
+          statusMessage = 'El comprobante fue rechazado';
+        } else {
+          bgColor = Colors.amber.withOpacity(0.1);
+          borderColor = Colors.amber;
+          textColor = Colors.amber.shade700;
+          iconData = Symbols.schedule;
+          statusTitle = 'Pendiente de pago';
+          statusMessage = pay != null
+              ? 'Sin pago registrado'
+              : 'Sin pago registrado';
+        }
+        break;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tipo de Usuario y Cuota',
+          style: TextStyle(
+            color: context.tokens.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(iconData, color: textColor, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      statusTitle,
                       style: TextStyle(
-                        color: _getEstadoCuotaColor(
-                          context,
-                          _user!.estadoCuota,
-                        ),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(
-                      _user!.estadoCuota == EstadoCuota.alDia
-                          ? Symbols.check_circle
-                          : Symbols.error,
-                      color: _getEstadoCuotaColor(context, _user!.estadoCuota),
-                      size: 20,
-                    ),
-                  ],
-                ),
-                if (_user!.estadoCuota != EstadoCuota.alDia) ...[
-                  const SizedBox(height: 8),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Text(
-                    'Último pago: 15/04',
+                    'Período:',
                     style: TextStyle(
-                      color: _getEstadoCuotaColor(context, _user!.estadoCuota),
+                      color: context.tokens.placeholder,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
-                    'La cuota mensual está vencida',
+                    currentDue.formattedPeriod,
                     style: TextStyle(
-                      color: _getEstadoCuotaColor(context, _user!.estadoCuota),
-                      fontSize: 12,
+                      color: context.tokens.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              if (pay != null) ...[
+                const SizedBox(height: 12),
+                Divider(color: borderColor.withOpacity(0.3), height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      pay.state == PayState.REJECTED
+                          ? Symbols.cancel
+                          : pay.state == PayState.APPROVED
+                          ? Symbols.check_circle
+                          : Symbols.receipt_long,
+                      color: pay.state == PayState.REJECTED
+                          ? context.tokens.redToRosita
+                          : pay.state == PayState.APPROVED
+                          ? Colors.green
+                          : textColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      pay.state == PayState.REJECTED
+                          ? 'Pago rechazado'
+                          : pay.state == PayState.APPROVED
+                          ? 'Pago aprobado'
+                          : 'Pago en revisión',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fecha: ${pay.date.split('-').reversed.join('/')}',
+                  style: TextStyle(color: context.tokens.text, fontSize: 13),
+                ),
+                if (pay.state == PayState.REJECTED) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: context.tokens.redToRosita.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Symbols.warning,
+                          color: context.tokens.redToRosita,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Comprobante rechazado - Por favor, volver a cargar',
+                            style: TextStyle(
+                              color: context.tokens.redToRosita,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ],
-            ),
+
+              const SizedBox(height: 8),
+              Text(
+                statusMessage,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

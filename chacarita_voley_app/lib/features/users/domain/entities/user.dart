@@ -1,3 +1,4 @@
+import 'due.dart';
 import 'gender.dart';
 
 class TeamInfo {
@@ -31,6 +32,7 @@ class User {
   final List<TeamInfo> equipos;
   final Set<UserType> tipos;
   final EstadoCuota estadoCuota;
+  final CurrentDue? currentDue;
 
   User({
     this.id,
@@ -49,6 +51,7 @@ class User {
     this.equipos = const [],
     required this.tipos,
     required this.estadoCuota,
+    this.currentDue,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -119,8 +122,6 @@ class User {
 enum UserType { jugador, profesor, administrador }
 
 enum EstadoCuota { alDia, vencida, ultimoPago }
-
-enum DueState { PAID, PENDING, OVERDUE }
 
 extension UserTypeExtension on UserType {
   String get displayName {
