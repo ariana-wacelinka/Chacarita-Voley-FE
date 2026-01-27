@@ -1,3 +1,5 @@
+import '../../../users/domain/entities/user.dart' show EstadoCuota;
+
 enum TrainingType {
   fisico('PHYSICAL'),
   pelota('BALL_SKILLS');
@@ -121,22 +123,26 @@ class PlayerAttendance {
   final String playerId;
   final String playerName;
   final bool isPresent;
+  final EstadoCuota? estadoCuota;
 
   PlayerAttendance({
     required this.playerId,
     required this.playerName,
     required this.isPresent,
+    this.estadoCuota,
   });
 
   PlayerAttendance copyWith({
     String? playerId,
     String? playerName,
     bool? isPresent,
+    EstadoCuota? estadoCuota,
   }) {
     return PlayerAttendance(
       playerId: playerId ?? this.playerId,
       playerName: playerName ?? this.playerName,
       isPresent: isPresent ?? this.isPresent,
+      estadoCuota: estadoCuota ?? this.estadoCuota,
     );
   }
 }
