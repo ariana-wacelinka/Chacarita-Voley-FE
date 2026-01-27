@@ -294,6 +294,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
+  Color _getStatusColor(NotificationStatus status) {
+    switch (status) {
+      case NotificationStatus.SENT:
+        return Colors.green;
+      case NotificationStatus.FAILED:
+        return context.tokens.redToRosita;
+      case NotificationStatus.PROCESSING:
+        return Colors.orange;
+      case NotificationStatus.SCHEDULED:
+        return Theme.of(context).colorScheme.primary;
+      case NotificationStatus.CREATED:
+        return context.tokens.placeholder;
+    }
+  }
+
   Widget _buildNotificationCard(NotificationModel notification) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -336,30 +351,46 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: notification.deliveries.isNotEmpty
-                                        ? Colors.green.withOpacity(0.15)
-                                        : Theme.of(context).colorScheme.primary
-                                              .withOpacity(0.15),
+                                    color: notification.status != null
+                                        ? _getStatusColor(
+                                            notification.status!,
+                                          ).withOpacity(0.15)
+                                        : (notification.deliveries.isNotEmpty
+                                              ? Colors.green.withOpacity(0.15)
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    .withOpacity(0.15)),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: notification.deliveries.isNotEmpty
-                                          ? Colors.green
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
+                                      color: notification.status != null
+                                          ? _getStatusColor(
+                                              notification.status!,
+                                            )
+                                          : (notification.deliveries.isNotEmpty
+                                                ? Colors.green
+                                                : Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary),
                                       width: 1,
                                     ),
                                   ),
                                   child: Text(
-                                    notification.deliveries.isNotEmpty
-                                        ? 'Enviado'
-                                        : 'Programado',
+                                    notification.status != null
+                                        ? notification.status!.displayName
+                                        : (notification.deliveries.isNotEmpty
+                                              ? 'Enviado'
+                                              : 'Programado'),
                                     style: TextStyle(
-                                      color: notification.deliveries.isNotEmpty
-                                          ? Colors.green
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
+                                      color: notification.status != null
+                                          ? _getStatusColor(
+                                              notification.status!,
+                                            )
+                                          : (notification.deliveries.isNotEmpty
+                                                ? Colors.green
+                                                : Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary),
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                     ),

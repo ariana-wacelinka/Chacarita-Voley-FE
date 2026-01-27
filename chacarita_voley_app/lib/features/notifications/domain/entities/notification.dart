@@ -106,6 +106,36 @@ enum DestinationType {
   }
 }
 
+enum NotificationStatus {
+  SCHEDULED,
+  CREATED,
+  PROCESSING,
+  SENT,
+  FAILED;
+
+  String get displayName {
+    switch (this) {
+      case NotificationStatus.SCHEDULED:
+        return 'Programado';
+      case NotificationStatus.CREATED:
+        return 'Creado';
+      case NotificationStatus.PROCESSING:
+        return 'Procesando';
+      case NotificationStatus.SENT:
+        return 'Enviado';
+      case NotificationStatus.FAILED:
+        return 'Fallido';
+    }
+  }
+
+  static NotificationStatus fromString(String value) {
+    return NotificationStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => NotificationStatus.CREATED,
+    );
+  }
+}
+
 enum DeliveryStatus {
   PENDING,
   SENT,
@@ -239,6 +269,7 @@ class NotificationModel {
   final List<NotificationDelivery> deliveries;
   final int countOfPlayers;
   final NotificationSender? sender;
+  final NotificationStatus? status;
 
   NotificationModel({
     required this.id,
@@ -253,6 +284,7 @@ class NotificationModel {
     required this.deliveries,
     this.countOfPlayers = 0,
     this.sender,
+    this.status,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -280,6 +312,9 @@ class NotificationModel {
       countOfPlayers: json['countOfPlayers'] as int? ?? 0,
       sender: json['sender'] != null
           ? NotificationSender.fromJson(json['sender'] as Map<String, dynamic>)
+          : null,
+      status: json['status'] != null
+          ? NotificationStatus.fromString(json['status'] as String)
           : null,
     );
   }
