@@ -307,171 +307,199 @@ class _TeamsPageState extends State<TeamsPage> {
                   return Column(
                     children: [
                       Expanded(
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SingleChildScrollView(
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.95,
-                              margin: const EdgeInsets.only(top: 10),
-                              child: DataTable(
-                                headingTextStyle: TextStyle(
-                                  color: context.tokens.text,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                                dataTextStyle: TextStyle(
-                                  color: context.tokens.text,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                                headingRowHeight: 40,
-                                dataRowMinHeight: 44,
-                                columnSpacing: 12,
-                                horizontalMargin: 5,
-                                dividerThickness: 0,
-                                columns: const [
-                                  DataColumn(label: Text('Nombre')),
-                                  DataColumn(label: Text('Entrenador')),
-                                  DataColumn(label: Text('Jugadores')),
-                                  DataColumn(label: SizedBox(width: 0)),
-                                ],
-                                rows: teams.map((team) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(team.nombre)),
-                                      DataCell(Text(team.entrenador)),
-                                      DataCell(
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              '${team.cantidadJugadores}/20',
-                                              style: TextStyle(
-                                                color: context.tokens.text,
-                                                fontWeight: FontWeight.w600,
+                        child: RefreshIndicator(
+                          onRefresh: () async {
+                            setState(() {
+                              _teamsFuture = _repository.getTeamsListItems(
+                                searchQuery: _searchQuery.isEmpty
+                                    ? null
+                                    : _searchQuery,
+                                page: _currentPage,
+                                size: _teamsPerPage,
+                              );
+                            });
+                            await Future.delayed(
+                              const Duration(milliseconds: 500),
+                            );
+                          },
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.95,
+                                margin: const EdgeInsets.only(top: 10),
+                                child: DataTable(
+                                  headingTextStyle: TextStyle(
+                                    color: context.tokens.text,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  dataTextStyle: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                  headingRowHeight: 40,
+                                  dataRowMinHeight: 44,
+                                  columnSpacing: 12,
+                                  horizontalMargin: 5,
+                                  dividerThickness: 0,
+                                  columns: const [
+                                    DataColumn(label: Text('Nombre')),
+                                    DataColumn(label: Text('Entrenador')),
+                                    DataColumn(label: Text('Jugadores')),
+                                    DataColumn(label: SizedBox(width: 0)),
+                                  ],
+                                  rows: teams.map((team) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(team.nombre)),
+                                        DataCell(Text(team.entrenador)),
+                                        DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '${team.cantidadJugadores}/20',
+                                                style: TextStyle(
+                                                  color: context.tokens.text,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Icon(
-                                              Symbols.group,
-                                              size: 18,
-                                              color: context.tokens.placeholder,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Transform.translate(
-                                            offset: const Offset(4, 0),
-                                            child: PopupMenuButton<_TeamMenuAction>(
-                                              useRootNavigator: true,
-                                              padding: EdgeInsets.zero,
-                                              icon: Icon(
-                                                Symbols.more_vert,
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Symbols.group,
+                                                size: 18,
                                                 color:
                                                     context.tokens.placeholder,
-                                                weight: 1000,
-                                                size: 18,
                                               ),
-                                              tooltip: 'Más opciones',
-                                              onSelected: (action) {
-                                                switch (action) {
-                                                  case _TeamMenuAction.view:
-                                                    context.push(
-                                                      '/teams/view/${team.id}',
-                                                    );
-                                                    break;
-                                                  case _TeamMenuAction.edit:
-                                                    context.push(
-                                                      '/teams/edit/${team.id}',
-                                                    );
-                                                    break;
-                                                  case _TeamMenuAction.delete:
-                                                    _showDeleteDialog(
-                                                      team.id,
-                                                      team.nombre,
-                                                    );
-                                                    break;
-                                                }
-                                              },
-                                              itemBuilder: (_) => [
-                                                PopupMenuItem(
-                                                  value: _TeamMenuAction.view,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Symbols.visibility,
-                                                        size: 18,
-                                                        color:
-                                                            context.tokens.text,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        'Ver',
-                                                        style: TextStyle(
+                                            ],
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Transform.translate(
+                                              offset: const Offset(4, 0),
+                                              child: PopupMenuButton<_TeamMenuAction>(
+                                                useRootNavigator: true,
+                                                padding: EdgeInsets.zero,
+                                                icon: Icon(
+                                                  Symbols.more_vert,
+                                                  color: context
+                                                      .tokens
+                                                      .placeholder,
+                                                  weight: 1000,
+                                                  size: 18,
+                                                ),
+                                                tooltip: 'Más opciones',
+                                                onSelected: (action) {
+                                                  switch (action) {
+                                                    case _TeamMenuAction.view:
+                                                      context.push(
+                                                        '/teams/view/${team.id}',
+                                                      );
+                                                      break;
+                                                    case _TeamMenuAction.edit:
+                                                      context.push(
+                                                        '/teams/edit/${team.id}',
+                                                      );
+                                                      break;
+                                                    case _TeamMenuAction.delete:
+                                                      _showDeleteDialog(
+                                                        team.id,
+                                                        team.nombre,
+                                                      );
+                                                      break;
+                                                  }
+                                                },
+                                                itemBuilder: (_) => [
+                                                  PopupMenuItem(
+                                                    value: _TeamMenuAction.view,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.visibility,
+                                                          size: 18,
                                                           color: context
                                                               .tokens
                                                               .text,
                                                         ),
-                                                      ),
-                                                    ],
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Ver',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .text,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                                PopupMenuItem(
-                                                  value: _TeamMenuAction.edit,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Symbols.edit,
-                                                        size: 18,
-                                                        color:
-                                                            context.tokens.text,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        'Modificar',
-                                                        style: TextStyle(
+                                                  PopupMenuItem(
+                                                    value: _TeamMenuAction.edit,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.edit,
+                                                          size: 18,
                                                           color: context
                                                               .tokens
                                                               .text,
                                                         ),
-                                                      ),
-                                                    ],
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Modificar',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .text,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                                PopupMenuItem(
-                                                  value: _TeamMenuAction.delete,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Symbols.delete,
-                                                        size: 18,
-                                                        color: context
-                                                            .tokens
-                                                            .redToRosita,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        'Eliminar',
-                                                        style: TextStyle(
+                                                  PopupMenuItem(
+                                                    value:
+                                                        _TeamMenuAction.delete,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Symbols.delete,
+                                                          size: 18,
                                                           color: context
                                                               .tokens
                                                               .redToRosita,
                                                         ),
-                                                      ),
-                                                    ],
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Eliminar',
+                                                          style: TextStyle(
+                                                            color: context
+                                                                .tokens
+                                                                .redToRosita,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                             ),
                           ),

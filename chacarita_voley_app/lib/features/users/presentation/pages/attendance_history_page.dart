@@ -340,14 +340,20 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
           )
         else
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _attendanceHistory.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final record = _attendanceHistory[index];
-                return _buildAttendanceItem(context, record);
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await _loadAttendanceHistory();
               },
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _attendanceHistory.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final record = _attendanceHistory[index];
+                  return _buildAttendanceItem(context, record);
+                },
+              ),
             ),
           ),
 

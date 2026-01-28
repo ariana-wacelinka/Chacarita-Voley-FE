@@ -791,21 +791,27 @@ class _TrainingsPageState extends State<TrainingsPage>
   }
 
   Widget _buildTrainingsList(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _trainings.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _buildFilterSection(context),
-          );
-        }
-
-        final trainingIndex = index - 1;
-        final training = _trainings[trainingIndex];
-        return _buildTrainingCard(context, training);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadTrainings();
       },
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: _trainings.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildFilterSection(context),
+            );
+          }
+
+          final trainingIndex = index - 1;
+          final training = _trainings[trainingIndex];
+          return _buildTrainingCard(context, training);
+        },
+      ),
     );
   }
 

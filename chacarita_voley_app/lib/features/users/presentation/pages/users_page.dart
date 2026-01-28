@@ -486,175 +486,187 @@ class _UsersPageState extends State<UsersPage> {
                   return Column(
                     children: [
                       Expanded(
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SingleChildScrollView(
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.95,
-                              margin: const EdgeInsets.only(top: 10),
-                              child: DataTable(
-                                headingTextStyle: TextStyle(
-                                  color: context.tokens.text,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                                dataTextStyle: TextStyle(
-                                  color: context.tokens.text,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                                columnSpacing: 12,
-                                horizontalMargin: 5,
-                                dividerThickness: 0,
-                                columns: const [
-                                  DataColumn(label: Text('DNI')),
-                                  DataColumn(label: Text('Nombre')),
-                                  DataColumn(label: Text('Equipo')),
-                                  DataColumn(label: Text('Cuota')),
-                                  DataColumn(label: SizedBox(width: 32)),
-                                ],
-                                rows: users.map((user) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(user.dni)),
-                                      DataCell(Text(user.nombreCompleto)),
-                                      DataCell(
-                                        Center(
-                                          child: _buildEquipoChip(
-                                            context,
-                                            user,
+                        child: RefreshIndicator(
+                          onRefresh: () async {
+                            _loadUsers();
+                            await Future.delayed(
+                              const Duration(milliseconds: 500),
+                            );
+                          },
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.95,
+                                margin: const EdgeInsets.only(top: 10),
+                                child: DataTable(
+                                  headingTextStyle: TextStyle(
+                                    color: context.tokens.text,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  dataTextStyle: TextStyle(
+                                    color: context.tokens.text,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                  columnSpacing: 12,
+                                  horizontalMargin: 5,
+                                  dividerThickness: 0,
+                                  columns: const [
+                                    DataColumn(label: Text('DNI')),
+                                    DataColumn(label: Text('Nombre')),
+                                    DataColumn(label: Text('Equipo')),
+                                    DataColumn(label: Text('Cuota')),
+                                    DataColumn(label: SizedBox(width: 32)),
+                                  ],
+                                  rows: users.map((user) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(user.dni)),
+                                        DataCell(Text(user.nombreCompleto)),
+                                        DataCell(
+                                          Center(
+                                            child: _buildEquipoChip(
+                                              context,
+                                              user,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      DataCell(
-                                        Center(
-                                          child: _buildEstadoCuotaIcon(
-                                            context,
-                                            user,
+                                        DataCell(
+                                          Center(
+                                            child: _buildEstadoCuotaIcon(
+                                              context,
+                                              user,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      DataCell(
-                                        PopupMenuButton<String>(
-                                          padding: EdgeInsets.zero,
-                                          icon: Icon(
-                                            Symbols.more_vert,
-                                            color: context.tokens.placeholder,
-                                            weight: 1000,
-                                            size: 18,
-                                          ),
-                                          tooltip: 'Más opciones',
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              onTap: () {
-                                                Future.microtask(() {
-                                                  context.go(
-                                                    '/users/${user.id}/view',
-                                                  );
-                                                });
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Symbols.visibility,
-                                                    size: 18,
-                                                    color: context.tokens.text,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    'Ver',
-                                                    style: TextStyle(
+                                        DataCell(
+                                          PopupMenuButton<String>(
+                                            padding: EdgeInsets.zero,
+                                            icon: Icon(
+                                              Symbols.more_vert,
+                                              color: context.tokens.placeholder,
+                                              weight: 1000,
+                                              size: 18,
+                                            ),
+                                            tooltip: 'Más opciones',
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                onTap: () {
+                                                  Future.microtask(() {
+                                                    context.go(
+                                                      '/users/${user.id}/view',
+                                                    );
+                                                  });
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Symbols.visibility,
+                                                      size: 18,
                                                       color:
                                                           context.tokens.text,
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Ver',
+                                                      style: TextStyle(
+                                                        color:
+                                                            context.tokens.text,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            PopupMenuItem(
-                                              onTap: () {
-                                                Future.microtask(() async {
-                                                  final updated = await context
-                                                      .push(
-                                                        '/users/${user.id}/edit',
-                                                      );
-                                                  if (updated == true &&
-                                                      mounted) {
-                                                    setState(() {
-                                                      _usersFuture = _repository
-                                                          .getUsers(
-                                                            searchQuery:
-                                                                _searchQuery
-                                                                    .isEmpty
-                                                                ? null
-                                                                : _searchQuery,
-                                                            page: _currentPage,
-                                                            size: _usersPerPage,
-                                                          );
-                                                      _totalElementsFuture =
-                                                          _repository
-                                                              .getTotalUsers(
-                                                                searchQuery:
-                                                                    _searchQuery
-                                                                        .isEmpty
-                                                                    ? null
-                                                                    : _searchQuery,
-                                                              );
-                                                    });
-                                                  }
-                                                });
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Symbols.edit,
-                                                    size: 18,
-                                                    color: context.tokens.text,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    'Modificar',
-                                                    style: TextStyle(
+                                              PopupMenuItem(
+                                                onTap: () {
+                                                  Future.microtask(() async {
+                                                    final updated =
+                                                        await context.push(
+                                                          '/users/${user.id}/edit',
+                                                        );
+                                                    if (updated == true &&
+                                                        mounted) {
+                                                      setState(() {
+                                                        _usersFuture =
+                                                            _repository.getUsers(
+                                                              searchQuery:
+                                                                  _searchQuery
+                                                                      .isEmpty
+                                                                  ? null
+                                                                  : _searchQuery,
+                                                              page:
+                                                                  _currentPage,
+                                                              size:
+                                                                  _usersPerPage,
+                                                            );
+                                                        _totalElementsFuture =
+                                                            _repository.getTotalUsers(
+                                                              searchQuery:
+                                                                  _searchQuery
+                                                                      .isEmpty
+                                                                  ? null
+                                                                  : _searchQuery,
+                                                            );
+                                                      });
+                                                    }
+                                                  });
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Symbols.edit,
+                                                      size: 18,
                                                       color:
                                                           context.tokens.text,
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Modificar',
+                                                      style: TextStyle(
+                                                        color:
+                                                            context.tokens.text,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            PopupMenuItem(
-                                              onTap: () {
-                                                Future.microtask(() {
-                                                  _showDeleteDialog(user);
-                                                });
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Symbols.delete,
-                                                    size: 18,
-                                                    color: context
-                                                        .tokens
-                                                        .redToRosita,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    'Eliminar',
-                                                    style: TextStyle(
+                                              PopupMenuItem(
+                                                onTap: () {
+                                                  Future.microtask(() {
+                                                    _showDeleteDialog(user);
+                                                  });
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Symbols.delete,
+                                                      size: 18,
                                                       color: context
                                                           .tokens
                                                           .redToRosita,
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Eliminar',
+                                                      style: TextStyle(
+                                                        color: context
+                                                            .tokens
+                                                            .redToRosita,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                             ),
                           ),

@@ -179,28 +179,34 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   }
 
   Widget _buildPaymentsList(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _pays.length + 2,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _buildSummarySection(context),
-          );
-        }
-
-        if (index == 1) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _buildFilterSection(context),
-          );
-        }
-
-        final paymentIndex = index - 2;
-        final payment = _pays[paymentIndex];
-        return _buildPaymentCard(context, payment);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadPays();
       },
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: _pays.length + 2,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildSummarySection(context),
+            );
+          }
+
+          if (index == 1) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildFilterSection(context),
+            );
+          }
+
+          final paymentIndex = index - 2;
+          final payment = _pays[paymentIndex];
+          return _buildPaymentCard(context, payment);
+        },
+      ),
     );
   }
 
