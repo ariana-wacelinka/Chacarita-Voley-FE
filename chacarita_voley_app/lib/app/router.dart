@@ -1,5 +1,6 @@
 import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
 import 'package:chacarita_voley_app/features/payments/presentation/pages/create_payment_page.dart';
+import 'package:chacarita_voley_app/features/payments/presentation/pages/payment_detail_page.dart';
 import 'package:go_router/go_router.dart';
 import '../features/payments/presentation/pages/payments_validation_page.dart';
 import '../features/payments/presentation/pages/payment_history_page.dart';
@@ -113,6 +114,14 @@ final appRouter = GoRouter(
       path: '/payments/create',
       name: 'payments-create',
       builder: (_, __) => const CreatePaymentPage(),
+    ),
+    GoRoute(
+      path: '/payments/detail/:id',
+      name: 'payments-detail',
+      builder: (_, state) => PaymentDetailPage(
+        paymentId: state.pathParameters['id']!,
+        userName: state.uri.queryParameters['userName'],
+      ),
     ),
     GoRoute(
       path: '/payments/edit/:id',
@@ -254,17 +263,4 @@ String? _subtitleForLocation(GoRouterState state) {
     return state.uri.queryParameters['teamName'];
   }
   return null;
-}
-
-class _Page extends StatelessWidget {
-  const _Page({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(text, style: Theme.of(context).textTheme.headlineSmall),
-    );
-  }
 }

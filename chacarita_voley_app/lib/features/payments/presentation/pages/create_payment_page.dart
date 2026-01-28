@@ -1,6 +1,3 @@
-// lib/features/payments/presentation/pages/create_payment_page.dart
-
-import 'package:chacarita_voley_app/features/payments/domain/entities/create_pay_input.dart';
 import 'package:chacarita_voley_app/features/payments/domain/mappers/pay_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

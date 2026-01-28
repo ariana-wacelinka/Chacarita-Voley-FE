@@ -87,13 +87,29 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
           onPressed: () =>
               context.go('/payments'), // Vuelta a lista o historial
         ),
-        title: Text(
-          'Detalle del Pago',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Detalle del Pago',
+              style: TextStyle(
+                color: tokens.text,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (_payment != null)
+              Text(
+                _payment!.player?.person.fullName ??
+                    _payment!.userName ??
+                    'Sin nombre',
+                style: TextStyle(
+                  color: tokens.placeholder,
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+          ],
         ),
         centerTitle: true,
       ),
@@ -103,30 +119,34 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                 valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
               ),
             )
-          : RefreshIndicator(
-              onRefresh: _loadPayment,
-              child: SingleChildScrollView(
-                child: PaymentDetailContent(payment: _payment!),
+          : SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadPayment,
+                child: SingleChildScrollView(
+                  child: PaymentDetailContent(payment: _payment!),
+                ),
               ),
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ElevatedButton.icon(
-          onPressed: _navigateToEdit,
-          icon: const Icon(Symbols.edit, color: Colors.white),
-          label: const Text(
-            'Modificar Pago',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ElevatedButton.icon(
+            onPressed: _navigateToEdit,
+            icon: const Icon(Symbols.edit, color: Colors.white),
+            label: const Text(
+              'Modificar Pago',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: tokens.redToRosita,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: tokens.redToRosita,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ),

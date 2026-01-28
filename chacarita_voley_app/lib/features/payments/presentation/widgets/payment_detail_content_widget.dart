@@ -12,8 +12,6 @@ class PaymentDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final timeFormat = DateFormat('HH:mm');
-    final dateFormat = DateFormat('dd/MM/yyyy');
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -31,13 +29,23 @@ class PaymentDetailContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Detalles del Pago',
-                  style: TextStyle(
-                    color: tokens.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.credit_card_outlined,
+                      color: tokens.text,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Detalles del Pago',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 _buildDetailRow(
@@ -81,19 +89,23 @@ class PaymentDetailContent extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.description_outlined, color: tokens.gray),
+                      Icon(
+                        Icons.description_outlined,
+                        color: tokens.text,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         'Comprobante de Pago',
                         style: TextStyle(
                           color: tokens.text,
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  Icon(Icons.download_outlined, color: tokens.gray),
+                  Icon(Icons.file_download, color: tokens.text),
                 ],
               ),
             ),
@@ -112,23 +124,27 @@ class PaymentDetailContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Estado del Pago',
-                  style: TextStyle(
-                    color: tokens.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: tokens.text, size: 24),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Estado del Pago',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 _buildStatusRow(
                   label: 'A validar',
                   subtitle: 'Pendiente de revisión',
                   isSelected: payment.status == PayState.pending,
-                  context:
-                      context, //TODO es asi esto o se puede mejorar lo del context
+                  context: context,
                 ),
-                // Agrega más si hay que mostrar todos
               ],
             ),
           ),
@@ -163,35 +179,45 @@ class PaymentDetailContent extends StatelessWidget {
     required bool isSelected,
     required BuildContext context,
   }) {
-    return Row(
-      children: [
-        Icon(
-          isSelected
-              ? Icons.radio_button_checked
-              : Icons.radio_button_unchecked,
-          color: isSelected ? context.tokens.redToRosita : context.tokens.gray,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.tokens.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: context.tokens.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(color: context.tokens.gray, fontSize: 14),
-              ),
-            ],
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: context.tokens.gray,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          Icon(
+            Icons.access_time_outlined,
+            color: context.tokens.gray,
+            size: 20,
+          ),
+        ],
+      ),
     );
   }
 }

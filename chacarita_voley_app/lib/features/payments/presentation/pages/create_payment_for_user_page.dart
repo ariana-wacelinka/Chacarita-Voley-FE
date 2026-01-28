@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 
 import '../../../users/domain/entities/user.dart';
-import '../../../users/data/repositories/user_repository.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/usecases/create_pay_usecase.dart';
 import '../../data/repositories/pay_repository.dart';
@@ -35,21 +34,12 @@ class _CreatePaymentForUserPageState extends State<CreatePaymentForUserPage> {
 
   Future<void> _loadUser() async {
     try {
-      final repo = UserRepository();
-      final user = repo.getUserById(widget.userId);
-      if (user != null) {
-        setState(() async {
-          _user = await user;
-          _isLoading = false;
-        });
-      } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Usuario no encontrado')),
           );
           context.go('/users'); // Vuelta a lista de users
         }
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

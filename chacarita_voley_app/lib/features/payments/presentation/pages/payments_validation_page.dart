@@ -508,7 +508,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                     children: [
                       InkWell(
                         onTap: () {
-                          // TODO: Ver detalles del pago
+                          context.go('/payments/detail/${payment.id}');
                         },
                         child: Icon(
                           Symbols.visibility,
