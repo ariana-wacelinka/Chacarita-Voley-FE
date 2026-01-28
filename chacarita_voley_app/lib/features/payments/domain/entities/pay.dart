@@ -71,10 +71,12 @@ class Pay {
   }
 
   factory Pay.fromJson(Map<String, dynamic> json) {
+    final stateString = (json['state'] as String? ?? json['status'] as String)
+        .toLowerCase();
     return Pay(
       id: json['id'] as String,
       status: PayState.values.firstWhere(
-        (e) => e.name == (json['state'] as String? ?? json['status'] as String),
+        (e) => e.name.toLowerCase() == stateString,
       ),
       amount: (json['amount'] as num).toDouble(),
       date: json['date'] as String,

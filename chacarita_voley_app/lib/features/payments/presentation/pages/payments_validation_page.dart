@@ -1,6 +1,7 @@
 import 'dart:core';
 
 import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repository.dart';
+import 'package:chacarita_voley_app/features/payments/domain/entities/payment_stats.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_filter_input.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   late final PayRepository _repository;
   List<Pay> _pays = [];
   bool _isLoading = true;
+  PaymentStats? _stats;
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
@@ -40,7 +42,23 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   void initState() {
     super.initState();
     _repository = PayRepository();
+    _loadStats();
     _loadPays();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final stats = await _repository.getPaymentsStats();
+      setState(() {
+        _stats = stats;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar estadísticas: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _loadPays() async {
@@ -86,12 +104,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     _loadPays();
   }
 
-  int get _approvedCount =>
-      _pays.where((p) => p.status == PayState.validated).length;
-  int get _rejectedCount =>
-      _pays.where((p) => p.status == PayState.rejected).length;
-  int get _pendingCount =>
-      _pays.where((p) => p.status == PayState.pending).length;
+  int get _approvedCount => _stats?.totalApprovedPayments ?? 0;
+  int get _rejectedCount => _stats?.totalRejectedPayments ?? 0;
+  int get _pendingCount => _stats?.totalPendingPayments ?? 0;
 
   @override
   Widget build(BuildContext context) {
