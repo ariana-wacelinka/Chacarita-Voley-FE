@@ -231,14 +231,17 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 return;
               }
               final newPayment = Pay(
-                userId: _selectedUser!.id!,
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                status: _selectedStatus,
+                amount: double.parse(_montoController.text),
+                date: _dateFormat.format(
+                  _dateFormat.parse(_fechaController.text),
+                ),
+                time: DateTime.now().toIso8601String().split('T')[1],
+                fileName: _comprobanteFileName ?? '',
+                fileUrl: '',
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
-                paymentDate: _dateFormat.parse(_fechaController.text),
-                sentDate: DateTime.now(),
-                amount: double.parse(_montoController.text),
-                status: _selectedStatus,
-                comprobantePath: _comprobanteFileName,
               );
               widget.onSave(newPayment);
             },

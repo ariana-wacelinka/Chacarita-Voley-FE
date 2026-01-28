@@ -76,7 +76,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _DrawerItem(
                     icon: Icons.people,
-                    title: 'Gestión de Usuarios',
+                    title: 'Validación de Pagos',
                     isSelected: currentLocation == '/users',
                     onTap: () {
                       Navigator.pop(context);

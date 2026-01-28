@@ -43,14 +43,16 @@ class PaymentDetailContent extends StatelessWidget {
                 _buildDetailRow(
                   icon: Icons.access_time_outlined,
                   label: 'Hora:',
-                  value: timeFormat.format(payment.paymentDate),
+                  value: payment.time.substring(0, 5),
                   context: context,
                 ),
                 const SizedBox(height: 12),
                 _buildDetailRow(
                   icon: Icons.calendar_today_outlined,
                   label: 'Fecha del Pago:',
-                  value: dateFormat.format(payment.paymentDate),
+                  value: DateFormat(
+                    'dd/MM/yyyy',
+                  ).format(DateTime.parse(payment.date)),
                   context: context,
                 ),
               ],
@@ -64,11 +66,7 @@ class PaymentDetailContent extends StatelessWidget {
             onTap: () {
               // Lógica para descargar o ver comprobante
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Descargando ${payment.comprobantePath ?? 'comprobante'}',
-                  ),
-                ),
+                SnackBar(content: Text('Descargando ${payment.fileName}')),
               );
             },
             child: Container(

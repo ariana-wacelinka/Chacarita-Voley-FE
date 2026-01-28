@@ -295,7 +295,7 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Descargando ${payment.comprobantePath ?? 'comprobante'}',
+                    'Descargando ${payment.fileName}',
                   ),
                 ),
               );

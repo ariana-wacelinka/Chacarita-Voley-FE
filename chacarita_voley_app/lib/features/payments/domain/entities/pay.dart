@@ -3,103 +3,95 @@ import 'package:flutter/foundation.dart'; // Para @immutable si quieres
 
 @immutable
 class Pay {
-  final String? id; // ID único para editar/detalle/historial
-  final String? userId;
-  final String userName; // Nombre completo para display
-  final String dni; // DNI para filtros/búsquedas
-  final DateTime paymentDate; // Fecha y hora del pago (incluye time)
-  final DateTime sentDate; // Fecha de envío/subida
-  final DateTime?
-  dueDate; // Fecha de vencimiento (para calcular estado cuota si derivado)
-  final double amount; // Monto
-  final PayState status; // Estado del pago individual
-  final String?
-  comprobantePath; // Path/URL del archivo comprobante (PDF/imagen)
-  final String? notes; // Notas opcionales (ej: razón de rechazo)
+  final String id;
+  final PayState status; // state en backend
+  final double amount;
+  final String date; // "2025-01-20" formato
+  final String time; // "20:06:07.491" formato
+  final String fileName;
+  final String fileUrl;
+
+  // Campos opcionales que pueden venir del player asociado
+  final String? userName; // Del player si está disponible
+  final String? dni; // Del player si está disponible
+  final String? notes; // Notas opcionales
 
   const Pay({
-    this.id,
-    required this.userId,
-    required this.userName,
-    required this.dni,
-    required this.paymentDate,
-    required this.sentDate,
-    this.dueDate,
-    required this.amount,
+    required this.id,
     required this.status,
-    this.comprobantePath,
+    required this.amount,
+    required this.date,
+    required this.time,
+    required this.fileName,
+    required this.fileUrl,
+    this.userName,
+    this.dni,
     this.notes,
   });
 
-  // Método copyWith para updates fáciles (útil en edición)
+  DateTime get paymentDate => DateTime.parse('$date $time');
+  DateTime get sentDate => paymentDate; // Asumimos que es la misma
+
   Pay copyWith({
     String? id,
-    String? userId,
+    PayState? status,
+    double? amount,
+    String? date,
+    String? time,
+    String? fileName,
+    String? fileUrl,
     String? userName,
     String? dni,
-    DateTime? paymentDate,
-    DateTime? sentDate,
-    DateTime? dueDate,
-    double? amount,
-    PayState? status,
-    String? comprobantePath,
     String? notes,
   }) {
     return Pay(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
+      status: status ?? this.status,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      fileName: fileName ?? this.fileName,
+      fileUrl: fileUrl ?? this.fileUrl,
       userName: userName ?? this.userName,
       dni: dni ?? this.dni,
-      paymentDate: paymentDate ?? this.paymentDate,
-      sentDate: sentDate ?? this.sentDate,
-      dueDate: dueDate ?? this.dueDate,
-      amount: amount ?? this.amount,
-      status: status ?? this.status,
-      comprobantePath: comprobantePath ?? this.comprobantePath,
       notes: notes ?? this.notes,
     );
   }
 
-  // Factory fromJson (para persistencia, similar a User)
   factory Pay.fromJson(Map<String, dynamic> json) {
     return Pay(
-      id: json['id'] as String?,
-      userId: json['userId'] as String?,
-      userName: json['userName'] as String,
-      dni: json['dni'] as String,
-      paymentDate: DateTime.parse(json['paymentDate'] as String),
-      sentDate: DateTime.parse(json['sentDate'] as String),
-      dueDate: json['dueDate'] != null
-          ? DateTime.parse(json['dueDate'] as String)
-          : null,
-      amount: (json['amount'] as num).toDouble(),
+      id: json['id'] as String,
       status: PayState.values.firstWhere(
-        (e) => e.name == (json['status'] as String),
+        (e) => e.name == (json['state'] as String? ?? json['status'] as String),
       ),
-      comprobantePath: json['comprobantePath'] as String?,
+      amount: (json['amount'] as num).toDouble(),
+      date: json['date'] as String,
+      time: json['time'] as String,
+      fileName: json['fileName'] as String,
+      fileUrl: json['fileUrl'] as String,
+      userName: json['userName'] as String?,
+      dni: json['dni'] as String?,
       notes: json['notes'] as String?,
     );
   }
 
-  // toJson (para persistencia)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'userId': userId,
-      'userName': userName,
-      'dni': dni,
-      'paymentDate': paymentDate.toIso8601String(),
-      'sentDate': sentDate.toIso8601String(),
-      'dueDate': dueDate?.toIso8601String(),
+      'state': status.name,
       'amount': amount,
-      'status': status.name,
-      'comprobantePath': comprobantePath,
-      'notes': notes,
+      'date': date,
+      'time': time,
+      'fileName': fileName,
+      'fileUrl': fileUrl,
+      if (userName != null) 'userName': userName,
+      if (dni != null) 'dni': dni,
+      if (notes != null) 'notes': notes,
     };
   }
 
   @override
   String toString() {
-    return 'Payment(id: $id, userId: $userId, userName: $userName, dni: $dni, paymentDate: $paymentDate, sentDate: $sentDate, dueDate: $dueDate, amount: $amount, status: $status, comprobantePath: $comprobantePath, notes: $notes)';
+    return 'Pay(id: $id, status: $status, amount: $amount, date: $date, time: $time, fileName: $fileName, userName: $userName, dni: $dni)';
   }
 }

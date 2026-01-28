@@ -234,7 +234,7 @@ String _titleForLocation(String loc) {
   const map = {
     '/home': '',
     '/users': 'Gestión de Usuarios',
-    '/payments': 'Gestión de Cuotas',
+    '/payments': 'Validación de Pagos',
     '/teams': 'Gestión de Equipos',
     '/notifications': 'Gestión de Notificaciones',
     '/trainings': 'Gestión de Entrenamientos',

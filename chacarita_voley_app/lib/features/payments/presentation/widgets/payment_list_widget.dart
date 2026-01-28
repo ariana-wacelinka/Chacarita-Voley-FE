@@ -54,13 +54,18 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     return List.generate(
       count,
       (index) => Pay(
-        userId: '222',
+        id: 'dummy_${_currentPage}_$index',
+        status: PayState.values[index % 3],
+        amount: 20.00,
+        date: now
+            .subtract(Duration(days: index))
+            .toIso8601String()
+            .split('T')[0],
+        time: '10:00:00.000',
+        fileName: 'comprobante_$index.pdf',
+        fileUrl: 'https://ejemplo.com/comprobante_$index.pdf',
         userName: 'Demas',
         dni: '12345678',
-        paymentDate: now.subtract(Duration(days: index)),
-        sentDate: now.subtract(Duration(days: index - 3)),
-        amount: 20.00,
-        status: PayState.values[index % 3],
       ),
     );
   }
@@ -129,7 +134,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                           children: [
                             Flexible(
                               child: Text(
-                                payment.userName,
+                                payment.userName ?? 'Sin nombre',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: tokens.text,

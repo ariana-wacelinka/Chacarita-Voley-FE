@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repository.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
+import 'package:chacarita_voley_app/features/payments/domain/entities/pay_filter_input.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -17,7 +18,7 @@ class PaymentsValidationPage extends StatefulWidget {
 
 class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   late final PayRepository _repository;
-  late List<Pay> _pays;
+  List<Pay> _pays = [];
   bool _isLoading = true;
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -27,6 +28,13 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   DateTime? _endDate;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+
+  int _currentPage = 0;
+  final int _itemsPerPage = 15;
+  int _totalElements = 0;
+  int _totalPages = 0;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
   @override
   void initState() {
     super.initState();
@@ -37,9 +45,27 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   Future<void> _loadPays() async {
     setState(() => _isLoading = true);
     try {
-      final payments = _repository.getPayments();
+      final payPage = await _repository.getAllPays(
+        page: _currentPage,
+        size: _itemsPerPage,
+        filters: PayFilterInput(
+          state: _selectedStatus,
+          dateFrom: _startDate?.toIso8601String().split('T')[0],
+          dateTo: _endDate?.toIso8601String().split('T')[0],
+          timeFrom: _startTime != null
+              ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}:00'
+              : null,
+          timeTo: _endTime != null
+              ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}:00'
+              : null,
+        ),
+      );
       setState(() {
-        _pays = payments;
+        _pays = payPage.content;
+        _totalElements = payPage.totalElements;
+        _totalPages = payPage.totalPages;
+        _hasNext = payPage.hasNext;
+        _hasPrevious = payPage.hasPrevious;
         _isLoading = false;
       });
     } catch (e) {
@@ -47,9 +73,16 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Error al cargar pagos')));
+        ).showSnackBar(SnackBar(content: Text('Error al cargar pagos: $e')));
       }
     }
+  }
+
+  void _goToPage(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadPays();
   }
 
   int get _approvedCount =>
@@ -58,11 +91,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       _pays.where((p) => p.status == PayState.rejected).length;
   int get _pendingCount =>
       _pays.where((p) => p.status == PayState.pending).length;
-
-  List<Pay> get _filteredPays {
-    if (_selectedStatus == null) return _pays;
-    return _pays.where((p) => p.status == _selectedStatus).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +108,40 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     return Scaffold(
       backgroundColor: tokens.background,
       body: SafeArea(
-        child: _filteredPays.isEmpty
-            ? _buildEmptyState(context)
-            : _buildPaymentsList(context),
+        child: Column(
+          children: [
+            Expanded(
+              child: _pays.isEmpty
+                  ? _buildEmptyState(context)
+                  : _buildPaymentsList(context),
+            ),
+            if (_pays.isNotEmpty) _buildPagination(context),
+          ],
+        ),
+      ),
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: FloatingActionButton(
+          onPressed: () async {
+            // TODO: Navegar a crear pago
+          },
+          backgroundColor: context.tokens.redToRosita,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: const [
+              Icon(Symbols.credit_card, color: Colors.white, size: 26),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Icon(Symbols.add, color: Colors.white, size: 14),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -121,7 +180,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   Widget _buildPaymentsList(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredPays.length + 2,
+      itemCount: _pays.length + 2,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -138,7 +197,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         }
 
         final paymentIndex = index - 2;
-        final payment = _filteredPays[paymentIndex];
+        final payment = _pays[paymentIndex];
         return _buildPaymentCard(context, payment);
       },
     );
@@ -336,7 +395,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                   _endDate = null;
                   _startTime = null;
                   _endTime = null;
+                  _currentPage = 0;
                 });
+                _loadPays();
               },
               icon: Icon(Symbols.close, size: 16, color: context.tokens.text),
               label: Text(
@@ -360,7 +421,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       onTap: () {
         setState(() {
           _selectedStatus = isSelected ? null : status;
+          _currentPage = 0;
         });
+        _loadPays();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -402,7 +465,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               children: [
                 Expanded(
                   child: Text(
-                    payment.userName,
+                    payment.userName ?? 'Sin nombre',
                     style: TextStyle(
                       color: context.tokens.text,
                       fontSize: 20,
@@ -470,7 +533,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              'DNI: ${payment.dni}',
+              'DNI: ${payment.dni ?? 'N/A'}',
               style: TextStyle(color: context.tokens.placeholder, fontSize: 12),
             ),
             const SizedBox(height: 16),
@@ -613,6 +676,66 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       case PayState.pending:
         return context.tokens.pending;
     }
+  }
+
+  Widget _buildPagination(BuildContext context) {
+    final startIndex = _currentPage * _itemsPerPage + 1;
+    final endIndex = (_currentPage * _itemsPerPage) + _pays.length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.tokens.background,
+        border: Border(top: BorderSide(color: context.tokens.stroke)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: Icon(
+              Symbols.keyboard_double_arrow_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(0) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.chevron_left,
+              color: _hasPrevious
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasPrevious ? () => _goToPage(_currentPage - 1) : null,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$startIndex-$endIndex de $_totalElements',
+            style: TextStyle(color: context.tokens.text, fontSize: 14),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(
+              Symbols.chevron_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_currentPage + 1) : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Symbols.keyboard_double_arrow_right,
+              color: _hasNext
+                  ? context.tokens.text
+                  : context.tokens.placeholder,
+            ),
+            onPressed: _hasNext ? () => _goToPage(_totalPages - 1) : null,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDateField({
@@ -778,7 +901,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         } else {
           _endDate = picked;
         }
+        _currentPage = 0;
       });
+      _loadPays();
     }
   }
 
@@ -809,7 +934,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         } else {
           _endTime = picked;
         }
+        _currentPage = 0;
       });
+      _loadPays();
     }
   }
 
@@ -823,7 +950,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           style: TextStyle(color: context.tokens.text),
         ),
         content: Text(
-          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.userName} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
+          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.userName ?? 'Sin nombre'} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
           style: TextStyle(color: context.tokens.text),
         ),
         actions: [

@@ -56,16 +56,14 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   Pay _getDummyPayment() {
     return Pay(
       id: widget.paymentId,
-      userId: 'dummy_user_id',
+      status: PayState.pending,
+      amount: 20000.0,
+      date: '2025-06-12',
+      time: '14:30:00.000',
+      fileName: 'comprobante_dummy.pdf',
+      fileUrl: 'https://ejemplo.com/comprobante_dummy.pdf',
       userName: widget.userName ?? 'Juan Perez',
       dni: '12345678',
-      paymentDate: DateTime(2025, 6, 12, 14, 30),
-      // Con hora para display
-      sentDate: DateTime(2025, 6, 15),
-      amount: 20000.0,
-      status: PayState.pending,
-      comprobantePath: 'comprobante_dummy.pdf',
-      notes: 'Pendiente de revisión',
     );
   }
 

@@ -210,11 +210,9 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                       amount:
                           double.tryParse(_montoController.text) ??
                           widget.payment.amount,
-                      paymentDate:
-                          widget.dateFormat.tryParse(_fechaController.text) ??
-                          widget.payment.paymentDate,
-                      // Actualiza status si es necesario, o recalcula basado en fecha
-                      // comprobante: si hay nuevo file, actualízalo
+                      date: _fechaController.text.isNotEmpty
+                          ? _fechaController.text
+                          : widget.payment.date,
                     );
                     widget.onSave(updatedPayment);
                   },

@@ -5,7 +5,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
-
 //TODO atencion a los deprecated de esta pagina
 
 class CreatePaymentForUserForm extends StatefulWidget {
@@ -129,15 +128,17 @@ class _CreatePaymentForUserFormState extends State<CreatePaymentForUserForm> {
                       );
                       return;
                     }
+                    final parsedDate = _dateFormat.parse(_fechaController.text);
                     final newPayment = Pay(
-                      userId: widget.user.id!,
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      status: _selectedStatus,
+                      amount: double.parse(_montoController.text),
+                      date: DateFormat('yyyy-MM-dd').format(parsedDate),
+                      time: DateTime.now().toIso8601String().split('T')[1],
+                      fileName: _comprobanteFileName ?? '',
+                      fileUrl: '',
                       userName: widget.user.nombreCompleto,
                       dni: widget.user.dni,
-                      paymentDate: _dateFormat.parse(_fechaController.text),
-                      sentDate: DateTime.now(),
-                      amount: double.parse(_montoController.text),
-                      status: _selectedStatus,
-                      comprobantePath: _comprobanteFileName,
                     );
                     widget.onSave(newPayment);
                   },
