@@ -4,7 +4,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
-import '../../domain/entities/pay_state.dart';
 
 class PaymentHistoryContent extends StatefulWidget {
   final List<Pay> payments;
@@ -330,52 +329,6 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
               );
             },
           ),
-          if (payment.status == PayState.validated ||
-              payment.status == PayState.rejected) ...[
-            const SizedBox(width: 4),
-            Container(
-              height: 32,
-              decoration: BoxDecoration(
-                border: Border.all(color: tokens.stroke, width: 1.5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Modificar pago ${payment.id}'),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Symbols.edit, size: 16, color: tokens.text),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Modificar',
-                          style: TextStyle(
-                            color: tokens.text,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

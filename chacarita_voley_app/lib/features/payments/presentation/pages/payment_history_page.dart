@@ -263,7 +263,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         height: 56,
         child: FloatingActionButton(
           onPressed: () {
-            context.push('/payments/create?userId=${widget.userId}');
+            context.push(
+              '/payments/create?userId=${widget.userId}&userName=${Uri.encodeComponent(widget.userName)}',
+            );
           },
           backgroundColor: context.tokens.redToRosita,
           shape: RoundedRectangleBorder(

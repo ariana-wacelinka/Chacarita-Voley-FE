@@ -10,10 +10,10 @@ import '../widgets/payment_create_form_widget.dart'; // Import del nuevo widget
 import '../../../users/domain/entities/user.dart';
 
 class CreatePaymentPage extends StatefulWidget {
-  final String?
-  userId; // Opcional: si viene de historial de usuario, pre-cargar
+  final String? userId;
+  final String? userName;
 
-  const CreatePaymentPage({super.key, this.userId});
+  const CreatePaymentPage({super.key, this.userId, this.userName});
 
   @override
   State<CreatePaymentPage> createState() => _CreatePaymentPageState();
@@ -126,15 +126,37 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: () => context.go('/payments'), // O ruta anterior
+          onPressed: () {
+            if (widget.userId != null && widget.userName != null) {
+              context.go(
+                '/users/${widget.userId}/payments?userName=${Uri.encodeComponent(widget.userName!)}',
+              );
+            } else {
+              context.go('/payments');
+            }
+          },
         ),
-        title: Text(
-          'Registrar Pago',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Registrar Pago',
+              style: TextStyle(
+                color: tokens.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (widget.userName != null)
+              Text(
+                widget.userName!,
+                style: TextStyle(
+                  color: tokens.placeholder,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+          ],
         ),
         centerTitle: true,
       ),

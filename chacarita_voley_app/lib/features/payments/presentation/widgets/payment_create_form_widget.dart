@@ -150,49 +150,96 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 ],
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Buscar por nombre o DNI...',
-                  hintStyle: TextStyle(color: tokens.placeholder),
-                  filled: true,
-                  fillColor: tokens.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: tokens.stroke),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: tokens.stroke),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  suffixIcon: Icon(Icons.search, color: tokens.gray, size: 20),
-                ),
-              ),
-              if (_filteredUsers.isNotEmpty)
+              if (widget.initialUserId != null && _selectedUser != null)
+                // Mostrar solo el nombre cuando viene de historial
                 Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  constraints: const BoxConstraints(maxHeight: 200),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: tokens.background,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: tokens.stroke),
                   ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _filteredUsers.length,
-                    itemBuilder: (context, index) {
-                      final user = _filteredUsers[index];
-                      return ListTile(
-                        title: Text(user.nombreCompleto),
-                        subtitle: Text('DNI: ${user.dni}'),
-                        onTap: () => _selectUser(user),
-                      );
-                    },
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedUser!.nombreCompleto,
+                              style: TextStyle(
+                                color: tokens.text,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'DNI: ${_selectedUser!.dni}',
+                              style: TextStyle(
+                                color: tokens.placeholder,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                )
+              else
+                // Mostrar buscador normal
+                Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar por nombre o DNI...',
+                        hintStyle: TextStyle(color: tokens.placeholder),
+                        filled: true,
+                        fillColor: tokens.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: tokens.stroke),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: tokens.stroke),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        suffixIcon: Icon(
+                          Icons.search,
+                          color: tokens.gray,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    if (_filteredUsers.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        decoration: BoxDecoration(
+                          color: tokens.background,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: tokens.stroke),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _filteredUsers.length,
+                          itemBuilder: (context, index) {
+                            final user = _filteredUsers[index];
+                            return ListTile(
+                              title: Text(user.nombreCompleto),
+                              subtitle: Text('DNI: ${user.dni}'),
+                              onTap: () => _selectUser(user),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),

@@ -106,7 +106,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/payments/create',
       name: 'payments-create',
-      builder: (_, __) => const CreatePaymentPage(),
+      builder: (_, state) => CreatePaymentPage(
+        userId: state.uri.queryParameters['userId'],
+        userName: state.uri.queryParameters['userName'],
+      ),
     ),
     GoRoute(
       path: '/payments/detail/:id',
