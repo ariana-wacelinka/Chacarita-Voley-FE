@@ -135,59 +135,58 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Comprobante de pago',
-                style: TextStyle(
-                  color: tokens.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.description_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Comprobante de pago',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               _buildFileField(tokens),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 '* El comprobante será revisado por un administrador para validar el pago',
                 style: TextStyle(color: tokens.gray, fontSize: 12),
               ),
-              // Button modificar
-              SizedBox(
-                // width: (double.infinity / 2).toDouble(),
-                width: 250,
-                height: 30, // altura típica para botones principales
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    //TODO
-                  },
-                  icon: const Icon(
-                    Icons.autorenew_rounded,
-                    // ↺  (también puedes usar Icons.refresh_rounded)
-                    size: 22,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Modificar',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.4,
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: 150,
+                  height: 36,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      //TODO: Implementar modificación de comprobante
+                    },
+                    icon: const Icon(
+                      Icons.autorenew_rounded,
+                      size: 18,
+                      color: Colors.white,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.tokens.gray,
-                    // tu color rojo/rosado del tema
-                    // Si no tienes el token o quieres un color fijo de emergencia:
-                    // backgroundColor: Color(0xFFE53935),         // rojo más vivo
-                    // backgroundColor: Color(0xFFD32F2F),         // rojo material
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    // sin sombra (como en tu captura)
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        999,
-                      ), // muy redondeado → casi píldora
+                    label: const Text(
+                      'Modificar',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.tokens.gray,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
                   ),
                 ),
               ),
@@ -446,36 +445,30 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
 
   // Campo para comprobante (simulado, agrega file_picker para upload real)
   Widget _buildFileField(AppTokens tokens) {
-    return GestureDetector(
-      onTap: () {
-        // Lógica para subir archivo (usa package file_picker)
-        // Ej: final result = await FilePicker.platform.pickFiles();
-        // if (result != null) _comprobanteFileName = result.files.single.name;
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: tokens.stroke),
-          borderRadius: BorderRadius.circular(8),
-          color: tokens.permanentWhite,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                _comprobanteFileName ?? 'Seleccionar archivo',
-                style: TextStyle(
-                  color: _comprobanteFileName != null
-                      ? tokens.text
-                      : tokens.placeholder,
-                ),
-                overflow: TextOverflow.ellipsis,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: tokens.stroke),
+        borderRadius: BorderRadius.circular(8),
+        color: tokens.background,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              _comprobanteFileName ?? 'Seleccionar archivo',
+              style: TextStyle(
+                color: _comprobanteFileName != null
+                    ? tokens.redToRosita
+                    : tokens.placeholder,
+                fontSize: 14,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-            Icon(Icons.file_download_outlined, color: tokens.gray),
-          ],
-        ),
+          ),
+          Icon(Icons.file_download_outlined, color: tokens.text, size: 20),
+        ],
       ),
     );
   }

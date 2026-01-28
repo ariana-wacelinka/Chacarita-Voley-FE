@@ -69,7 +69,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
   void _navigateToEdit() {
     if (_payment != null) {
-      context.go('/payments/${_payment!.id}/edit');
+      context.go('/payments/edit/${_payment!.id}');
     }
   }
 

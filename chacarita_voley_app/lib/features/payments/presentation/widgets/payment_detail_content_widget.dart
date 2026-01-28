@@ -4,10 +4,17 @@ import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
 
-class PaymentDetailContent extends StatelessWidget {
+class PaymentDetailContent extends StatefulWidget {
   final Pay payment;
 
   const PaymentDetailContent({super.key, required this.payment});
+
+  @override
+  State<PaymentDetailContent> createState() => _PaymentDetailContentState();
+}
+
+class _PaymentDetailContentState extends State<PaymentDetailContent> {
+  bool _isDownloaded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +58,7 @@ class PaymentDetailContent extends StatelessWidget {
                 _buildDetailRow(
                   icon: Icons.access_time_outlined,
                   label: 'Hora:',
-                  value: payment.time.substring(0, 5),
+                  value: widget.payment.time.substring(0, 5),
                   context: context,
                 ),
                 const SizedBox(height: 12),
@@ -60,7 +67,7 @@ class PaymentDetailContent extends StatelessWidget {
                   label: 'Fecha del Pago:',
                   value: DateFormat(
                     'dd/MM/yyyy',
-                  ).format(DateTime.parse(payment.date)),
+                  ).format(DateTime.parse(widget.payment.date)),
                   context: context,
                 ),
               ],
@@ -70,12 +77,18 @@ class PaymentDetailContent extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Sección Comprobante de Pago
+          // Sección Comprobante de Pago
           GestureDetector(
             onTap: () {
               // Lógica para descargar o ver comprobante
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Descargando ${payment.fileName}')),
+                SnackBar(
+                  content: Text('Descargando ${widget.payment.fileName}'),
+                ),
               );
+              setState(() {
+                _isDownloaded = true;
+              });
             },
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -105,7 +118,10 @@ class PaymentDetailContent extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Icon(Icons.file_download, color: tokens.text),
+                  Icon(
+                    _isDownloaded ? Icons.download_done : Icons.file_download,
+                    color: tokens.text,
+                  ),
                 ],
               ),
             ),
@@ -142,7 +158,7 @@ class PaymentDetailContent extends StatelessWidget {
                 _buildStatusRow(
                   label: 'A validar',
                   subtitle: 'Pendiente de revisión',
-                  isSelected: payment.status == PayState.pending,
+                  isSelected: widget.payment.status == PayState.pending,
                   context: context,
                 ),
               ],
