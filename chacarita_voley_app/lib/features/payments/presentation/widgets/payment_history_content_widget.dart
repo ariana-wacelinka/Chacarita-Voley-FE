@@ -1,7 +1,6 @@
-// lib/features/payments/presentation/widgets/payment_history_content.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
@@ -9,11 +8,13 @@ import '../../domain/entities/pay.dart';
 class PaymentHistoryContent extends StatefulWidget {
   final List<Pay> payments;
   final String userName;
+  final String userId;
 
   const PaymentHistoryContent({
     super.key,
     required this.payments,
     required this.userName,
+    required this.userId,
   });
 
   @override
@@ -25,16 +26,35 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   DateTime? _endDate;
   List<Pay> _filteredPayments = [];
   int _currentPage = 0;
-  static const int _itemsPerPage = 10; // Ajustable
+  static const int _itemsPerPage = 7;
+  bool _localeInitialized = false;
 
-  final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
-  final DateFormat _pickerFormat = DateFormat('dd/MM/yyyy');
+  late DateFormat _dateFormat;
+  late DateFormat _pickerFormat;
 
   @override
   void initState() {
     super.initState();
-    _filteredPayments = widget.payments;
+    _initializeLocale();
+    _filteredPayments = List.from(widget.payments);
     _updateDisplayedPayments();
+  }
+
+  Future<void> _initializeLocale() async {
+    await initializeDateFormatting('es');
+    setState(() {
+      _dateFormat = DateFormat('d \'de\' MMMM \'de\' yyyy', 'es');
+      _pickerFormat = DateFormat('dd/MM/yyyy');
+      _localeInitialized = true;
+    });
+  }
+
+  @override
+  void didUpdateWidget(PaymentHistoryContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.payments != widget.payments) {
+      _filterPayments();
+    }
   }
 
   void _filterPayments() {
@@ -58,7 +78,7 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   }
 
   void _updateDisplayedPayments() {
-    // Lógica de paginación (puedes expandir con InfiniteScroll si necesitas)
+    // Lógica de paginación
   }
 
   void _nextPage() {
@@ -79,144 +99,123 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   int get _endItem =>
       ((_currentPage + 1) * _itemsPerPage).clamp(0, _filteredPayments.length);
 
+  List<Pay> get _displayedPayments {
+    final start = _currentPage * _itemsPerPage;
+    final end = (start + _itemsPerPage).clamp(0, _filteredPayments.length);
+    return _filteredPayments.sublist(start, end);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Banner de Estado de la Cuota (similar al de edit, pero fijo para vencida en dummy)
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: _buildStatusBanner(tokens),
+    if (!_localeInitialized) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
         ),
+      );
+    }
 
-        // Sección Filtros
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Filtros',
-                style: TextStyle(
-                  color: tokens.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDatePickerField(
-                      label: 'Desde',
-                      date: _startDate,
-                      onSelected: (date) {
-                        setState(() => _startDate = date);
-                        _filterPayments();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDatePickerField(
-                      label: 'Hasta',
-                      date: _endDate,
-                      onSelected: (date) {
-                        setState(() => _endDate = date);
-                        _filterPayments();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatusBanner(tokens),
+          const SizedBox(height: 24),
+          _buildFiltersSection(tokens),
+          const SizedBox(height: 24),
+          ..._displayedPayments.map(
+            (payment) => _buildPaymentItem(payment, tokens),
           ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Lista de pagos
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _filteredPayments.length,
-          itemBuilder: (context, index) {
-            final payment = _filteredPayments[index];
-            return _buildPaymentItem(payment, tokens);
-          },
-        ),
-
-        // Paginación (similar a users_page)
-        if (_filteredPayments.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: _currentPage > 0 ? _previousPage : null,
-                  icon: Icon(
-                    Symbols.chevron_left,
-                    color: _currentPage > 0 ? tokens.text : tokens.gray,
-                  ),
-                ),
-                Text('$_startItem-$_endItem de ${_filteredPayments.length}'),
-                IconButton(
-                  onPressed:
-                      (_currentPage + 1) * _itemsPerPage <
-                          _filteredPayments.length
-                      ? _nextPage
-                      : null,
-                  icon: Icon(
-                    Symbols.chevron_right,
-                    color:
-                        (_currentPage + 1) * _itemsPerPage <
-                            _filteredPayments.length
-                        ? tokens.text
-                        : tokens.gray,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
+          if (_filteredPayments.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildPagination(tokens),
+          ],
+        ],
+      ),
     );
   }
 
-  // Banner de estado (fijo para ejemplo, pero puedes hacerlo dinámico basado en último pago)
   Widget _buildStatusBanner(AppTokens tokens) {
+    final lastPayment = widget.payments.isNotEmpty
+        ? widget.payments.reduce(
+            (a, b) => a.paymentDate.isAfter(b.paymentDate) ? a : b,
+          )
+        : null;
+
+    final lastPaymentDate = lastPayment != null
+        ? DateFormat('dd/MM').format(lastPayment.paymentDate)
+        : 'N/A';
+
+    final bannerColor = tokens.redToRosita;
+    final title = 'Cuota vencida';
+    final subtitle = 'Último pago: $lastPaymentDate';
+    final description = 'La cuota mensual está vencida';
+    const icon = Symbols.error;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: tokens.redToRosita.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tokens.stroke),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: tokens.redToRosita, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+          Row(
+            children: [
+              Icon(Symbols.credit_card, color: tokens.text, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Estado de la Cuota',
+                style: TextStyle(
+                  color: tokens.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: bannerColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: bannerColor),
+            ),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Cuota vencida',
-                  style: TextStyle(
-                    color: tokens.redToRosita,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: bannerColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: bannerColor, fontSize: 12),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        description,
+                        style: TextStyle(color: bannerColor, fontSize: 12),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  'Último pago: 15/04',
-                  style: TextStyle(color: tokens.redToRosita),
-                ),
-                Text(
-                  'La cuota mensual está vencida',
-                  style: TextStyle(color: tokens.redToRosita),
-                ),
+                Icon(icon, color: bannerColor, size: 24),
               ],
             ),
           ),
@@ -225,32 +224,99 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
     );
   }
 
-  // Campo date picker
+  Widget _buildFiltersSection(AppTokens tokens) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Symbols.filter_alt, color: tokens.text, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Filtros',
+                style: TextStyle(
+                  color: tokens.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDatePickerField(
+                  label: 'Desde',
+                  date: _startDate,
+                  onSelected: (date) {
+                    setState(() => _startDate = date);
+                    _filterPayments();
+                  },
+                  tokens: tokens,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildDatePickerField(
+                  label: 'Hasta',
+                  date: _endDate,
+                  onSelected: (date) {
+                    setState(() => _endDate = date);
+                    _filterPayments();
+                  },
+                  tokens: tokens,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDatePickerField({
     required String label,
     required DateTime? date,
     required ValueChanged<DateTime?> onSelected,
+    required AppTokens tokens,
   }) {
-    return GestureDetector(
-      onTap: () async {
-        final selected = await showDatePicker(
-          context: context,
-          initialDate: date ?? DateTime.now(),
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-        );
-        onSelected(selected);
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: context.tokens.text)),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: tokens.text,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: () async {
+            final selected = await showDatePicker(
+              context: context,
+              initialDate: date ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+              locale: const Locale('es'),
+            );
+            onSelected(selected);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              border: Border.all(color: context.tokens.stroke),
+              border: Border.all(color: tokens.stroke),
               borderRadius: BorderRadius.circular(8),
+              color: tokens.card1,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -258,51 +324,109 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
                 Text(
                   date != null ? _pickerFormat.format(date) : 'DD/MM/AAAA',
                   style: TextStyle(
-                    color: date != null
-                        ? context.tokens.text
-                        : context.tokens.gray,
+                    color: date != null ? tokens.text : tokens.placeholder,
+                    fontSize: 14,
                   ),
                 ),
-                Icon(Icons.calendar_today, color: context.tokens.gray),
+                Icon(
+                  Symbols.calendar_today,
+                  color: tokens.placeholder,
+                  size: 18,
+                ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // Item de lista de pago
   Widget _buildPaymentItem(Pay payment, AppTokens tokens) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      title: Text(
-        _dateFormat.format(payment.paymentDate),
-        style: TextStyle(color: tokens.text, fontWeight: FontWeight.w500),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(left: 16, right: 4, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tokens.stroke),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          Text(
-            '\$${payment.amount.toStringAsFixed(0)}',
-            style: TextStyle(color: tokens.text, fontSize: 16),
+          Icon(Symbols.calendar_today, color: tokens.placeholder, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _dateFormat.format(payment.paymentDate),
+              style: TextStyle(
+                color: tokens.text,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          Text(
+            '\$${payment.amount.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '')}',
+            style: TextStyle(
+              color: tokens.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 12),
           IconButton(
-            icon: Icon(Icons.download_outlined, color: tokens.gray),
+            icon: Icon(Symbols.download, color: tokens.placeholder, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             onPressed: () {
-              // Lógica para descargar comprobante (abrir URL o file)
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Descargando ${payment.fileName}',
-                  ),
+                  content: Text('Descargando ${payment.fileName}'),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPagination(AppTokens tokens) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: _currentPage > 0 ? _previousPage : null,
+          icon: Icon(
+            Symbols.chevron_left,
+            color: _currentPage > 0 ? tokens.text : tokens.placeholder,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$_startItem-$_endItem de ${_filteredPayments.length}',
+          style: TextStyle(
+            color: tokens.text,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed:
+              (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
+              ? _nextPage
+              : null,
+          icon: Icon(
+            Symbols.chevron_right,
+            color: (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
+                ? tokens.text
+                : tokens.placeholder,
+            size: 20,
+          ),
+        ),
+      ],
     );
   }
 }

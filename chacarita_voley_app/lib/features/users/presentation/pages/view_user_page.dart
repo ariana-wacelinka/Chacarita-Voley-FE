@@ -684,7 +684,11 @@ class _ViewUserPageState extends State<ViewUserPage> {
             context,
             icon: Symbols.credit_card,
             title: 'Ver historial de pagos',
-            onTap: () {},
+            onTap: () {
+              context.push(
+                '/users/${widget.userId}/payments?userName=${Uri.encodeComponent('${_user!.nombre} ${_user!.apellido}')}',
+              );
+            },
           ),
           const SizedBox(height: 8),
           _buildActionItem(

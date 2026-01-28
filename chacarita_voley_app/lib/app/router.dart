@@ -99,13 +99,6 @@ final appRouter = GoRouter(
           name: 'settings',
           builder: (_, __) => const SettingsPage(),
         ),
-        //TODO Temporal
-        GoRoute(
-          path: '/payments_history',
-          name: 'history',
-          builder: (_, __) =>
-              const PaymentHistoryPage(userId: '01', userName: 'Prueba'),
-        ),
       ],
     ),
 
@@ -150,6 +143,14 @@ final appRouter = GoRouter(
       name: 'users-attendance',
       builder: (_, state) =>
           AttendanceHistoryPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/users/:id/payments',
+      name: 'users-payments',
+      builder: (_, state) => PaymentHistoryPage(
+        userId: state.pathParameters['id']!,
+        userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+      ),
     ),
     GoRoute(
       path: '/users/:id/notification',

@@ -1,17 +1,15 @@
-// lib/features/payments/presentation/pages/payment_history_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
-import '../../data/repositories/pay_repository.dart'; // Asumiendo que existe o crea uno similar a UserRepository
+import '../../data/repositories/pay_repository.dart';
 import '../../domain/entities/pay_state.dart';
-import '../widgets/payment_history_content_widget.dart'; // Import del nuevo widget
+import '../widgets/payment_history_content_widget.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
-  final String userId; // Para cargar pagos del usuario específico
-  final String userName; // Para mostrar en el título
+  final String userId;
+  final String userName;
 
   const PaymentHistoryPage({
     super.key,
@@ -24,8 +22,8 @@ class PaymentHistoryPage extends StatefulWidget {
 }
 
 class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
-  late final PayRepository _payRepository; // Similar a UserRepository
-  List<Pay> _pay = [];
+  late final PayRepository _payRepository;
+  List<Pay> _payments = [];
   bool _isLoading = true;
 
   @override
@@ -36,28 +34,30 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   }
 
   Future<void> _loadPays() async {
+    setState(() => _isLoading = true);
+
     try {
-      // Cargar pagos reales del repo por userId
       final pays = _payRepository.getPaymentByUserId(widget.userId);
+      if (!mounted) return;
+
       setState(() {
-        _pay = pays.isNotEmpty
-            ? pays
-            : _getDummyPayments(); // Fallback a dummy si vacío
+        _payments = pays.isNotEmpty ? pays : _getDummyPayments();
         _isLoading = false;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Error al cargar historial de pagos'),
-            backgroundColor: context.tokens.redToRosita,
-          ),
-        );
-      }
+      if (!mounted) return;
+
       setState(() {
-        _pay = _getDummyPayments(); // Usar dummy en error
+        _payments = _getDummyPayments();
         _isLoading = false;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Error al cargar historial de pagos'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
     }
   }
 
@@ -155,17 +155,28 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: () => context.go(
-            '/users/${widget.userId}/view',
-          ), // Asumiendo ruta de vuelta a view user
+          onPressed: () => context.go('/users/${widget.userId}/view'),
         ),
-        title: Text(
-          'Historial de Pagos',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Historial de Pagos',
+              style: TextStyle(
+                color: tokens.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              widget.userName,
+              style: TextStyle(
+                color: tokens.placeholder,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
       ),
@@ -178,18 +189,17 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           : RefreshIndicator(
               onRefresh: _loadPays,
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: PaymentHistoryContent(
-                  payments: _pay,
+                  payments: _payments,
                   userName: widget.userName,
+                  userId: widget.userId,
                 ),
               ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navegar a página de crear pago para este usuario
-          context.go(
-            '/payments/create?userId=${widget.userId}', //TODO
-          ); // Asumiendo ruta para create
+          context.push('/payments/create?userId=${widget.userId}');
         },
         backgroundColor: tokens.redToRosita,
         child: const Icon(Symbols.add, color: Colors.white),
