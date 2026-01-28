@@ -515,7 +515,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'DNI: ${payment.dni ?? 'N/A'}',
+                        'DNI: ${payment.effectiveDni}',
                         style: TextStyle(
                           color: context.tokens.placeholder,
                           fontSize: 14,
