@@ -467,83 +467,71 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Nombre, Badge y Acciones
+            // Header: Avatar, Nombre, DNI y Badge
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    payment.effectiveUserName,
-                    style: TextStyle(
-                      color: context.tokens.text,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(payment.status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    payment.status.displayName,
-                    style: TextStyle(
-                      color: _getStatusColor(payment.status),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: context.tokens.background,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: context.tokens.stroke),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Icon(
+                    Symbols.person,
+                    color: context.tokens.placeholder,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      InkWell(
-                        onTap: () {
-                          context.go('/payments/detail/${payment.id}');
-                        },
-                        child: Icon(
-                          Symbols.visibility,
-                          color: context.tokens.placeholder,
-                          size: 20,
+                      Text(
+                        payment.effectiveUserName,
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () {
-                          // TODO: Ver comprobante
-                        },
-                        child: Icon(
-                          Symbols.description,
+                      const SizedBox(height: 2),
+                      Text(
+                        'DNI: ${payment.dni ?? 'N/A'}',
+                        style: TextStyle(
                           color: context.tokens.placeholder,
-                          size: 20,
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(
+                      payment.status,
+                    ).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    payment.status.displayName,
+                    style: TextStyle(
+                      color: _getStatusColor(payment.status),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'DNI: ${payment.dni ?? 'N/A'}',
-              style: TextStyle(color: context.tokens.placeholder, fontSize: 12),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             // Fechas
             Row(
               children: [
@@ -551,13 +539,24 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Fecha de Pago',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Symbols.calendar_today,
+                            color: context.tokens.placeholder,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'FECHA DE PAGO',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -565,6 +564,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         style: TextStyle(
                           color: context.tokens.text,
                           fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -574,13 +574,24 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Enviado',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Symbols.send,
+                            color: context.tokens.placeholder,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'ENVIADO',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -588,6 +599,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                         style: TextStyle(
                           color: context.tokens.text,
                           fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -595,75 +607,209 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Monto y botones de validación
+            const SizedBox(height: 20),
+            // Monto
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.tokens.gray.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'MONTO',
+                    style: TextStyle(
+                      color: context.tokens.placeholder,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '\$${payment.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Iconos de acción y botones
             Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                InkWell(
+                  onTap: () {
+                    context.go('/payments/detail/${payment.id}');
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Symbols.visibility,
+                      color: context.tokens.placeholder,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: () {
+                    // TODO: Ver comprobante
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Symbols.description,
+                      color: context.tokens.placeholder,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (payment.status == PayState.pending)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Monto',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: context.tokens.redToRosita,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              _showValidationDialog(context, payment, false);
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Symbols.close,
+                                    size: 20,
+                                    color: context.tokens.redToRosita,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Rechazar',
+                                    style: TextStyle(
+                                      color: context.tokens.redToRosita,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: context.tokens.green,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              _showValidationDialog(context, payment, true);
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Symbols.check,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Aprobar',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                if (payment.status == PayState.pending)
+                if (payment.status == PayState.validated ||
+                    payment.status == PayState.rejected)
                   Container(
                     height: 40,
                     decoration: BoxDecoration(
+                      border: Border.all(
+                        color: context.tokens.stroke,
+                        width: 1.5,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            _showValidationDialog(context, payment, true);
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            color: context.tokens.green,
-                            child: Icon(
-                              Symbols.check,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          context.push('/payments/${payment.id}/edit');
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Symbols.edit,
+                                size: 20,
+                                color: context.tokens.text,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Modificar',
+                                style: TextStyle(
+                                  color: context.tokens.text,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            _showValidationDialog(context, payment, false);
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            color: context.tokens.redToRosita,
-                            child: Icon(
-                              Symbols.close,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
               ],
