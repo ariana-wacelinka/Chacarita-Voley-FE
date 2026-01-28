@@ -4,6 +4,7 @@ import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repo
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_filter_input.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -123,8 +124,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () async {
-            // TODO: Navegar a crear pago
+          onPressed: () {
+            context.go('/payments/create');
           },
           backgroundColor: context.tokens.redToRosita,
           shape: RoundedRectangleBorder(
@@ -465,7 +466,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               children: [
                 Expanded(
                   child: Text(
-                    payment.userName ?? 'Sin nombre',
+                    payment.effectiveUserName,
                     style: TextStyle(
                       color: context.tokens.text,
                       fontSize: 20,
@@ -950,7 +951,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           style: TextStyle(color: context.tokens.text),
         ),
         content: Text(
-          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.userName ?? 'Sin nombre'} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
+          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.effectiveUserName} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
           style: TextStyle(color: context.tokens.text),
         ),
         actions: [

@@ -267,8 +267,8 @@ class PayRepository implements PayRepositoryInterface {
     final result = await _mutate(
       MutationOptions(
         document: gql('''
-          mutation CreatePay(\$input: CreatePayInput!) {
-            createPay(input: \$input) {
+          mutation CreatePay(\$dueId: ID!, \$input: CreatePayInput!) {
+            createPay(dueId: \$dueId, input: \$input) {
               id
               fileName
               fileUrl
@@ -279,7 +279,7 @@ class PayRepository implements PayRepositoryInterface {
             }
           }
         '''),
-        variables: {'input': input.toJson()},
+        variables: input.toJson(),
       ),
     );
 

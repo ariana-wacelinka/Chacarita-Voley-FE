@@ -1,4 +1,5 @@
 import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
+import 'package:chacarita_voley_app/features/payments/presentation/pages/create_payment_page.dart';
 import 'package:go_router/go_router.dart';
 import '../features/payments/presentation/pages/payments_validation_page.dart';
 import '../features/payments/presentation/pages/payment_history_page.dart';
@@ -108,6 +109,11 @@ final appRouter = GoRouter(
     ),
 
     //Ruta persnalizada de Payments
+    GoRoute(
+      path: '/payments/create',
+      name: 'payments-create',
+      builder: (_, __) => const CreatePaymentPage(),
+    ),
     GoRoute(
       path: '/payments/edit/:id',
       name: 'payments-edit',

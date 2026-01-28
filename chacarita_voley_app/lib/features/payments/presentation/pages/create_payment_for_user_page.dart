@@ -63,12 +63,21 @@ class _CreatePaymentForUserPageState extends State<CreatePaymentForUserPage> {
   }
 
   Future<void> _handleCreatePayment(Pay newPay) async {
+    if (_user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: usuario no cargado')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createPaymentUseCase.execute(PayMapper.toCreateInput(newPay));
+      await _createPaymentUseCase.execute(
+        PayMapper.toCreateInput(newPay, _user!),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

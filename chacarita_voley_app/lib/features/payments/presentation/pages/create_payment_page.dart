@@ -10,6 +10,7 @@ import '../../domain/entities/pay.dart';
 import '../../domain/usecases/create_pay_usecase.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../widgets/payment_create_form_widget.dart'; // Import del nuevo widget
+import '../../../users/domain/entities/user.dart';
 
 class CreatePaymentPage extends StatefulWidget {
   final String?
@@ -31,13 +32,15 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     _createPaymentUseCase = CreatePayUseCase(PayRepository());
   }
 
-  Future<void> _handleCreatePayment(Pay newPay) async {
+  Future<void> _handleCreatePayment(Pay newPay, User selectedUser) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createPaymentUseCase.execute(PayMapper.toCreateInput(newPay));
+      await _createPaymentUseCase.execute(
+        PayMapper.toCreateInput(newPay, selectedUser),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -132,25 +135,27 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
           'Registrar Pago',
           style: TextStyle(
             color: tokens.text,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: PaymentCreateForm(
+                  initialUserId: widget.userId,
+                  onSave: _handleCreatePayment,
+                ),
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: PaymentCreateForm(
-                initialUserId: widget.userId,
-                onSave: _handleCreatePayment,
-              ),
-            ),
+      ),
     );
   }
 }

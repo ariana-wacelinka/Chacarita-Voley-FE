@@ -1,16 +1,19 @@
 import '../entities/pay.dart';
 import '../entities/create_pay_input.dart';
-import 'package:intl/intl.dart';
-
-import '../entities/update_pay_input.dart'; // Para formateo date/time
+import '../entities/update_pay_input.dart';
+import '../../../users/domain/entities/user.dart';
 
 class PayMapper {
-  static CreatePayInput toCreateInput(Pay pay) {
+  static CreatePayInput toCreateInput(Pay pay, User user) {
+    if (user.currentDue == null) {
+      throw ArgumentError('User must have a currentDue to create a payment');
+    }
+
     return CreatePayInput(
+      dueId: user.currentDue!.id,
       fileName: pay.fileName,
       fileUrl: pay.fileUrl,
       date: pay.date,
-      time: pay.time,
       amount: pay.amount,
       state: pay.status.name.toUpperCase(),
     );
@@ -27,6 +30,4 @@ class PayMapper {
       state: pay.status.name.toUpperCase(),
     );
   }
-
-  // add more: e.g., static Pay fromResponseModel(PayResponseModel model) { ... }
 }

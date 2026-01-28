@@ -1,4 +1,5 @@
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
+import 'package:chacarita_voley_app/features/payments/domain/entities/player.dart';
 import 'package:flutter/foundation.dart'; // Para @immutable si quieres
 
 @immutable
@@ -11,9 +12,12 @@ class Pay {
   final String fileName;
   final String fileUrl;
 
-  // Campos opcionales que pueden venir del player asociado
-  final String? userName; // Del player si está disponible
-  final String? dni; // Del player si está disponible
+  // Player opcional (viene del backend en getAllPays)
+  final Player? player;
+
+  // Campos opcionales para retrocompatibilidad
+  final String? userName; // Deprecado: usar player.person.fullName
+  final String? dni; // Deprecado: usar player.person.dni
   final String? notes; // Notas opcionales
 
   const Pay({
@@ -24,10 +28,16 @@ class Pay {
     required this.time,
     required this.fileName,
     required this.fileUrl,
+    this.player,
     this.userName,
     this.dni,
     this.notes,
   });
+
+  // Getters para obtener datos del player o fallback a campos legacy
+  String get effectiveUserName =>
+      player?.person.fullName ?? userName ?? 'Sin nombre';
+  String get effectiveDni => player?.person.dni ?? dni ?? 'N/A';
 
   DateTime get paymentDate => DateTime.parse('$date $time');
   DateTime get sentDate => paymentDate; // Asumimos que es la misma
@@ -40,6 +50,7 @@ class Pay {
     String? time,
     String? fileName,
     String? fileUrl,
+    Player? player,
     String? userName,
     String? dni,
     String? notes,
@@ -52,6 +63,7 @@ class Pay {
       time: time ?? this.time,
       fileName: fileName ?? this.fileName,
       fileUrl: fileUrl ?? this.fileUrl,
+      player: player ?? this.player,
       userName: userName ?? this.userName,
       dni: dni ?? this.dni,
       notes: notes ?? this.notes,
@@ -69,6 +81,9 @@ class Pay {
       time: json['time'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
+      player: json['player'] != null
+          ? Player.fromJson(json['player'] as Map<String, dynamic>)
+          : null,
       userName: json['userName'] as String?,
       dni: json['dni'] as String?,
       notes: json['notes'] as String?,

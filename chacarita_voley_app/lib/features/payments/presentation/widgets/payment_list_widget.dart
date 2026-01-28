@@ -134,7 +134,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                           children: [
                             Flexible(
                               child: Text(
-                                payment.userName ?? 'Sin nombre',
+                                payment.effectiveUserName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: tokens.text,

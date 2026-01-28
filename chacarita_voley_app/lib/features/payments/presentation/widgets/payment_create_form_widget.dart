@@ -12,7 +12,7 @@ import '../../domain/entities/pay_state.dart';
 
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
-  final Function(Pay newPayment) onSave;
+  final Function(Pay newPayment, User selectedUser) onSave;
 
   const PaymentCreateForm({
     super.key,
@@ -38,17 +38,23 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
     _loadUsers();
     _searchController.addListener(_onSearchChanged);
     if (widget.initialUserId != null) {
-      // Pre-cargar usuario si proporcionado
-      final repo = UserRepository();
-      _selectedUser = await repo.getUserById(widget.initialUserId!);
-      if (_selectedUser != null) {
+      _loadInitialUser();
+    }
+  }
+
+  Future<void> _loadInitialUser() async {
+    // Pre-cargar usuario si proporcionado
+    final repo = UserRepository();
+    _selectedUser = await repo.getUserById(widget.initialUserId!);
+    if (_selectedUser != null && mounted) {
+      setState(() {
         _searchController.text = _selectedUser!.nombreCompleto;
-      }
+      });
     }
   }
 
@@ -118,102 +124,196 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Sección Usuario
-        Text(
-          'Usuario',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        // Sección Usuario con card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: tokens.card1,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.stroke),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.person, color: tokens.text, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Usuario',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar por nombre o DNI...',
+                  hintStyle: TextStyle(color: tokens.placeholder),
+                  filled: true,
+                  fillColor: tokens.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: tokens.stroke),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: tokens.stroke),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  suffixIcon: Icon(Icons.search, color: tokens.gray, size: 20),
+                ),
+              ),
+              if (_filteredUsers.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  decoration: BoxDecoration(
+                    color: tokens.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: tokens.stroke),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _filteredUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = _filteredUsers[index];
+                      return ListTile(
+                        title: Text(user.nombreCompleto),
+                        subtitle: Text('DNI: ${user.dni}'),
+                        onTap: () => _selectUser(user),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Buscar por nombre o DNI...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: tokens.stroke),
-            ),
-            prefixIcon: Icon(Icons.person_outline, color: tokens.gray),
-            suffixIcon: Icon(Icons.search, color: tokens.gray),
+
+        const SizedBox(height: 16),
+
+        // Sección Fecha y Monto con card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: tokens.card1,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.stroke),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, color: tokens.text, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Fecha y Monto',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildFormField(
+                label: 'Monto',
+                controller: _montoController,
+                keyboardType: TextInputType.number,
+                required: true,
+              ),
+              const SizedBox(height: 16),
+              _buildDateField(
+                label: 'Fecha del pago',
+                controller: _fechaController,
+                required: true,
+              ),
+            ],
           ),
         ),
-        if (_filteredUsers.isNotEmpty)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _filteredUsers.length,
-              itemBuilder: (context, index) {
-                final user = _filteredUsers[index];
-                return ListTile(
-                  title: Text(user.nombreCompleto),
-                  subtitle: Text('DNI: ${user.dni}'),
-                  onTap: () => _selectUser(user),
-                );
-              },
-            ),
+
+        const SizedBox(height: 16),
+
+        // Sección Comprobante con card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: tokens.card1,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.stroke),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.description, color: tokens.text, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Comprobante de pago',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildFileUploadField(tokens),
+              const SizedBox(height: 8),
+              Text(
+                '* El comprobante será revisado por un administrador para validar el pago',
+                style: TextStyle(color: tokens.gray, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Sección Estado del pago con card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: tokens.card1,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.stroke),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, color: tokens.text, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Estado del pago',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildStatusRadioGroup(tokens),
+            ],
+          ),
+        ),
 
         const SizedBox(height: 24),
-
-        // Sección Fecha y Monto
-        Text(
-          'Fecha y Monto',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildFormField(
-          label: 'Monto *',
-          controller: _montoController,
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 12),
-        _buildDateField(
-          label: 'Fecha del pago *',
-          controller: _fechaController,
-        ),
-
-        const SizedBox(height: 24),
-
-        // Sección Comprobante
-        Text(
-          'Comprobante de pago',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildFileUploadField(tokens),
-        const SizedBox(height: 4),
-        Text(
-          '* El comprobante será revisado por un administrador para validar el pago',
-          style: TextStyle(color: tokens.gray, fontSize: 12),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Sección Estado del pago
-        Text(
-          'Estado del pago',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildStatusRadioGroup(tokens),
-
-        const SizedBox(height: 32),
 
         // Botón Registrar
         SizedBox(
@@ -243,7 +343,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
               );
-              widget.onSave(newPayment);
+              widget.onSave(newPayment, _selectedUser!);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: tokens.redToRosita,
@@ -251,6 +351,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              elevation: 0,
             ),
             child: const Text(
               'Registrar pago',
@@ -271,29 +372,46 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     required String label,
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: context.tokens.text,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            children: [
+              if (required)
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: context.tokens.redToRosita),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          style: TextStyle(color: context.tokens.text),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: context.tokens.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: context.tokens.stroke),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: context.tokens.stroke),
+            ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
+              horizontal: 16,
               vertical: 12,
             ),
           ),
@@ -306,19 +424,29 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   Widget _buildDateField({
     required String label,
     required TextEditingController controller,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: context.tokens.text,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            children: [
+              if (required)
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: context.tokens.redToRosita),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
             final selectedDate = await showDatePicker(
@@ -334,19 +462,28 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           child: AbsorbPointer(
             child: TextFormField(
               controller: controller,
+              style: TextStyle(color: context.tokens.text),
               decoration: InputDecoration(
                 hintText: 'DD/MM/AAAA',
+                hintStyle: TextStyle(color: context.tokens.placeholder),
+                filled: true,
+                fillColor: context.tokens.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: context.tokens.stroke),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: context.tokens.stroke),
+                ),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 16,
                   vertical: 12,
                 ),
                 suffixIcon: Icon(
-                  Icons.calendar_today_outlined,
+                  Icons.calendar_today,
                   color: context.tokens.gray,
+                  size: 20,
                 ),
               ),
             ),
@@ -363,31 +500,45 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         // Lógica real de file_picker
         setState(() {
           _comprobanteFileName =
-              'comprobante_${DateTime.now().millisecondsSinceEpoch}.pdf'; // Simulado
+              'comprobante_${DateTime.now().millisecondsSinceEpoch}.pdf';
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
         decoration: BoxDecoration(
-          border: Border.all(color: tokens.stroke),
+          border: Border.all(color: tokens.stroke, style: BorderStyle.solid),
           borderRadius: BorderRadius.circular(8),
-          color: tokens.permanentWhite,
+          color: tokens.background,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.upload_file, color: tokens.redToRosita, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              _comprobanteFileName ??
-                  'Arrastrá y soltá el comprobante acá o seleccioná un archivo',
-              style: TextStyle(
-                color: _comprobanteFileName != null
-                    ? tokens.text
-                    : tokens.redToRosita,
+            Icon(Icons.upload_file_outlined, color: tokens.gray, size: 40),
+            const SizedBox(height: 12),
+            if (_comprobanteFileName == null)
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  text: 'Arrastrá y soltá el comprobante acá o\n',
+                  style: TextStyle(color: tokens.text, fontSize: 14),
+                  children: [
+                    TextSpan(
+                      text: 'seleccioná un archivo',
+                      style: TextStyle(
+                        color: tokens.redToRosita,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(
+                _comprobanteFileName!,
+                style: TextStyle(color: tokens.text, fontSize: 14),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),
@@ -397,16 +548,83 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   // Grupo de radios para estado
   Widget _buildStatusRadioGroup(AppTokens tokens) {
     return Column(
-      children: PayState.values.map((status) {
-        return RadioListTile<PayState>(
-          title: Text(status.name.capitalize()),
-          subtitle: Text(status.displayName),
-          value: status,
-          groupValue: _selectedStatus,
-          onChanged: (value) => setState(() => _selectedStatus = value!),
-          activeColor: tokens.redToRosita,
-        );
-      }).toList(),
+      children: [
+        _buildStatusOption(
+          tokens: tokens,
+          status: PayState.pending,
+          title: 'Pendiente',
+          subtitle: 'Pendiente de revisión',
+        ),
+        const SizedBox(height: 8),
+        _buildStatusOption(
+          tokens: tokens,
+          status: PayState.validated,
+          title: 'Validada',
+          subtitle: 'Pago confirmado y registrado',
+        ),
+        const SizedBox(height: 8),
+        _buildStatusOption(
+          tokens: tokens,
+          status: PayState.rejected,
+          title: 'Rechazada',
+          subtitle: 'Comprobante inválido o pago no recibido',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusOption({
+    required AppTokens tokens,
+    required PayState status,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedStatus == status;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedStatus = status),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: tokens.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? tokens.redToRosita : tokens.stroke,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected ? tokens.redToRosita : tokens.gray,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: tokens.gray, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -416,12 +634,5 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     _montoController.dispose();
     _fechaController.dispose();
     super.dispose();
-  }
-}
-
-// Extensión helper para capitalize (opcional)
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
