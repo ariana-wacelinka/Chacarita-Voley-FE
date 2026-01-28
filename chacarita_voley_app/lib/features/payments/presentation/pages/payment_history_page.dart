@@ -26,6 +26,11 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   List<Pay> _payments = [];
   bool _isLoading = true;
 
+  int _currentPage = 0;
+  static const int _itemsPerPage = 7;
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   @override
   void initState() {
     super.initState();
@@ -144,6 +149,53 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     ];
   }
 
+  List<Pay> get _filteredPayments {
+    return _payments.where((payment) {
+      bool afterStart =
+          _startDate == null ||
+          payment.paymentDate.isAfter(
+            _startDate!.subtract(const Duration(days: 1)),
+          );
+      bool beforeEnd =
+          _endDate == null ||
+          payment.paymentDate.isBefore(_endDate!.add(const Duration(days: 1)));
+      return afterStart && beforeEnd;
+    }).toList();
+  }
+
+  List<Pay> get _displayedPayments {
+    final filtered = _filteredPayments;
+    final start = _currentPage * _itemsPerPage;
+    final end = (start + _itemsPerPage).clamp(0, filtered.length);
+    return filtered.sublist(start, end);
+  }
+
+  void _nextPage() {
+    if ((_currentPage + 1) * _itemsPerPage < _filteredPayments.length) {
+      setState(() => _currentPage++);
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      setState(() => _currentPage--);
+    }
+  }
+
+  int get _startItem =>
+      _filteredPayments.isEmpty ? 0 : _currentPage * _itemsPerPage + 1;
+
+  int get _endItem =>
+      ((_currentPage + 1) * _itemsPerPage).clamp(0, _filteredPayments.length);
+
+  void _onFiltersChanged(DateTime? startDate, DateTime? endDate) {
+    setState(() {
+      _startDate = startDate;
+      _endDate = endDate;
+      _currentPage = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -186,23 +238,96 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                 valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
               ),
             )
-          : RefreshIndicator(
-              onRefresh: _loadPays,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: PaymentHistoryContent(
-                  payments: _payments,
-                  userName: widget.userName,
-                  userId: widget.userId,
+          : Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadPays,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: PaymentHistoryContent(
+                        payments: _displayedPayments,
+                        allPayments: _payments,
+                        userName: widget.userName,
+                        userId: widget.userId,
+                        onFiltersChanged: _onFiltersChanged,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                if (_filteredPayments.isNotEmpty) _buildPagination(tokens),
+              ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/payments/create?userId=${widget.userId}');
-        },
-        backgroundColor: tokens.redToRosita,
-        child: const Icon(Symbols.add, color: Colors.white),
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: FloatingActionButton(
+          onPressed: () {
+            context.push('/payments/create?userId=${widget.userId}');
+          },
+          backgroundColor: context.tokens.redToRosita,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: const [
+              Icon(Symbols.credit_card, color: Colors.white, size: 26),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Icon(Symbols.add, color: Colors.white, size: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPagination(AppTokens tokens) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: tokens.card1,
+        border: Border(top: BorderSide(color: tokens.stroke)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: _currentPage > 0 ? _previousPage : null,
+            icon: Icon(
+              Symbols.chevron_left,
+              color: _currentPage > 0 ? tokens.text : tokens.placeholder,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$_startItem-$_endItem de ${_filteredPayments.length}',
+            style: TextStyle(
+              color: tokens.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed:
+                (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
+                ? _nextPage
+                : null,
+            icon: Icon(
+              Symbols.chevron_right,
+              color:
+                  (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
+                  ? tokens.text
+                  : tokens.placeholder,
+              size: 20,
+            ),
+          ),
+        ],
       ),
     );
   }

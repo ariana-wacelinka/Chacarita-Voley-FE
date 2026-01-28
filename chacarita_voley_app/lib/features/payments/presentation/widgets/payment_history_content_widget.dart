@@ -7,14 +7,18 @@ import '../../domain/entities/pay.dart';
 
 class PaymentHistoryContent extends StatefulWidget {
   final List<Pay> payments;
+  final List<Pay> allPayments;
   final String userName;
   final String userId;
+  final Function(DateTime?, DateTime?) onFiltersChanged;
 
   const PaymentHistoryContent({
     super.key,
     required this.payments,
+    required this.allPayments,
     required this.userName,
     required this.userId,
+    required this.onFiltersChanged,
   });
 
   @override
@@ -24,9 +28,6 @@ class PaymentHistoryContent extends StatefulWidget {
 class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   DateTime? _startDate;
   DateTime? _endDate;
-  List<Pay> _filteredPayments = [];
-  int _currentPage = 0;
-  static const int _itemsPerPage = 7;
   bool _localeInitialized = false;
 
   late DateFormat _dateFormat;
@@ -36,8 +37,6 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   void initState() {
     super.initState();
     _initializeLocale();
-    _filteredPayments = List.from(widget.payments);
-    _updateDisplayedPayments();
   }
 
   Future<void> _initializeLocale() async {
@@ -49,60 +48,8 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
     });
   }
 
-  @override
-  void didUpdateWidget(PaymentHistoryContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.payments != widget.payments) {
-      _filterPayments();
-    }
-  }
-
-  void _filterPayments() {
-    setState(() {
-      _currentPage = 0;
-      _filteredPayments = widget.payments.where((payment) {
-        bool afterStart =
-            _startDate == null ||
-            payment.paymentDate.isAfter(
-              _startDate!.subtract(const Duration(days: 1)),
-            );
-        bool beforeEnd =
-            _endDate == null ||
-            payment.paymentDate.isBefore(
-              _endDate!.add(const Duration(days: 1)),
-            );
-        return afterStart && beforeEnd;
-      }).toList();
-      _updateDisplayedPayments();
-    });
-  }
-
-  void _updateDisplayedPayments() {
-    // Lógica de paginación
-  }
-
-  void _nextPage() {
-    if ((_currentPage + 1) * _itemsPerPage < _filteredPayments.length) {
-      setState(() => _currentPage++);
-    }
-  }
-
-  void _previousPage() {
-    if (_currentPage > 0) {
-      setState(() => _currentPage--);
-    }
-  }
-
-  int get _startItem =>
-      _filteredPayments.isEmpty ? 0 : _currentPage * _itemsPerPage + 1;
-
-  int get _endItem =>
-      ((_currentPage + 1) * _itemsPerPage).clamp(0, _filteredPayments.length);
-
-  List<Pay> get _displayedPayments {
-    final start = _currentPage * _itemsPerPage;
-    final end = (start + _itemsPerPage).clamp(0, _filteredPayments.length);
-    return _filteredPayments.sublist(start, end);
+  void _applyFilters() {
+    widget.onFiltersChanged(_startDate, _endDate);
   }
 
   @override
@@ -126,21 +73,17 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
           const SizedBox(height: 24),
           _buildFiltersSection(tokens),
           const SizedBox(height: 24),
-          ..._displayedPayments.map(
+          ...widget.payments.map(
             (payment) => _buildPaymentItem(payment, tokens),
           ),
-          if (_filteredPayments.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _buildPagination(tokens),
-          ],
         ],
       ),
     );
   }
 
   Widget _buildStatusBanner(AppTokens tokens) {
-    final lastPayment = widget.payments.isNotEmpty
-        ? widget.payments.reduce(
+    final lastPayment = widget.allPayments.isNotEmpty
+        ? widget.allPayments.reduce(
             (a, b) => a.paymentDate.isAfter(b.paymentDate) ? a : b,
           )
         : null;
@@ -258,7 +201,7 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
                   date: _startDate,
                   onSelected: (date) {
                     setState(() => _startDate = date);
-                    _filterPayments();
+                    _applyFilters();
                   },
                   tokens: tokens,
                 ),
@@ -270,7 +213,7 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
                   date: _endDate,
                   onSelected: (date) {
                     setState(() => _endDate = date);
-                    _filterPayments();
+                    _applyFilters();
                   },
                   tokens: tokens,
                 ),
@@ -388,45 +331,6 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPagination(AppTokens tokens) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: _currentPage > 0 ? _previousPage : null,
-          icon: Icon(
-            Symbols.chevron_left,
-            color: _currentPage > 0 ? tokens.text : tokens.placeholder,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$_startItem-$_endItem de ${_filteredPayments.length}',
-          style: TextStyle(
-            color: tokens.text,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed:
-              (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
-              ? _nextPage
-              : null,
-          icon: Icon(
-            Symbols.chevron_right,
-            color: (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
-                ? tokens.text
-                : tokens.placeholder,
-            size: 20,
-          ),
-        ),
-      ],
     );
   }
 }
