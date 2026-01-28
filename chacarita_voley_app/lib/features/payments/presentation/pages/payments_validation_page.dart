@@ -3,11 +3,10 @@ import 'dart:core';
 import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repository.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
-import '../widgets/payment_list_widget.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
   const PaymentsValidationPage({super.key});
@@ -17,42 +16,18 @@ class PaymentsValidationPage extends StatefulWidget {
 }
 
 class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
-  // Data dummy (replace with API/DB)
-  late final List<Pay> initialPayments = [
-    Pay(
-      userId: '10',
-      userName: 'Marcos Paz',
-      dni: '12345678',
-      paymentDate: DateTime(2025, 6, 12),
-      sentDate: DateTime(2025, 6, 15),
-      amount: 20000.00,
-      status: PayState.pending,
-    ),
-    Pay(
-      userId: '11',
-      userName: 'Enrique Cruz',
-      dni: '12345678',
-      paymentDate: DateTime(2025, 6, 12),
-      sentDate: DateTime(2025, 6, 15),
-      amount: 20.00,
-      status: PayState.validated,
-    ),
-    Pay(
-      userId: '12',
-      userName: 'Mari Gonzales',
-      dni: '12345678',
-      paymentDate: DateTime(2025, 6, 12),
-      sentDate: DateTime(2025, 6, 15),
-      amount: 20.00,
-      status: PayState.rejected,
-    ),
-  ];
-
-  //USe the repository for dummy
   late final PayRepository _repository;
   late List<Pay> _pays;
   bool _isLoading = true;
 
+  final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
+
+  PayState? _selectedStatus;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  @override
   void initState() {
     super.initState();
     _repository = PayRepository();
@@ -77,14 +52,17 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     }
   }
 
-  DateTime? _startDate;
-  DateTime? _endDate;
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
-  final Set<String> _selectedFilters = {};
+  int get _approvedCount =>
+      _pays.where((p) => p.status == PayState.validated).length;
+  int get _rejectedCount =>
+      _pays.where((p) => p.status == PayState.rejected).length;
+  int get _pendingCount =>
+      _pays.where((p) => p.status == PayState.pending).length;
 
-  // Format
-  final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
+  List<Pay> get _filteredPays {
+    if (_selectedStatus == null) return _pays;
+    return _pays.where((p) => p.status == _selectedStatus).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,226 +80,129 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     return Scaffold(
       backgroundColor: tokens.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Resumen
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: tokens.card1,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: tokens.stroke),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          color: tokens.gray,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Resumen de Validaciones',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: tokens.text,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildSummaryItem(
-                          number: '70',
-                          label: 'Aprobados',
-                          numberColor: tokens.green,
-                          labelColor: tokens.gray,
-                        ),
-                        _buildSummaryItem(
-                          number: '30',
-                          label: 'Rechazados',
-                          numberColor: tokens.redToRosita,
-                          labelColor: tokens.gray,
-                        ),
-                        _buildSummaryItem(
-                          number: '70',
-                          label: 'Pendientes',
-                          numberColor: tokens.pending,
-                          labelColor: tokens.gray,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Filter
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: tokens.card1,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: tokens.stroke),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.filter_alt_outlined,
-                          color: tokens.gray,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Filtro',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: tokens.text,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Fechas (ejemplo estático por ahora)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildDateField(
-                            label: 'Fecha de inicio *',
-                            // DateTime.now(),
-                            date: _startDate,
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _startDate ?? DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (date != null)
-                                setState(() => _startDate = date);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildDateField(
-                            // 'Fecha de fin *',
-                            // DateTime.now().add(const Duration(days: 30)),
-                            label: 'Fecha de fin *',
-                            date: _endDate,
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _endDate ?? DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (date != null) setState(() => _endDate = date);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTimeField(
-                            // 'Hora de inicio *',
-                            // TimeOfDay.now(),
-                            'Hora de inicio *',
-                            _startTime,
-                            () async {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: _startTime ?? TimeOfDay.now(),
-                              );
-                              if (time != null)
-                                setState(() => _startTime = time);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTimeField(
-                            // 'Hora de fin *',
-                            // TimeOfDay.now(),
-                            'Hora de fin *',
-                            _endTime,
-                            () async {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: _endTime ?? TimeOfDay.now(),
-                              );
-                              if (time != null) setState(() => _endTime = time);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Button Filter
-                    Text(
-                      'Filtrar por:',
-                      style: TextStyle(fontSize: 14, color: tokens.gray),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        _buildFilterButton('Validados', tokens.green),
-                        const SizedBox(width: 8),
-                        _buildFilterButton('Rechazados', tokens.redToRosita),
-                        const SizedBox(width: 8),
-                        _buildFilterButton('Pendientes', tokens.pending),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Expanded(
-              // Inifity scroll label payment
-              child: PaymentListWidget(
-                initialPayments: _pays,
-              ), //initialPayments TODO
-            ),
-          ],
-        ),
+        child: _filteredPays.isEmpty
+            ? _buildEmptyState(context)
+            : _buildPaymentsList(context),
       ),
     );
   }
 
-  // ────────────────────────────────────────────────
-  // Widget private
-  // ────────────────────────────────────────────────
+  Widget _buildEmptyState(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(child: _buildSummarySection(context)),
+        SliverToBoxAdapter(child: _buildFilterSection(context)),
+        SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Symbols.payments,
+                  size: 64,
+                  color: context.tokens.placeholder,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No hay pagos para validar',
+                  style: TextStyle(
+                    color: context.tokens.placeholder,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentsList(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredPays.length + 2,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildSummarySection(context),
+          );
+        }
+
+        if (index == 1) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildFilterSection(context),
+          );
+        }
+
+        final paymentIndex = index - 2;
+        final payment = _filteredPays[paymentIndex];
+        return _buildPaymentCard(context, payment);
+      },
+    );
+  }
+
+  Widget _buildSummarySection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Symbols.check_circle_outline,
+                color: context.tokens.gray,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Resumen de Validaciones',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: context.tokens.text,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(
+                number: _approvedCount.toString(),
+                label: 'Aprobados',
+                numberColor: context.tokens.green,
+              ),
+              _buildSummaryItem(
+                number: _rejectedCount.toString(),
+                label: 'Rechazados',
+                numberColor: context.tokens.redToRosita,
+              ),
+              _buildSummaryItem(
+                number: _pendingCount.toString(),
+                label: 'Pendientes',
+                numberColor: context.tokens.pending,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSummaryItem({
     required String number,
     required String label,
     required Color numberColor,
-    required Color labelColor,
   }) {
     return Column(
       children: [
@@ -333,210 +214,650 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             color: numberColor,
           ),
         ),
-        Text(label, style: TextStyle(fontSize: 14, color: labelColor)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: context.tokens.placeholder),
+        ),
       ],
     );
   }
 
-  // Widget para campo de fecha
-  Widget _buildDateField({
-    required String label,
-    required DateTime? date,
-    required VoidCallback onTap, //TODO que es el VoidCallback
-  }) {
-    final tokens = context.tokens;
-
-    final hasAsterisk = label.endsWith(' *');
-    final textPart = hasAsterisk
-        ? label.substring(0, label.length - 2).trim()
-        : label;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(textPart, style: TextStyle(fontSize: 14, color: tokens.text)),
-            if (hasAsterisk)
-              Text(
-                ' *',
-                style: TextStyle(fontSize: 14, color: tokens.redToRosita),
+  Widget _buildFilterSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Symbols.filter_alt,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
               ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: tokens.stroke),
-              borderRadius: BorderRadius.circular(8),
-              color: tokens.permanentWhite,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  date != null ? _dateFormat.format(date) : 'Seleccionar fecha',
-                  style: TextStyle(
-                    color: date != null ? tokens.text : tokens.placeholder,
-                  ),
+              const SizedBox(width: 8),
+              Text(
+                'Filtro',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: context.tokens.text,
                 ),
-                Icon(Icons.calendar_today_outlined, color: tokens.gray),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDateField(
+                  label: 'Fecha de inicio',
+                  value: _startDate,
+                  onTap: () => _selectDate(context, true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDateField(
+                  label: 'Fecha de fin',
+                  value: _endDate,
+                  onTap: () => _selectDate(context, false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTimeField(
+                  label: 'Hora de inicio',
+                  value: _startTime,
+                  onTap: () => _selectTime(context, true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTimeField(
+                  label: 'Hora de fin',
+                  value: _endTime,
+                  onTap: () => _selectTime(context, false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Filtrar por:',
+            style: TextStyle(
+              color: context.tokens.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeField(String label, TimeOfDay? time, VoidCallback onTap) {
-    final tokens = context.tokens;
-    bool hasAsterisk = label.endsWith(' *');
-    String textPart = hasAsterisk
-        ? label.substring(0, label.length - 2).trim()
-        : label;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(textPart, style: TextStyle(fontSize: 14, color: tokens.text)),
-            if (hasAsterisk)
-              Text(
-                ' *',
-                style: TextStyle(fontSize: 14, color: tokens.redToRosita),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildFilterChip(
+                label: 'Validados',
+                status: PayState.validated,
+                color: context.tokens.green,
               ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: tokens.stroke),
-              borderRadius: BorderRadius.circular(8),
-              color: tokens.permanentWhite,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  time != null
-                      ? '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
-                      : 'Seleccionar hora',
-                  style: TextStyle(
-                    color: time != null ? tokens.text : tokens.placeholder,
-                  ),
-                ),
-                Icon(Icons.access_time_outlined, color: tokens.gray),
-              ],
-            ),
+              _buildFilterChip(
+                label: 'Rechazados',
+                status: PayState.rejected,
+                color: context.tokens.redToRosita,
+              ),
+              _buildFilterChip(
+                label: 'Pendientes',
+                status: PayState.pending,
+                color: context.tokens.pending,
+              ),
+            ],
           ),
-        ),
-      ],
-    );
-  }
-
-  // Botón de filtro (usando GFButton para estilo)
-  Widget _buildFilterButton(String label, Color color) {
-    final isSelected = _selectedFilters.contains(label);
-    return GFButton(
-      onPressed: () {
-        setState(() {
-          if (isSelected) {
-            _selectedFilters.remove(label);
-          } else {
-            _selectedFilters.add(label);
-          }
-        });
-      },
-      text: label,
-      // shape: GFButtonShape.standard,
-      //
-      // type: GFButtonType.outline,
-      // color: color,
-      // textStyle: TextStyle(color: context.tokens.text),
-      shape: GFButtonShape.pills,
-      type: isSelected ? GFButtonType.solid : GFButtonType.outline,
-      color: isSelected ? color : context.tokens.stroke,
-      borderSide: BorderSide(color: context.tokens.stroke),
-      textStyle: TextStyle(
-        color: isSelected ? context.tokens.permanentWhite : context.tokens.text,
+          if (_selectedStatus != null ||
+              _startDate != null ||
+              _endDate != null ||
+              _startTime != null ||
+              _endTime != null) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _selectedStatus = null;
+                  _startDate = null;
+                  _endDate = null;
+                  _startTime = null;
+                  _endTime = null;
+                });
+              },
+              icon: Icon(Symbols.close, size: 16, color: context.tokens.text),
+              label: Text(
+                'Limpiar filtros',
+                style: TextStyle(color: context.tokens.text),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
-}
 
-// Widget reutilizable para cada card de validación de pago (usando GFCard, GFListTile, GFBadge, GFButton)
-class PaymentValidationCard extends StatelessWidget {
-  final Pay payment;
-
-  const PaymentValidationCard({super.key, required this.payment});
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    Color statusColor;
-    GFButtonType buttonType;
-    switch (payment.status.displayName) {
-      case 'Pendiente':
-        statusColor = tokens.pending;
-        buttonType = GFButtonType.outline;
-        break;
-      case 'Rechazado':
-        statusColor = tokens.redToRosita;
-        buttonType = GFButtonType.solid;
-        break;
-      case 'Aprobado':
-        statusColor = tokens.green;
-        buttonType = GFButtonType.transparent;
-        break;
-      default:
-        statusColor = tokens.gray;
-        buttonType = GFButtonType.transparent;
-    }
-
-    return GFCard(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      boxFit: BoxFit.cover,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      content: GFListTile(
-        title: Text(
-          payment.userName,
-          style: TextStyle(fontWeight: FontWeight.bold, color: tokens.text),
+  Widget _buildFilterChip({
+    required String label,
+    required PayState status,
+    required Color color,
+  }) {
+    final isSelected = _selectedStatus == status;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedStatus = isSelected ? null : status;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? color : context.tokens.stroke,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(20),
         ),
-        subTitle: Column(
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : context.tokens.text,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentCard(BuildContext context, Pay payment) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: context.tokens.card1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.tokens.stroke),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Fecha: ${payment.paymentDate.day}/${payment.paymentDate.month}/${payment.paymentDate.year}',
+            // Header: Nombre, Badge y Acciones
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    payment.userName,
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(payment.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    payment.status.displayName,
+                    style: TextStyle(
+                      color: _getStatusColor(payment.status),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.tokens.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: context.tokens.stroke),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          // TODO: Ver detalles del pago
+                        },
+                        child: Icon(
+                          Symbols.visibility,
+                          color: context.tokens.placeholder,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () {
+                          // TODO: Ver comprobante
+                        },
+                        child: Icon(
+                          Symbols.description,
+                          color: context.tokens.placeholder,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 4),
             Text(
-              'Hora: ${payment.paymentDate.hour}:${payment.paymentDate.minute}',
+              'DNI: ${payment.dni}',
+              style: TextStyle(color: context.tokens.placeholder, fontSize: 12),
             ),
-            Text('Monto: \$${payment.amount.toStringAsFixed(2)}'),
+            const SizedBox(height: 16),
+            // Fechas
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fecha de Pago',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _dateFormat.format(payment.paymentDate),
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enviado',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _dateFormat.format(payment.sentDate),
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Monto y botones de validación
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Monto',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '\$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (payment.status == PayState.pending)
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            _showValidationDialog(context, payment, true);
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            color: context.tokens.green,
+                            child: Icon(
+                              Symbols.check,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            _showValidationDialog(context, payment, false);
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            color: context.tokens.redToRosita,
+                            child: Icon(
+                              Symbols.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
-        description: GFBadge(
-          text: payment.status.displayName,
-          color: statusColor,
-          shape: GFBadgeShape.pills,
+      ),
+    );
+  }
+
+  Color _getStatusColor(PayState status) {
+    switch (status) {
+      case PayState.validated:
+        return context.tokens.green;
+      case PayState.rejected:
+        return context.tokens.redToRosita;
+      case PayState.pending:
+        return context.tokens.pending;
+    }
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? value,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: label,
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: context.tokens.redToRosita,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
-        icon: GFButton(
-          onPressed: () {
-            // Lógica para validar (navega a detalle o modal)
-          },
-          text: 'Validar',
-          color: tokens.redToRosita,
-          shape: GFButtonShape.standard,
-          type: buttonType,
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: context.tokens.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.tokens.stroke),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value != null ? _dateFormat.format(value) : 'DD/MM/AAAA',
+                    style: TextStyle(
+                      color: value != null
+                          ? context.tokens.text
+                          : context.tokens.placeholder,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Symbols.calendar_month,
+                  size: 20,
+                  color: context.tokens.placeholder,
+                ),
+              ],
+            ),
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildTimeField({
+    required String label,
+    required TimeOfDay? value,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: label,
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: context.tokens.redToRosita,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: context.tokens.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.tokens.stroke),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value != null
+                        ? '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}'
+                        : 'HH:MM',
+                    style: TextStyle(
+                      color: value != null
+                          ? context.tokens.text
+                          : context.tokens.placeholder,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Symbols.schedule,
+                  size: 20,
+                  color: context.tokens.placeholder,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStart
+          ? (_startDate ?? DateTime.now())
+          : (_endDate ?? DateTime.now()),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: context.tokens.redToRosita,
+              onPrimary: Colors.white,
+              surface: context.tokens.card1,
+              onSurface: context.tokens.text,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startDate = picked;
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStart) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart
+          ? (_startTime ?? TimeOfDay.now())
+          : (_endTime ?? TimeOfDay.now()),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: context.tokens.redToRosita,
+              onPrimary: Colors.white,
+              surface: context.tokens.card1,
+              onSurface: context.tokens.text,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  void _showValidationDialog(BuildContext context, Pay payment, bool approve) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.tokens.card1,
+        title: Text(
+          approve ? '¿Aprobar pago?' : '¿Rechazar pago?',
+          style: TextStyle(color: context.tokens.text),
+        ),
+        content: Text(
+          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.userName} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
+          style: TextStyle(color: context.tokens.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: context.tokens.placeholder),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implementar aprobación/rechazo
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(approve ? 'Pago aprobado' : 'Pago rechazado'),
+                  backgroundColor: approve
+                      ? context.tokens.green
+                      : context.tokens.redToRosita,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: approve
+                  ? context.tokens.green
+                  : context.tokens.redToRosita,
+            ),
+            child: Text(
+              approve ? 'Aprobar' : 'Rechazar',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }
