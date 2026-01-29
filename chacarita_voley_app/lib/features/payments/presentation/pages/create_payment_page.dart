@@ -30,14 +30,31 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   }
 
   Future<void> _handleCreatePayment(Pay newPay, User selectedUser) async {
+    print('🔵 Iniciando creación de pago...');
+    print('Usuario: ${selectedUser.nombreCompleto} (${selectedUser.id})');
+    print('Monto: ${newPay.amount}');
+    print('Fecha: ${newPay.date}');
+    print('Archivo: ${newPay.fileName}');
+    print('FileURL: ${newPay.fileUrl}');
+    print('Estado: ${newPay.status.name}');
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createPaymentUseCase.execute(
-        PayMapper.toCreateInput(newPay, selectedUser),
-      );
+      final input = PayMapper.toCreateInput(newPay, selectedUser);
+      print('🟡 CreatePayInput generado:');
+      print('  - dueId: ${input.dueId}');
+      print('  - amount: ${input.amount}');
+      print('  - date: ${input.date}');
+      print('  - fileName: ${input.fileName}');
+      print('  - fileUrl: ${input.fileUrl}');
+      print('  - state: ${input.state}');
+
+      print('🟡 Ejecutando mutation createPay...');
+      final result = await _createPaymentUseCase.execute(input);
+      print('🟢 Pago creado exitosamente! ID: ${result.id}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,6 +94,12 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         ); // O a historial si userId presente: '/users/${newPayment.userId}/payments'
       }
     } catch (e) {
+      print('🔴 ERROR al crear pago:');
+      print('Tipo: ${e.runtimeType}');
+      print('Mensaje: $e');
+      print('Stack trace:');
+      print(StackTrace.current);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -84,10 +107,10 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Error al registrar pago',
-                    style: TextStyle(
+                    'Error al registrar pago: $e',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -102,7 +125,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
