@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/file_upload_service.dart';
 
 import '../../../users/domain/entities/gender.dart';
-import '../../../users/domain/entities/user.dart'; // Para User entity
-import '../../../users/data/repositories/user_repository.dart'; // Para buscar usuarios
+import '../../../users/domain/entities/user.dart';
+import '../../../users/data/repositories/user_repository.dart';
 
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
-//TODO review to deprecated into page
 
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
@@ -28,12 +29,14 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _montoController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
-  String? _comprobanteFileName; // Para upload simulado
-  PayState _selectedStatus = PayState.pending; // Default
+  String? _comprobanteFileName;
+  String? _comprobanteFileUrl;
+  bool _isUploadingFile = false;
+  PayState _selectedStatus = PayState.pending;
 
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
-  User? _selectedUser; // Usuario seleccionado
+  User? _selectedUser;
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
@@ -386,7 +389,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 ),
                 time: DateTime.now().toIso8601String().split('T')[1],
                 fileName: _comprobanteFileName ?? '',
-                fileUrl: '',
+                fileUrl: _comprobanteFileUrl ?? '',
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
               );
@@ -543,13 +546,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   // Campo upload
   Widget _buildFileUploadField(AppTokens tokens) {
     return GestureDetector(
-      onTap: () {
-        // Lógica real de file_picker
-        setState(() {
-          _comprobanteFileName =
-              'comprobante_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        });
-      },
+      onTap: _isUploadingFile ? null : _handleFileUpload,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
@@ -561,9 +558,18 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.upload_file_outlined, color: tokens.gray, size: 40),
+            if (_isUploadingFile)
+              CircularProgressIndicator(color: tokens.redToRosita)
+            else
+              Icon(Icons.upload_file_outlined, color: tokens.gray, size: 40),
             const SizedBox(height: 12),
-            if (_comprobanteFileName == null)
+            if (_isUploadingFile)
+              Text(
+                'Subiendo archivo...',
+                style: TextStyle(color: tokens.text, fontSize: 14),
+                textAlign: TextAlign.center,
+              )
+            else if (_comprobanteFileName == null)
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
@@ -581,15 +587,100 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 ),
               )
             else
-              Text(
-                _comprobanteFileName!,
-                style: TextStyle(color: tokens.text, fontSize: 14),
-                textAlign: TextAlign.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle, color: tokens.green, size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      _comprobanteFileName!,
+                      style: TextStyle(color: tokens.text, fontSize: 14),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _handleFileUpload() async {
+    setState(() => _isUploadingFile = true);
+
+    try {
+      // Mostrar opciones: Cámara, Galería o Archivo
+      final option = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Seleccionar comprobante'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Tomar foto'),
+                onTap: () => Navigator.pop(context, 'camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galería'),
+                onTap: () => Navigator.pop(context, 'gallery'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file),
+                title: const Text('Archivo'),
+                onTap: () => Navigator.pop(context, 'file'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (option == null) {
+        setState(() => _isUploadingFile = false);
+        return;
+      }
+
+      Map<String, String>? result;
+
+      if (option == 'camera') {
+        result = await FileUploadService.pickAndUploadImage(
+          source: ImageSource.camera,
+        );
+      } else if (option == 'gallery') {
+        result = await FileUploadService.pickAndUploadImage(
+          source: ImageSource.gallery,
+        );
+      } else if (option == 'file') {
+        result = await FileUploadService.pickAndUploadFile(
+          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        );
+      }
+
+      if (result != null && mounted) {
+        setState(() {
+          _comprobanteFileName = result!['fileName'];
+          _comprobanteFileUrl = result['fileUrl'];
+          _isUploadingFile = false;
+        });
+      } else {
+        setState(() => _isUploadingFile = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingFile = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al subir archivo: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    }
   }
 
   // Grupo de radios para estado

@@ -1,11 +1,10 @@
-import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
-import '../../data/repositories/pay_repository.dart'; // Asumiendo repo
-import '../widgets/payment_detail_content_widget.dart'; // Import del nuevo widget
+import '../../data/repositories/pay_repository.dart';
+import '../widgets/payment_detail_content_widget.dart';
 
 class PaymentDetailPage extends StatefulWidget {
   final String paymentId; // ID del pago a mostrar
@@ -21,6 +20,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   late final PayRepository _paymentRepository;
   Pay? _payment;
   bool _isLoading = true;
+  bool _notFound = false;
 
   @override
   void initState() {
@@ -30,41 +30,50 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   }
 
   Future<void> _loadPayment() async {
+    setState(() => _isLoading = true);
     try {
       final payment = _paymentRepository.getPaymentById(widget.paymentId);
+      if (payment != null) {
+        setState(() {
+          _payment = payment;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _notFound = true;
+          _isLoading = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Pago no encontrado. Regresando a la lista.',
+                ),
+                backgroundColor: context.tokens.redToRosita,
+              ),
+            );
+            context.go('/payments');
+          }
+        });
+      }
+    } catch (e) {
       setState(() {
-        _payment = payment ?? _getDummyPayment(); // Fallback a dummy
+        _notFound = true;
         _isLoading = false;
       });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Error al cargar detalle del pago'),
-            backgroundColor: context.tokens.redToRosita,
-          ),
-        );
-      }
-      setState(() {
-        _payment = _getDummyPayment(); // Usar dummy en error
-        _isLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al cargar detalle del pago: $e'),
+              backgroundColor: context.tokens.redToRosita,
+            ),
+          );
+          context.go('/payments');
+        }
       });
     }
-  }
-
-  // Dummy data para visualización
-  Pay _getDummyPayment() {
-    return Pay(
-      id: widget.paymentId,
-      status: PayState.pending,
-      amount: 20000.0,
-      date: '2025-06-12',
-      time: '14:30:00.000',
-      fileName: 'comprobante_dummy.pdf',
-      fileUrl: 'https://ejemplo.com/comprobante_dummy.pdf',
-      userName: widget.userName ?? 'Juan Perez',
-      dni: '12345678',
-    );
   }
 
   void _navigateToEdit() {

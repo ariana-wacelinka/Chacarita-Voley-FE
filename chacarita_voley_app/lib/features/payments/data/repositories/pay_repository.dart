@@ -7,10 +7,12 @@ import '../../domain/entities/pay_page.dart';
 import '../../domain/entities/pay_filter_input.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../../../core/network/graphql_client_factory.dart';
-import '../models/pay_response_model.dart';
 
 class PayRepository implements PayRepositoryInterface {
   // Datos dummy eliminados - ahora usa GraphQL real
+
+  // Caché de pagos para búsqueda por ID
+  final Map<String, Pay> _paysCache = {};
 
   //TODO de aca hasta el otro ToDo de abajo
   @override
@@ -78,10 +80,17 @@ class PayRepository implements PayRepositoryInterface {
 
     final data = result.data!['getAllPays'] as Map<String, dynamic>;
 
+    final pays = (data['content'] as List)
+        .map((json) => Pay.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    // Actualizar caché
+    for (final pay in pays) {
+      _paysCache[pay.id] = pay;
+    }
+
     return PayPage(
-      content: (data['content'] as List)
-          .map((json) => Pay.fromJson(json as Map<String, dynamic>))
-          .toList(),
+      content: pays,
       totalElements: data['totalElements'] as int,
       totalPages: data['totalPages'] as int,
       pageNumber: data['pageNumber'] as int,
@@ -93,14 +102,14 @@ class PayRepository implements PayRepositoryInterface {
 
   // Métodos auxiliares (usando datos dummy hasta implementar GraphQL)
   Pay? getPaymentById(String id) {
-    // TODO: Implementar query GraphQL getPayById
-    // Por ahora retorna null para usar fallback en las páginas
+    // Buscar en caché primero
+    if (_paysCache.containsKey(id)) {
+      return _paysCache[id];
+    }
     return null;
   }
 
   List<Pay> getPaymentByUserId(String userId) {
-    // TODO: Implementar query GraphQL getPaymentsByUserId
-    // Por ahora retorna lista vacía para usar fallback en las páginas
     return [];
   }
 
@@ -124,8 +133,6 @@ class PayRepository implements PayRepositoryInterface {
     final data = result.data!['getPaymentsStats'] as Map<String, dynamic>;
     return PaymentStats.fromJson(data);
   }
-
-  //TODO ver los metodos si realmente estan correctos para conectar con GrahpQL
 
   PayRepository({GraphQLClient? graphQLClient})
     : _clientOverride = graphQLClient;
@@ -206,12 +213,21 @@ class PayRepository implements PayRepositoryInterface {
           mutation CreatePay(\$dueId: ID!, \$input: CreatePayInput!) {
             createPay(dueId: \$dueId, input: \$input) {
               id
+              state
+              amount
+              date
               fileName
               fileUrl
-              date
               time
-              amount
-              state
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
             }
           }
         '''),
@@ -221,10 +237,13 @@ class PayRepository implements PayRepositoryInterface {
 
     if (result.hasException) throw result.exception!;
 
-    final model = PayResponseModel.fromJson(
-      result.data!['createPay'] as Map<String, dynamic>,
-    );
-    return Pay.fromJson(model.toJson()); // To entity //TODO
+    final payData = result.data!['createPay'] as Map<String, dynamic>;
+    final newPay = Pay.fromJson(payData);
+
+    // Agregar a caché
+    _paysCache[newPay.id] = newPay;
+
+    return newPay;
   }
 
   // Implementa updatePay, validatePay, rejectPay similares

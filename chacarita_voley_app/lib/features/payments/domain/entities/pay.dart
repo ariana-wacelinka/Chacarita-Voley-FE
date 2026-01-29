@@ -37,7 +37,12 @@ class Pay {
   // Getters para obtener datos del player o fallback a campos legacy
   String get effectiveUserName =>
       player?.person.fullName ?? userName ?? 'Sin nombre';
-  String get effectiveDni => player?.person.dni ?? dni ?? 'N/A';
+  String get effectiveDni {
+    final playerDni = player?.person.dni;
+    if (playerDni != null && playerDni.isNotEmpty) return playerDni;
+    if (dni != null && dni!.isNotEmpty) return dni!;
+    return 'N/A';
+  }
 
   DateTime get paymentDate => DateTime.parse('$date $time');
   DateTime get sentDate => paymentDate; // Asumimos que es la misma
