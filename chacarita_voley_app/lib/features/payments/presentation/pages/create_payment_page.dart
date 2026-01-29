@@ -100,6 +100,23 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       print('Stack trace:');
       print(StackTrace.current);
 
+      // Determinar el mensaje de error apropiado
+      String errorMessage = 'Error al registrar pago';
+
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('payment_already_exists_for_dues')) {
+        errorMessage = 'Ya existe un pago registrado para este periodo';
+      } else if (errorString.contains('future') ||
+          errorString.contains('fecha')) {
+        errorMessage = 'La fecha seleccionada no es válida';
+      } else if (errorString.contains('invalid') ||
+          errorString.contains('failed to convert')) {
+        errorMessage = 'Datos inválidos. Verifica los campos';
+      } else if (errorString.contains('unauthorized') ||
+          errorString.contains('401')) {
+        errorMessage = 'Sesión expirada. Por favor, vuelve a iniciar sesión';
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -109,7 +126,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Error al registrar pago: $e',
+                    errorMessage,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

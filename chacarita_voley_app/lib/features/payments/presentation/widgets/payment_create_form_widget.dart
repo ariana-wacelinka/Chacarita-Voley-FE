@@ -380,6 +380,28 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 );
                 return;
               }
+
+              // Validar que la fecha no sea futura
+              final selectedDate = _dateFormat.parse(_fechaController.text);
+              final today = DateTime.now();
+              final todayDateOnly = DateTime(
+                today.year,
+                today.month,
+                today.day,
+              );
+
+              if (selectedDate.isAfter(todayDateOnly)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'No se puede registrar un pago con fecha futura',
+                    ),
+                    backgroundColor: context.tokens.redToRosita,
+                  ),
+                );
+                return;
+              }
+
               final newPayment = Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 status: _selectedStatus,
@@ -612,7 +634,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     setState(() => _isUploadingFile = true);
 
     try {
-      // Mostrar opciones: Cámara, Galería o Archivo
+      // Mostrar opciones: Galería o Archivo
       final option = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
@@ -620,11 +642,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Tomar foto'),
-                onTap: () => Navigator.pop(context, 'camera'),
-              ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Galería'),
@@ -647,11 +664,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
       Map<String, String>? result;
 
-      if (option == 'camera') {
-        result = await FileUploadService.pickAndUploadImage(
-          source: ImageSource.camera,
-        );
-      } else if (option == 'gallery') {
+      if (option == 'gallery') {
         result = await FileUploadService.pickAndUploadImage(
           source: ImageSource.gallery,
         );
@@ -677,6 +690,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           SnackBar(
             content: Text('Error al subir archivo: $e'),
             backgroundColor: context.tokens.redToRosita,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
