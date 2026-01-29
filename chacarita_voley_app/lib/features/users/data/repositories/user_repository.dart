@@ -727,4 +727,100 @@ class UserRepository implements UserRepositoryInterface {
       rethrow;
     }
   }
+
+  // Método para obtener cuotas por playerId con filtros de estado
+  Future<List<CurrentDue>> getAllDuesByPlayerId(
+    String playerId, {
+    List<DueState>? states,
+  }) async {
+    try {
+      // Por ahora retornamos datos mock ya que el backend no está implementado
+      // TODO: Implementar query GraphQL cuando esté disponible en backend
+      /*
+      final result = await _query(
+        QueryOptions(
+          document: gql('''
+            query GetAllDuesByPlayerId(\$id: ID!, \$filters: DueFilterInput) {
+              getAllDuesByPlayerId(id: \$id, filters: \$filters) {
+                content {
+                  id
+                  period
+                  state
+                }
+              }
+            }
+          '''),
+          variables: {
+            'id': playerId,
+            'filters': {
+              'state': states?.map((s) => s.name).toList() ?? ['PENDING', 'OVERDUE'],
+            },
+          },
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) throw result.exception!;
+
+      final content = result.data?['getAllDuesByPlayerId']?['content'] as List?;
+      if (content == null) return [];
+
+      return content
+          .map((json) => CurrentDue.fromJson(json as Map<String, dynamic>))
+          .toList();
+      */
+
+      // Datos mock para visualización
+      return _getMockDuesForPlayer(playerId, states);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Mock de cuotas pendientes/vencidas para probar UI
+  List<CurrentDue> _getMockDuesForPlayer(
+    String playerId,
+    List<DueState>? states,
+  ) {
+    final now = DateTime.now();
+    final mockDues = <CurrentDue>[
+      // Dos cuotas vencidas
+      CurrentDue(
+        id: 'due-vencida-2-$playerId',
+        state: DueState.OVERDUE,
+        period: '${now.year}-${(now.month - 2).toString().padLeft(2, '0')}',
+        amount: 20000.0,
+        pay: null,
+      ),
+      CurrentDue(
+        id: 'due-vencida-1-$playerId',
+        state: DueState.OVERDUE,
+        period: '${now.year}-${(now.month - 1).toString().padLeft(2, '0')}',
+        amount: 20000.0,
+        pay: null,
+      ),
+      // Dos cuotas pendientes
+      CurrentDue(
+        id: 'due-pendiente-1-$playerId',
+        state: DueState.PENDING,
+        period: '${now.year}-${now.month.toString().padLeft(2, '0')}',
+        amount: 20000.0,
+        pay: null,
+      ),
+      CurrentDue(
+        id: 'due-pendiente-2-$playerId',
+        state: DueState.PENDING,
+        period: '${now.year}-${(now.month + 1).toString().padLeft(2, '0')}',
+        amount: 20000.0,
+        pay: null,
+      ),
+    ];
+
+    // Filtrar por estado si se especifica
+    if (states != null && states.isNotEmpty) {
+      return mockDues.where((due) => states.contains(due.state)).toList();
+    }
+
+    return mockDues;
+  }
 }

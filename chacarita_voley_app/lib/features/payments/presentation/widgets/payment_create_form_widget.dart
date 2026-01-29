@@ -6,14 +6,15 @@ import '../../../../core/services/file_upload_service.dart';
 
 import '../../../users/domain/entities/gender.dart';
 import '../../../users/domain/entities/user.dart';
+import '../../../users/domain/entities/due.dart';
 import '../../../users/data/repositories/user_repository.dart';
 
-import '../../domain/entities/pay.dart';
-import '../../domain/entities/pay_state.dart';
+import '../../domain/entities/pay.dart' as payment_entities;
+import '../../domain/entities/pay_state.dart' as payment_state;
 
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
-  final Function(Pay newPayment, User selectedUser) onSave;
+  final Function(payment_entities.Pay newPayment, User selectedUser) onSave;
 
   const PaymentCreateForm({
     super.key,
@@ -32,11 +33,17 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   String? _comprobanteFileName;
   String? _comprobanteFileUrl;
   bool _isUploadingFile = false;
-  PayState _selectedStatus = PayState.pending;
+  payment_state.PayState _selectedStatus = payment_state.PayState.pending;
 
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   User? _selectedUser;
+
+  // Cuotas del jugador seleccionado
+  List<CurrentDue> _availableDues = [];
+  CurrentDue? _selectedDue;
+  bool _isLoadingDues = false;
+  bool _isDuesSelectorExpanded = false;
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
@@ -85,7 +92,43 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       _selectedUser = user;
       _searchController.text = user.nombreCompleto;
       _filteredUsers = []; // Ocultar sugerencias
+
+      // Resetear cuota seleccionada
+      _selectedDue = null;
+      _availableDues = [];
     });
+
+    // Cargar cuotas del jugador
+    _loadDuesForPlayer(user);
+  }
+
+  Future<void> _loadDuesForPlayer(User user) async {
+    setState(() => _isLoadingDues = true);
+
+    try {
+      final repo = UserRepository();
+      // Siempre cargar cuotas mock para visualización
+      final dues = await repo.getAllDuesByPlayerId(
+        user.playerId ?? 'mock-player-id',
+        states: [DueState.PENDING, DueState.OVERDUE],
+      );
+
+      if (mounted) {
+        setState(() {
+          _availableDues = dues;
+          _isLoadingDues = false;
+          // Seleccionar automáticamente la cuota PENDING (mes actual)
+          _selectedDue = dues.firstWhere(
+            (due) => due.state == DueState.PENDING,
+            orElse: () => dues.isNotEmpty ? dues.first : null as CurrentDue,
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingDues = false);
+      }
+    }
   }
 
   List<User> _getDummyUsers() {
@@ -250,47 +293,84 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         const SizedBox(height: 16),
 
-        // Sección Fecha y Monto con card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: tokens.card1,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.stroke),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.calendar_today, color: tokens.text, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Fecha y Monto',
-                    style: TextStyle(
-                      color: tokens.text,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+        // Sección unificada: Cuota + Fecha y Monto (solo si hay usuario seleccionado)
+        if (_selectedUser != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: tokens.card1,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.stroke),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sección Cuota a pagar
+                Row(
+                  children: [
+                    Icon(Icons.credit_card, color: tokens.text, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Cuota a pagar',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildFormField(
-                label: 'Monto',
-                controller: _montoController,
-                keyboardType: TextInputType.number,
-                required: true,
-              ),
-              const SizedBox(height: 16),
-              _buildDateField(
-                label: 'Fecha del pago',
-                controller: _fechaController,
-                required: true,
-              ),
-            ],
+                    const Spacer(),
+                    if (_isLoadingDues)
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(
+                            tokens.redToRosita,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildDueSelector(tokens),
+
+                // Divider
+                const SizedBox(height: 24),
+                Divider(height: 1, color: tokens.stroke),
+                const SizedBox(height: 24),
+
+                // Sección Fecha y Monto
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, color: tokens.text, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Fecha y Monto',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildFormField(
+                  label: 'Monto',
+                  controller: _montoController,
+                  keyboardType: TextInputType.number,
+                  required: true,
+                ),
+                const SizedBox(height: 16),
+                _buildDateField(
+                  label: 'Fecha del pago',
+                  controller: _fechaController,
+                  required: true,
+                ),
+              ],
+            ),
           ),
-        ),
 
         const SizedBox(height: 16),
 
@@ -402,7 +482,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 return;
               }
 
-              final newPayment = Pay(
+              final newPayment = payment_entities.Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 status: _selectedStatus,
                 amount: double.parse(_montoController.text),
@@ -436,6 +516,166 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           ),
         ),
       ],
+    );
+  }
+
+  // Widget para selector de cuota
+  Widget _buildDueSelector(AppTokens tokens) {
+    if (_availableDues.isEmpty && !_isLoadingDues) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: tokens.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: tokens.stroke),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: tokens.gray, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'No hay cuotas pendientes o vencidas para este jugador',
+                style: TextStyle(color: tokens.gray, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Seleccioná la cuota que querés pagar *',
+          style: TextStyle(
+            color: tokens.text,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Campo principal (cerrado o con selección)
+        GestureDetector(
+          onTap: () {
+            if (_selectedDue == null) {
+              setState(() {
+                _isDuesSelectorExpanded = !_isDuesSelectorExpanded;
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: tokens.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.stroke),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _selectedDue == null
+                      ? Text(
+                          'Seleccioná la cuota que querés pagar',
+                          style: TextStyle(color: tokens.placeholder),
+                        )
+                      : Text(
+                          _selectedDue!.formattedPeriod,
+                          style: TextStyle(
+                            color: tokens.text,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                ),
+                if (_selectedDue != null)
+                  _buildDueBadge(_selectedDue!.state, tokens),
+                if (_selectedDue != null) const SizedBox(width: 8),
+                if (_selectedDue != null)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedDue = null;
+                        _isDuesSelectorExpanded = false;
+                      });
+                    },
+                    child: Icon(Icons.close, color: tokens.gray, size: 20),
+                  ),
+                if (_selectedDue == null)
+                  Icon(
+                    _isDuesSelectorExpanded
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
+                    color: tokens.text,
+                  ),
+              ],
+            ),
+          ),
+        ),
+        // Lista desplegable de cuotas
+        if (_isDuesSelectorExpanded && _selectedDue == null) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: tokens.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.stroke),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _availableDues.length,
+              itemBuilder: (context, index) {
+                final due = _availableDues[index];
+                return ListTile(
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          due.formattedPeriod,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      _buildDueBadge(due.state, tokens),
+                    ],
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedDue = due;
+                      _isDuesSelectorExpanded = false;
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Badge para el estado de la cuota
+  Widget _buildDueBadge(DueState state, AppTokens tokens) {
+    final color = state == DueState.OVERDUE
+        ? tokens.redToRosita
+        : tokens.pending; // Naranja para pendiente
+    final label = state == DueState.OVERDUE ? 'Vencida' : 'Pendiente';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -703,21 +943,21 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       children: [
         _buildStatusOption(
           tokens: tokens,
-          status: PayState.pending,
+          status: payment_state.PayState.pending,
           title: 'Pendiente',
           subtitle: 'Pendiente de revisión',
         ),
         const SizedBox(height: 8),
         _buildStatusOption(
           tokens: tokens,
-          status: PayState.validated,
+          status: payment_state.PayState.validated,
           title: 'Validada',
           subtitle: 'Pago confirmado y registrado',
         ),
         const SizedBox(height: 8),
         _buildStatusOption(
           tokens: tokens,
-          status: PayState.rejected,
+          status: payment_state.PayState.rejected,
           title: 'Rechazada',
           subtitle: 'Comprobante inválido o pago no recibido',
         ),
@@ -727,7 +967,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
   Widget _buildStatusOption({
     required AppTokens tokens,
-    required PayState status,
+    required payment_state.PayState status,
     required String title,
     required String subtitle,
   }) {
