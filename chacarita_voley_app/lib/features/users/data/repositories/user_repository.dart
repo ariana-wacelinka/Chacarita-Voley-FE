@@ -349,7 +349,6 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     final input = _mapUserToUpdateInput(user);
-    print('📤 Update input: $input');
 
     final result = await _mutate(
       MutationOptions(
@@ -358,19 +357,14 @@ class UserRepository implements UserRepositoryInterface {
       ),
     );
 
-    print('📥 Update result hasException: ${result.hasException}');
     if (result.hasException) {
-      print('❌ Update exception: ${result.exception.toString()}');
       throw Exception(result.exception.toString());
     }
 
-    print('📦 Update result data: ${result.data}');
     final data = result.data?['updatePerson'] as Map<String, dynamic>?;
     if (data == null) {
-      print('⚠️ updatePerson data is null');
       throw Exception('Respuesta inválida de updatePerson');
     }
-    print('✅ Update successful, mapping to User');
     return _mapPersonToUser(data);
   }
 
@@ -414,8 +408,6 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   User _mapPersonToUser(Map<String, dynamic> person) {
-    // Query minimal: NO trae gender, birthDate, email, phone, player, professor
-    // Query full: trae TODO
     final gender = (person['gender'] as String?) ?? 'OTHER';
     final parsedGender = switch (gender) {
       'MALE' => Gender.masculino,
@@ -484,14 +476,10 @@ class UserRepository implements UserRepositoryInterface {
     if (player != null) {
       final currentDueData = player['currentDue'] as Map<String, dynamic>?;
       if (currentDueData != null) {
-        print('🔍 currentDueData: $currentDueData');
         try {
           currentDue = CurrentDue.fromJson(currentDueData);
-          print('✅ currentDue parsed: state=${currentDue.state}');
           estadoCuota = EstadoCuotaExtension.fromDueState(currentDue.state);
-          print('✅ estadoCuota mapped: $estadoCuota');
         } catch (e) {
-          print('❌ Error parsing currentDue: $e');
           estadoCuota = EstadoCuota.alDia;
         }
       }
