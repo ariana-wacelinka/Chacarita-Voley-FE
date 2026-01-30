@@ -4,6 +4,7 @@ import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
 
@@ -22,6 +23,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   int _currentPage = 0;
   bool _isLoading = false;
   final int _itemsPerPage = 3;
+  final Map<String, bool> _downloadingFiles = {};
 
   @override
   void initState() {
@@ -74,6 +76,43 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       _loadMorePayments();
+    }
+  }
+
+  Future<void> _downloadReceipt(Pay payment) async {
+    print('🔵 Descargando comprobante para pago ${payment.id}');
+    print('fileName: ${payment.fileName}');
+
+    setState(() => _downloadingFiles[payment.id] = true);
+
+    try {
+      await FileUploadService.downloadPaymentReceiptWithNotification(
+        paymentId: payment.id,
+        fileName: payment.fileName,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comprobante descargado exitosamente'),
+            backgroundColor: context.tokens.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('🔴 Error descargando: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar comprobante: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _downloadingFiles[payment.id] = false);
+      }
     }
   }
 
@@ -192,12 +231,30 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                             constraints: const BoxConstraints(),
                           ),
                           IconButton(
-                            icon: Icon(
-                              Icons.description_outlined,
-                              color: tokens.gray,
-                              size: 24,
-                            ),
-                            onPressed: () {},
+                            icon: _downloadingFiles[payment.id] == true
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        tokens.gray,
+                                      ),
+                                    ),
+                                  )
+                                : Opacity(
+                                    opacity: payment.fileName.isNotEmpty
+                                        ? 1.0
+                                        : 0.3,
+                                    child: Icon(
+                                      Icons.description_outlined,
+                                      color: tokens.gray,
+                                      size: 24,
+                                    ),
+                                  ),
+                            onPressed: payment.fileName.isNotEmpty
+                                ? () => _downloadReceipt(payment)
+                                : null,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                           ),
@@ -224,12 +281,18 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                     children: [
                       _buildDateColumn(
                         'Fecha de Pago',
-                        dateFormat.format(payment.paymentDate),
+                        dateFormat.format(DateTime.parse(payment.date)),
                         AppTheme(),
                       ),
                       _buildDateColumn(
                         'Enviado',
-                        dateFormat.format(payment.sentDate),
+                        dateFormat.format(
+                          DateTime.parse(
+                            payment.updateAt ??
+                                payment.createdAt ??
+                                payment.date,
+                          ),
+                        ),
                         AppTheme(),
                       ),
                     ],
