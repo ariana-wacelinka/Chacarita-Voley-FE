@@ -1180,49 +1180,125 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   void _showValidationDialog(BuildContext context, Pay payment, bool approve) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.tokens.card1,
-        title: Text(
-          approve ? '¿Aprobar pago?' : '¿Rechazar pago?',
-          style: TextStyle(color: context.tokens.text),
-        ),
-        content: Text(
-          'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.effectiveUserName} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
-          style: TextStyle(color: context.tokens.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: context.tokens.placeholder),
-            ),
+      builder: (dialogContext) {
+        // Capturar el ScaffoldMessenger antes de cerrar el diálogo
+        final scaffoldMessenger = ScaffoldMessenger.of(context);
+        final theme = Theme.of(context);
+        final tokens = context.tokens;
+
+        return AlertDialog(
+          backgroundColor: tokens.card1,
+          title: Text(
+            approve ? '¿Aprobar pago?' : '¿Rechazar pago?',
+            style: TextStyle(color: tokens.text),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implementar aprobación/rechazo
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(approve ? 'Pago aprobado' : 'Pago rechazado'),
-                  backgroundColor: approve
-                      ? context.tokens.green
-                      : context.tokens.redToRosita,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: approve
-                  ? context.tokens.green
-                  : context.tokens.redToRosita,
-            ),
-            child: Text(
-              approve ? 'Aprobar' : 'Rechazar',
-              style: const TextStyle(color: Colors.white),
-            ),
+          content: Text(
+            'Esta acción ${approve ? 'aprobará' : 'rechazará'} el pago de ${payment.effectiveUserName} por \$${payment.amount.toStringAsFixed(3).replaceAll('.', ',')}',
+            style: TextStyle(color: tokens.text),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: tokens.placeholder),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+
+                try {
+                  if (approve) {
+                    await _repository.validatePay(payment.id);
+                  } else {
+                    await _repository.rejectPay(payment.id);
+                  }
+
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              approve
+                                  ? 'Pago aprobado exitosamente'
+                                  : 'Pago rechazado',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: approve
+                          ? tokens.green
+                          : tokens.redToRosita,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+
+                  // Recargar datos después de validar/rechazar
+                  _loadStats();
+                  _loadPays();
+                } catch (e) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Error al ${approve ? 'aprobar' : 'rechazar'} el pago: $e',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: tokens.redToRosita,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: approve ? tokens.green : tokens.redToRosita,
+              ),
+              child: Text(
+                approve ? 'Aprobar' : 'Rechazar',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

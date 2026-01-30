@@ -259,15 +259,41 @@ class PayRepository implements PayRepositoryInterface {
           mutation ValidatePay(\$id: ID!) {
             validatePay(id: \$id) {
               id
-              # ... all fields
+              state
+              amount
+              date
+              fileName
+              fileUrl
+              createdAt
+              updateAt
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
             }
           }
         '''),
         variables: {'id': id},
       ),
     );
-    throw UnimplementedError(); //TODO
-    // Similar parsing...
+
+    if (result.hasException) {
+      print('❌ ValidatePay Exception: ${result.exception}');
+      throw result.exception!;
+    }
+
+    final payData = result.data!['validatePay'] as Map<String, dynamic>;
+    final validatedPay = Pay.fromJson(payData);
+
+    // Actualizar caché
+    _paysCache[validatedPay.id] = validatedPay;
+
+    return validatedPay;
   }
 
   @override
@@ -319,9 +345,48 @@ class PayRepository implements PayRepositoryInterface {
   }
 
   @override
-  Future<Pay> rejectPay(String id) {
-    // TODO: implement rejectPay
-    throw UnimplementedError();
+  Future<Pay> rejectPay(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql('''
+          mutation RejectPay(\$id: ID!) {
+            rejectPay(id: \$id) {
+              id
+              state
+              amount
+              date
+              fileName
+              fileUrl
+              createdAt
+              updateAt
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
+            }
+          }
+        '''),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      print('❌ RejectPay Exception: ${result.exception}');
+      throw result.exception!;
+    }
+
+    final payData = result.data!['rejectPay'] as Map<String, dynamic>;
+    final rejectedPay = Pay.fromJson(payData);
+
+    // Actualizar caché
+    _paysCache[rejectedPay.id] = rejectedPay;
+
+    return rejectedPay;
   }
 
   @override
