@@ -1,5 +1,6 @@
 import 'dart:core';
 
+import 'package:chacarita_voley_app/core/services/file_upload_service.dart';
 import 'package:chacarita_voley_app/features/payments/data/repositories/pay_repository.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/payment_stats.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
@@ -38,6 +39,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   int _totalPages = 0;
   bool _hasNext = false;
   bool _hasPrevious = false;
+  final Map<String, bool> _downloadingFiles = {};
   @override
   void initState() {
     super.initState();
@@ -86,6 +88,13 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         _hasNext = payPage.hasNext;
         _hasPrevious = payPage.hasPrevious;
         _isLoading = false;
+
+        // Debug: verificar fileName
+        for (final pay in _pays) {
+          print(
+            'Pay ${pay.id}: fileName="${pay.fileName}" (isEmpty: ${pay.fileName.isEmpty})',
+          );
+        }
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -102,6 +111,39 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       _currentPage = page;
     });
     _loadPays();
+  }
+
+  Future<void> _downloadReceipt(Pay payment) async {
+    setState(() => _downloadingFiles[payment.id] = true);
+
+    try {
+      await FileUploadService.downloadPaymentReceiptWithNotification(
+        paymentId: payment.id,
+        fileName: payment.fileName,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comprobante descargado exitosamente'),
+            backgroundColor: context.tokens.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar comprobante: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _downloadingFiles[payment.id] = false);
+      }
+    }
   }
 
   int get _approvedCount => _stats?.totalApprovedPayments ?? 0;
@@ -675,17 +717,32 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ),
                 const SizedBox(width: 4),
                 InkWell(
-                  onTap: () {
-                    // TODO: Ver comprobante
-                  },
+                  onTap: payment.fileName.isNotEmpty
+                      ? () => _downloadReceipt(payment)
+                      : null,
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Symbols.description,
-                      color: context.tokens.placeholder,
-                      size: 24,
-                    ),
+                    child: _downloadingFiles[payment.id] == true
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                context.tokens.placeholder,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Symbols.description,
+                            color: payment.fileName.isNotEmpty
+                                ? context.tokens.placeholder
+                                : context.tokens.placeholder.withValues(
+                                    alpha: 0.3,
+                                  ),
+                            size: 24,
+                          ),
                   ),
                 ),
                 const Spacer(),
