@@ -188,7 +188,8 @@ class FileUploadService {
         channelDescription: 'Notificaciones de descargas completadas',
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: '@mipmap/launcher_icon',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
       );
 
       const notificationDetails = NotificationDetails(android: androidDetails);
