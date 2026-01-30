@@ -155,6 +155,36 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  String _getAllPersonsForPaymentsQuery() => '''
+    query GetAllPersonsForPayments(\$page: Int!, \$size: Int!, \$search: String) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: PLAYER}) {
+        content {
+          id
+          name
+          surname
+          dni
+          player {
+            id
+            currentDue {
+              id
+              state
+              pay {
+                id
+                state
+              }
+            }
+          }
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
+      }
+    }
+  ''';
+
   String _getPersonByIdQuery() =>
       '''
     query GetPersonById(\$id: ID!) {
@@ -256,6 +286,29 @@ class UserRepository implements UserRepositoryInterface {
       QueryOptions(
         document: gql(_getAllPersonsForNotificationsQuery()),
         variables: {'page': 0, 'size': 100},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
+  }
+
+  Future<List<User>> getUsersForPayments({String? searchQuery}) async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsForPaymentsQuery()),
+        variables: {'page': 0, 'size': 10, 'search': searchQuery ?? ''},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -734,93 +787,47 @@ class UserRepository implements UserRepositoryInterface {
     List<DueState>? states,
   }) async {
     try {
-      // Por ahora retornamos datos mock ya que el backend no está implementado
-      // TODO: Implementar query GraphQL cuando esté disponible en backend
-      /*
       final result = await _query(
         QueryOptions(
           document: gql('''
-            query GetAllDuesByPlayerId(\$id: ID!, \$filters: DueFilterInput) {
-              getAllDuesByPlayerId(id: \$id, filters: \$filters) {
+            query GetAllDues(\$playerId: ID!, \$states: [DuesState!]) {
+              getAllDues(filters: {playerId: \$playerId, states: \$states}) {
                 content {
                   id
                   period
                   state
+                  amount
+                  pay {
+                    state
+                  }
                 }
               }
             }
           '''),
           variables: {
-            'id': playerId,
-            'filters': {
-              'state': states?.map((s) => s.name).toList() ?? ['PENDING', 'OVERDUE'],
-            },
+            'playerId': playerId,
+            if (states != null && states.isNotEmpty)
+              'states': states.map((s) => s.name.toUpperCase()).toList(),
           },
           fetchPolicy: FetchPolicy.networkOnly,
         ),
       );
+      if (result.hasException) {
+        print('❌ [getAllDuesByPlayerId] Exception: ${result.exception}');
+        throw result.exception!;
+      }
 
-      if (result.hasException) throw result.exception!;
+      final content = result.data?['getAllDues']?['content'] as List?;
 
-      final content = result.data?['getAllDuesByPlayerId']?['content'] as List?;
       if (content == null) return [];
 
-      return content
+      final dues = content
           .map((json) => CurrentDue.fromJson(json as Map<String, dynamic>))
           .toList();
-      */
-
-      // Datos mock para visualización
-      return _getMockDuesForPlayer(playerId, states);
+      return dues;
     } catch (e) {
+      print('❌ [getAllDuesByPlayerId] Error: $e');
       return [];
     }
-  }
-
-  // Mock de cuotas pendientes/vencidas para probar UI
-  List<CurrentDue> _getMockDuesForPlayer(
-    String playerId,
-    List<DueState>? states,
-  ) {
-    final now = DateTime.now();
-    final mockDues = <CurrentDue>[
-      // Dos cuotas vencidas
-      CurrentDue(
-        id: 'due-vencida-2-$playerId',
-        state: DueState.OVERDUE,
-        period: '${now.year}-${(now.month - 2).toString().padLeft(2, '0')}',
-        amount: 20000.0,
-        pay: null,
-      ),
-      CurrentDue(
-        id: 'due-vencida-1-$playerId',
-        state: DueState.OVERDUE,
-        period: '${now.year}-${(now.month - 1).toString().padLeft(2, '0')}',
-        amount: 20000.0,
-        pay: null,
-      ),
-      // Dos cuotas pendientes
-      CurrentDue(
-        id: 'due-pendiente-1-$playerId',
-        state: DueState.PENDING,
-        period: '${now.year}-${now.month.toString().padLeft(2, '0')}',
-        amount: 20000.0,
-        pay: null,
-      ),
-      CurrentDue(
-        id: 'due-pendiente-2-$playerId',
-        state: DueState.PENDING,
-        period: '${now.year}-${(now.month + 1).toString().padLeft(2, '0')}',
-        amount: 20000.0,
-        pay: null,
-      ),
-    ];
-
-    // Filtrar por estado si se especifica
-    if (states != null && states.isNotEmpty) {
-      return mockDues.where((due) => states.contains(due.state)).toList();
-    }
-
-    return mockDues;
   }
 }

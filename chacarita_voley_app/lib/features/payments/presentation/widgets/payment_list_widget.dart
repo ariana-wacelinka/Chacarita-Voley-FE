@@ -61,7 +61,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
             .subtract(Duration(days: index))
             .toIso8601String()
             .split('T')[0],
-        time: '10:00:00.000',
+        createdAt: now.subtract(Duration(days: index)).toIso8601String(),
         fileName: 'comprobante_$index.pdf',
         fileUrl: 'https://ejemplo.com/comprobante_$index.pdf',
         userName: 'Demas',

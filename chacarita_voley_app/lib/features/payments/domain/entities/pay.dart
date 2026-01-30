@@ -8,7 +8,8 @@ class Pay {
   final PayState status; // state en backend
   final double amount;
   final String date; // "2025-01-20" formato
-  final String time; // "20:06:07.491" formato
+  final String? createdAt; // "2026-01-24T20:04:24.201587" formato ISO
+  final String? updateAt; // "2026-01-24T20:04:24.201587" formato ISO
   final String fileName;
   final String fileUrl;
 
@@ -25,7 +26,8 @@ class Pay {
     required this.status,
     required this.amount,
     required this.date,
-    required this.time,
+    this.createdAt,
+    this.updateAt,
     required this.fileName,
     required this.fileUrl,
     this.player,
@@ -44,15 +46,26 @@ class Pay {
     return 'N/A';
   }
 
-  DateTime get paymentDate => DateTime.parse('$date $time');
-  DateTime get sentDate => paymentDate; // Asumimos que es la misma
+  DateTime get paymentDate => DateTime.parse(date);
+  DateTime get sentDate {
+    if (createdAt != null) return DateTime.parse(createdAt!);
+    return paymentDate;
+  }
+
+  String get time {
+    final dateTime = updateAt != null
+        ? DateTime.parse(updateAt!)
+        : (createdAt != null ? DateTime.parse(createdAt!) : DateTime.now());
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+  }
 
   Pay copyWith({
     String? id,
     PayState? status,
     double? amount,
     String? date,
-    String? time,
+    String? createdAt,
+    String? updateAt,
     String? fileName,
     String? fileUrl,
     Player? player,
@@ -65,7 +78,8 @@ class Pay {
       status: status ?? this.status,
       amount: amount ?? this.amount,
       date: date ?? this.date,
-      time: time ?? this.time,
+      createdAt: createdAt ?? this.createdAt,
+      updateAt: updateAt ?? this.updateAt,
       fileName: fileName ?? this.fileName,
       fileUrl: fileUrl ?? this.fileUrl,
       player: player ?? this.player,
@@ -85,7 +99,8 @@ class Pay {
       ),
       amount: (json['amount'] as num).toDouble(),
       date: json['date'] as String,
-      time: json['time'] as String,
+      createdAt: json['createdAt'] as String?,
+      updateAt: json['updateAt'] as String?,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
       player: json['player'] != null
@@ -103,7 +118,8 @@ class Pay {
       'state': status.name,
       'amount': amount,
       'date': date,
-      'time': time,
+      if (createdAt != null) 'createdAt': createdAt,
+      if (updateAt != null) 'updateAt': updateAt,
       'fileName': fileName,
       'fileUrl': fileUrl,
       if (userName != null) 'userName': userName,
@@ -114,6 +130,6 @@ class Pay {
 
   @override
   String toString() {
-    return 'Pay(id: $id, status: $status, amount: $amount, date: $date, time: $time, fileName: $fileName, userName: $userName, dni: $dni)';
+    return 'Pay(id: $id, status: $status, amount: $amount, date: $date, createdAt: $createdAt, updateAt: $updateAt, fileName: $fileName, userName: $userName, dni: $dni)';
   }
 }

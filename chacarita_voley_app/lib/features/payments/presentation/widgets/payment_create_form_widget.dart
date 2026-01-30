@@ -14,7 +14,12 @@ import '../../domain/entities/pay_state.dart' as payment_state;
 
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
-  final Function(payment_entities.Pay newPayment, User selectedUser) onSave;
+  final Function(
+    payment_entities.Pay newPayment,
+    User selectedUser,
+    String dueId,
+  )
+  onSave;
 
   const PaymentCreateForm({
     super.key,
@@ -70,7 +75,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
   Future<void> _loadUsers() async {
     final repo = UserRepository();
-    _allUsers = await repo.getUsers(); // Usuarios reales
+    _allUsers = await repo
+        .getUsersForPayments(); // Solo jugadores con player.id
     if (_allUsers.isEmpty) {
       _allUsers = _getDummyUsers(); // Fallback dummy
     }
@@ -88,6 +94,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   void _selectUser(User user) {
+    print(
+      '🔍 Usuario seleccionado: ${user.nombreCompleto} (ID: ${user.id}, PlayerID: ${user.playerId})',
+    );
     setState(() {
       _selectedUser = user;
       _searchController.text = user.nombreCompleto;
@@ -103,30 +112,90 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   Future<void> _loadDuesForPlayer(User user) async {
+    // Validar que el usuario tenga playerId
+    if (user.playerId == null) {
+      print('⚠️ Usuario ${user.nombreCompleto} no tiene playerId');
+      setState(() {
+        _availableDues = [];
+        _selectedDue = null;
+        _isLoadingDues = false;
+      });
+      return;
+    }
+
+    print('🔄 Cargando cuotas para playerId: ${user.playerId}');
     setState(() => _isLoadingDues = true);
 
     try {
       final repo = UserRepository();
-      // Siempre cargar cuotas mock para visualización
-      final dues = await repo.getAllDuesByPlayerId(
-        user.playerId ?? 'mock-player-id',
+      var dues = await repo.getAllDuesByPlayerId(
+        user.playerId!,
         states: [DueState.PENDING, DueState.OVERDUE],
       );
 
+      print('✅ Cuotas obtenidas: ${dues.length}');
+      if (dues.isNotEmpty) {
+        print(
+          '📋 Cuotas: ${dues.map((d) => '${d.period} (${d.state}, pay: ${d.pay?.state})').join(', ')}',
+        );
+      }
+
+      // Aplicar lógica de filtrado según estado de pago
+      List<CurrentDue> filteredDues = dues;
+
+      // Caso 1: Una sola cuota con pago PENDING/REJECTED
+      if (dues.length == 1) {
+        final due = dues.first;
+        if (due.pay != null &&
+            (due.pay!.state == PayState.PENDING ||
+                due.pay!.state == PayState.REJECTED)) {
+          print(
+            '⚠️ Cuota única con pago ${due.pay!.state} - mostrando mensaje',
+          );
+          filteredDues = [];
+        }
+      }
+      // Caso 2: Varias cuotas - verificar si cuota del mes actual tiene pago PENDING
+      else if (dues.length > 1) {
+        final currentMonthDue = dues.firstWhere(
+          (due) => due.state == DueState.PENDING,
+          orElse: () => dues.first,
+        );
+
+        if (currentMonthDue.pay != null &&
+            currentMonthDue.pay!.state == PayState.PENDING) {
+          print(
+            '⚠️ Cuota del mes actual con pago PENDING - filtrando solo OVERDUE',
+          );
+          filteredDues = dues
+              .where((due) => due.state == DueState.OVERDUE)
+              .toList();
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _availableDues = dues;
+          _availableDues = filteredDues;
           _isLoadingDues = false;
           // Seleccionar automáticamente la cuota PENDING (mes actual)
-          _selectedDue = dues.firstWhere(
-            (due) => due.state == DueState.PENDING,
-            orElse: () => dues.isNotEmpty ? dues.first : null as CurrentDue,
-          );
+          if (filteredDues.isNotEmpty) {
+            _selectedDue = filteredDues.firstWhere(
+              (due) => due.state == DueState.PENDING,
+              orElse: () => filteredDues.first,
+            );
+            print(
+              '✅ Cuota seleccionada automáticamente: ${_selectedDue?.period}',
+            );
+          }
         });
       }
     } catch (e) {
+      print('❌ Error cargando cuotas: $e');
       if (mounted) {
-        setState(() => _isLoadingDues = false);
+        setState(() {
+          _availableDues = [];
+          _isLoadingDues = false;
+        });
       }
     }
   }
@@ -451,6 +520,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           child: ElevatedButton(
             onPressed: () {
               if (_selectedUser == null ||
+                  _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -489,13 +559,13 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 date: _dateFormat.format(
                   _dateFormat.parse(_fechaController.text),
                 ),
-                time: DateTime.now().toIso8601String().split('T')[1],
+                createdAt: DateTime.now().toIso8601String(),
                 fileName: _comprobanteFileName ?? '',
                 fileUrl: _comprobanteFileUrl ?? '',
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
               );
-              widget.onSave(newPayment, _selectedUser!);
+              widget.onSave(newPayment, _selectedUser!, _selectedDue!.id);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: tokens.redToRosita,
@@ -905,13 +975,25 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       Map<String, String>? result;
 
       if (option == 'gallery') {
-        result = await FileUploadService.pickAndUploadImage(
+        final file = await FileUploadService.pickImage(
           source: ImageSource.gallery,
         );
+        if (file != null) {
+          result = {
+            'fileName': file.path.split('/').last,
+            'fileUrl': file.path,
+          };
+        }
       } else if (option == 'file') {
-        result = await FileUploadService.pickAndUploadFile(
+        final file = await FileUploadService.pickFile(
           allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         );
+        if (file != null) {
+          result = {
+            'fileName': file.path.split('/').last,
+            'fileUrl': file.path,
+          };
+        }
       }
 
       if (result != null && mounted) {

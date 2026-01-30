@@ -3,7 +3,8 @@ class PayResponseModel {
   final String? fileName;
   final String? fileUrl;
   final String date;
-  final String time;
+  final String? createdAt;
+  final String? updateAt;
   final double amount;
   final String state; // Map to PayState in repo
 
@@ -12,7 +13,8 @@ class PayResponseModel {
     this.fileName,
     this.fileUrl,
     required this.date,
-    required this.time,
+    this.createdAt,
+    this.updateAt,
     required this.amount,
     required this.state,
   });
@@ -23,7 +25,8 @@ class PayResponseModel {
       fileName: json['fileName'] as String?,
       fileUrl: json['fileUrl'] as String?,
       date: json['date'] as String,
-      time: json['time'] as String,
+      createdAt: json['createdAt'] as String?,
+      updateAt: json['updateAt'] as String?,
       amount: (json['amount'] as num).toDouble(),
       state: json['state'] as String,
     );
@@ -35,7 +38,8 @@ class PayResponseModel {
       'fileName': fileName,
       'fileUrl': fileUrl,
       'date': date,
-      'time': time,
+      if (createdAt != null) 'createdAt': createdAt,
+      if (updateAt != null) 'updateAt': updateAt,
       'amount': amount,
       'state': state,
     };

@@ -3,7 +3,6 @@ class UpdatePayInput {
   final String? fileName;
   final String? fileUrl;
   final String? date;
-  final String? time;
   final double? amount;
   final String? state;
 
@@ -12,7 +11,6 @@ class UpdatePayInput {
     this.fileName,
     this.fileUrl,
     this.date,
-    this.time,
     this.amount,
     this.state,
   });
@@ -23,7 +21,6 @@ class UpdatePayInput {
       if (fileName != null) 'fileName': fileName,
       if (fileUrl != null) 'fileUrl': fileUrl,
       if (date != null) 'date': date,
-      if (time != null) 'time': time,
       if (amount != null) 'amount': amount,
       if (state != null) 'state': state,
     };

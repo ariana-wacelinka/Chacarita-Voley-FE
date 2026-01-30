@@ -58,7 +58,8 @@ class PayRepository implements PayRepositoryInterface {
                 fileName
                 fileUrl
                 id
-                time
+                createdAt
+                updateAt
                 player {
                   id
                   person {
@@ -169,7 +170,8 @@ class PayRepository implements PayRepositoryInterface {
                 fileName
                 fileUrl
                 date
-                time
+                createdAt
+                updateAt
                 amount
                 state
               }
@@ -218,7 +220,8 @@ class PayRepository implements PayRepositoryInterface {
               date
               fileName
               fileUrl
-              time
+              createdAt
+              updateAt
               player {
                 id
                 person {

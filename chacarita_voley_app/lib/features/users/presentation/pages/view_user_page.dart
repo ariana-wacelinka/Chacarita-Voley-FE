@@ -454,7 +454,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fecha: ${pay.date.split('-').reversed.join('/')}',
+                  'Fecha: ${pay.date?.split('-').reversed.join('/') ?? 'N/A'}',
                   style: TextStyle(color: context.tokens.text, fontSize: 13),
                 ),
                 if (pay.state == PayState.REJECTED) ...[

@@ -8,11 +8,7 @@ class PayMapper {
   static final DateFormat _displayFormat = DateFormat('dd/MM/yyyy');
   static final DateFormat _isoFormat = DateFormat('yyyy-MM-dd');
 
-  static CreatePayInput toCreateInput(Pay pay, User user) {
-    if (user.currentDue == null) {
-      throw ArgumentError('User must have a currentDue to create a payment');
-    }
-
+  static CreatePayInput toCreateInput(Pay pay, String dueId) {
     // Convertir fecha de formato display (dd/MM/yyyy) a formato ISO (yyyy-MM-dd)
     String isoDate;
     try {
@@ -24,7 +20,7 @@ class PayMapper {
     }
 
     return CreatePayInput(
-      dueId: user.currentDue!.id,
+      dueId: dueId,
       fileName: pay.fileName,
       fileUrl: pay.fileUrl,
       date: isoDate,
@@ -49,7 +45,6 @@ class PayMapper {
       fileName: pay.fileName,
       fileUrl: pay.fileUrl,
       date: isoDate,
-      time: pay.time,
       amount: pay.amount,
       state: pay.status.name.toUpperCase(),
     );

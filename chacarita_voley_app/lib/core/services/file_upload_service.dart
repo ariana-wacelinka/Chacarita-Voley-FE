@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,10 +7,8 @@ import '../environment.dart';
 import '../network/graphql_client_factory.dart';
 
 class FileUploadService {
-  // TODO: Actualizar con el endpoint real cuando esté disponible en el backend
-  static const String _uploadEndpoint = '/api/upload';
-  static const bool _mockUpload =
-      true; // Cambiar a false cuando el backend esté listo
+  static const bool _mockUpload = false;
+  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
 
   /// Selecciona una imagen desde la cámara o galería
   static Future<File?> pickImage({required ImageSource source}) async {
@@ -44,74 +43,71 @@ class FileUploadService {
     return null;
   }
 
-  /// Sube un archivo al backend y retorna la URL y nombre del archivo
-  static Future<Map<String, String>> uploadFile(File file) async {
+  /// Sube un comprobante de pago al backend
+  /// Endpoint: POST /api/pays/{paymentId}/receipt
+  /// Retorna: {fileName: "receipts/1/uuid.pdf", fileUrl: "https://..."}
+  static Future<Map<String, String>> uploadPaymentReceipt({
+    required String paymentId,
+    required File file,
+  }) async {
     try {
       final fileName = file.path.split(Platform.pathSeparator).last;
 
-      // Modo mock: simular upload exitoso sin llamar al backend
       if (_mockUpload) {
-        // Simular delay de red
         await Future.delayed(const Duration(seconds: 1));
-
         return {'fileUrl': 'mock://uploads/$fileName', 'fileName': fileName};
       }
 
-      // Modo real: subir al backend
-      final url = Uri.parse('${Environment.baseUrl}$_uploadEndpoint');
+      final url = Uri.parse(
+        '${Environment.baseUrl}/api/pays/$paymentId/receipt',
+      );
       final request = http.MultipartRequest('POST', url);
 
-      // Agregar token de autorización si existe
       final token = GraphQLClientFactory.token;
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      // Agregar el archivo
       request.files.add(await http.MultipartFile.fromPath('file', file.path));
 
-      // Enviar request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // TODO: Parsear la respuesta JSON real del backend
-        // final jsonResponse = json.decode(response.body);
-        // return {
-        //   'fileUrl': jsonResponse['fileUrl'],
-        //   'fileName': jsonResponse['fileName'],
-        // };
-
+        final jsonData = json.decode(response.body);
         return {
-          'fileUrl': 'https://ejemplo.com/uploads/$fileName',
-          'fileName': fileName,
+          'fileUrl': jsonData['fileUrl'] as String,
+          'fileName': jsonData['fileName'] as String,
         };
       } else {
-        throw Exception('Error al subir archivo: ${response.statusCode}');
+        throw Exception(
+          'Error al subir comprobante: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
-      throw Exception('Error al subir archivo: $e');
+      throw Exception('Error al subir comprobante: $e');
     }
   }
 
-  /// Opción combinada: seleccionar y subir archivo
-  static Future<Map<String, String>?> pickAndUploadFile({
-    List<String>? allowedExtensions,
+  /// Selecciona y sube un comprobante de pago (PDF, JPEG, PNG)
+  static Future<Map<String, String>?> pickAndUploadPaymentReceipt({
+    required String paymentId,
   }) async {
-    final file = await pickFile(allowedExtensions: allowedExtensions);
+    final file = await pickFile(allowedExtensions: _allowedExtensions);
     if (file != null) {
-      return await uploadFile(file);
+      return await uploadPaymentReceipt(paymentId: paymentId, file: file);
     }
     return null;
   }
 
-  /// Opción combinada: seleccionar y subir imagen
-  static Future<Map<String, String>?> pickAndUploadImage({
+  /// Selecciona imagen y la sube como comprobante de pago
+  static Future<Map<String, String>?> pickAndUploadPaymentReceiptImage({
+    required String paymentId,
     required ImageSource source,
   }) async {
     final file = await pickImage(source: source);
     if (file != null) {
-      return await uploadFile(file);
+      return await uploadPaymentReceipt(paymentId: paymentId, file: file);
     }
     return null;
   }

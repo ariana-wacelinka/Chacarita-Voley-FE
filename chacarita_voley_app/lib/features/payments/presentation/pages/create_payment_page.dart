@@ -29,7 +29,11 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     _createPaymentUseCase = CreatePayUseCase(PayRepository());
   }
 
-  Future<void> _handleCreatePayment(Pay newPay, User selectedUser) async {
+  Future<void> _handleCreatePayment(
+    Pay newPay,
+    User selectedUser,
+    String dueId,
+  ) async {
     print('🔵 Iniciando creación de pago...');
     print('Usuario: ${selectedUser.nombreCompleto} (${selectedUser.id})');
     print('Monto: ${newPay.amount}');
@@ -37,13 +41,14 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     print('Archivo: ${newPay.fileName}');
     print('FileURL: ${newPay.fileUrl}');
     print('Estado: ${newPay.status.name}');
+    print('DueId: $dueId');
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final input = PayMapper.toCreateInput(newPay, selectedUser);
+      final input = PayMapper.toCreateInput(newPay, dueId);
       print('🟡 CreatePayInput generado:');
       print('  - dueId: ${input.dueId}');
       print('  - amount: ${input.amount}');
