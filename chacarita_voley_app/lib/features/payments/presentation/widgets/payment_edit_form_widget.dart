@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
 
@@ -26,8 +30,9 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
   // Controladores para los campos editables
   late final TextEditingController _montoController;
   late final TextEditingController _fechaController;
-  String?
-  _comprobanteFileName; // Para el archivo (simulado, puedes usar file_picker para upload real)
+  String? _comprobanteFileName;
+  String? _comprobanteFileUrl;
+  bool _isUploadingFile = false;
 
   @override
   void initState() {
@@ -36,10 +41,10 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       text: widget.payment.amount.toStringAsFixed(2),
     );
     _fechaController = TextEditingController(
-      text: widget.dateFormat.format(widget.payment.paymentDate),
+      text: widget.dateFormat.format(DateTime.parse(widget.payment.date)),
     );
-    _comprobanteFileName =
-        'Comprobante mayoVoley.pdf'; // Simulado del existente
+    _comprobanteFileName = widget.payment.fileName;
+    _comprobanteFileUrl = widget.payment.fileUrl;
   }
 
   @override
@@ -163,17 +168,24 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                   width: 150,
                   height: 36,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      //TODO: Implementar modificación de comprobante
-                    },
-                    icon: const Icon(
-                      Icons.autorenew_rounded,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      'Modificar',
-                      style: TextStyle(
+                    onPressed: _isUploadingFile ? null : _handleUpdateReceipt,
+                    icon: _isUploadingFile
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.autorenew_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                    label: Text(
+                      _isUploadingFile ? 'Subiendo...' : 'Modificar',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -445,32 +457,207 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
 
   // Campo para comprobante (simulado, agrega file_picker para upload real)
   Widget _buildFileField(AppTokens tokens) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: tokens.stroke),
-        borderRadius: BorderRadius.circular(8),
-        color: tokens.background,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              _comprobanteFileName ?? 'Seleccionar archivo',
-              style: TextStyle(
-                color: _comprobanteFileName != null
-                    ? tokens.redToRosita
-                    : tokens.placeholder,
-                fontSize: 14,
+    final hasFile =
+        _comprobanteFileName != null && _comprobanteFileName!.isNotEmpty;
+
+    return InkWell(
+      onTap: hasFile ? _handleDownloadReceipt : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: tokens.stroke),
+          borderRadius: BorderRadius.circular(8),
+          color: tokens.background,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                _comprobanteFileName ?? 'Sin comprobante',
+                style: TextStyle(
+                  color: hasFile ? tokens.redToRosita : tokens.placeholder,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          Icon(Icons.file_download_outlined, color: tokens.text, size: 20),
-        ],
+            Icon(
+              Icons.file_download_outlined,
+              color: hasFile ? tokens.text : tokens.gray,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _handleDownloadReceipt() async {
+    if (_comprobanteFileName == null || _comprobanteFileName!.isEmpty) return;
+
+    try {
+      await FileUploadService.downloadPaymentReceiptWithNotification(
+        paymentId: widget.payment.id,
+        fileName: _comprobanteFileName!,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comprobante descargado exitosamente'),
+            backgroundColor: context.tokens.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleUpdateReceipt() async {
+    try {
+      setState(() => _isUploadingFile = true);
+
+      final option = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: context.tokens.card1,
+          title: Text(
+            'Seleccionar comprobante',
+            style: TextStyle(color: context.tokens.text),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library, color: context.tokens.text),
+                title: Text(
+                  'Galería',
+                  style: TextStyle(color: context.tokens.text),
+                ),
+                onTap: () => Navigator.of(context).pop('gallery'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.insert_drive_file,
+                  color: context.tokens.text,
+                ),
+                title: Text(
+                  'Archivo',
+                  style: TextStyle(color: context.tokens.text),
+                ),
+                onTap: () => Navigator.of(context).pop('file'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (option == null) {
+        setState(() => _isUploadingFile = false);
+        return;
+      }
+
+      Map<String, String>? result;
+
+      if (option == 'gallery') {
+        final file = await FileUploadService.pickImage(
+          source: ImageSource.gallery,
+        );
+        if (file != null) {
+          result = {
+            'fileName': file.path.split('/').last,
+            'fileUrl': file.path,
+          };
+        }
+      } else if (option == 'file') {
+        final file = await FileUploadService.pickFile(
+          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        );
+        if (file != null) {
+          result = {
+            'fileName': file.path.split('/').last,
+            'fileUrl': file.path,
+          };
+        }
+      }
+
+      if (result != null && mounted) {
+        // Subir el archivo al servidor usando updatePaymentReceipt
+        try {
+          print('📤 Subiendo archivo al servidor...');
+          print('Payment ID: ${widget.payment.id}');
+          print('Archivo: ${result['fileName']}');
+
+          final uploadResult = await FileUploadService.updatePaymentReceipt(
+            paymentId: widget.payment.id,
+            file: File(result['fileUrl']!),
+          );
+
+          print('✅ Archivo subido exitosamente');
+          print('fileName: ${uploadResult['fileName']}');
+          print('fileUrl: ${uploadResult['fileUrl']}');
+
+          if (mounted) {
+            setState(() {
+              _comprobanteFileName = uploadResult['fileName'];
+              _comprobanteFileUrl = uploadResult['fileUrl'];
+              _isUploadingFile = false;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Comprobante actualizado exitosamente'),
+                backgroundColor: context.tokens.green,
+              ),
+            );
+          }
+        } catch (e) {
+          print('❌ Error al subir archivo: $e');
+          if (mounted) {
+            setState(() => _isUploadingFile = false);
+
+            // Mensaje específico si es error 500 del servidor
+            String errorMsg = 'Error al subir archivo';
+            if (e.toString().contains('500') ||
+                e.toString().contains('Internal Server Error')) {
+              errorMsg =
+                  'Error del servidor al procesar el archivo. Por favor, intenta más tarde o contacta al administrador.';
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMsg),
+                backgroundColor: context.tokens.redToRosita,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      } else {
+        setState(() => _isUploadingFile = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingFile = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar archivo: $e'),
+            backgroundColor: context.tokens.redToRosita,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override

@@ -92,7 +92,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         // Debug: verificar fileName
         for (final pay in _pays) {
           print(
-            'Pay ${pay.id}: fileName="${pay.fileName}" (isEmpty: ${pay.fileName.isEmpty})',
+            'Pay ${pay.id}: fileName="${pay.fileName}" (isEmpty: ${(pay.fileName?.isEmpty ?? true)})',
           );
         }
       });
@@ -119,7 +119,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     try {
       await FileUploadService.downloadPaymentReceiptWithNotification(
         paymentId: payment.id,
-        fileName: payment.fileName,
+        fileName: payment.fileName ?? 'comprobante.pdf',
       );
 
       if (mounted) {
@@ -717,7 +717,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                 ),
                 const SizedBox(width: 4),
                 InkWell(
-                  onTap: payment.fileName.isNotEmpty
+                  onTap: (payment.fileName?.isNotEmpty ?? false)
                       ? () => _downloadReceipt(payment)
                       : null,
                   borderRadius: BorderRadius.circular(8),
@@ -736,7 +736,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                           )
                         : Icon(
                             Symbols.description,
-                            color: payment.fileName.isNotEmpty
+                            color: (payment.fileName?.isNotEmpty ?? false)
                                 ? context.tokens.placeholder
                                 : context.tokens.placeholder.withValues(
                                     alpha: 0.3,

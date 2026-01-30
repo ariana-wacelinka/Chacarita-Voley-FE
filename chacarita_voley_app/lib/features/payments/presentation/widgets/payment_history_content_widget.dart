@@ -323,7 +323,9 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Descargando ${payment.fileName}'),
+                  content: Text(
+                    'Descargando ${payment.fileName ?? "comprobante"}',
+                  ),
                   duration: const Duration(seconds: 2),
                 ),
               );

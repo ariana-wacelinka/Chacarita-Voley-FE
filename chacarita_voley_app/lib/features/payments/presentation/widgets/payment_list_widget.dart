@@ -88,7 +88,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     try {
       await FileUploadService.downloadPaymentReceiptWithNotification(
         paymentId: payment.id,
-        fileName: payment.fileName,
+        fileName: payment.fileName ?? 'comprobante.pdf',
       );
 
       if (mounted) {
@@ -243,7 +243,8 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                                     ),
                                   )
                                 : Opacity(
-                                    opacity: payment.fileName.isNotEmpty
+                                    opacity:
+                                        (payment.fileName?.isNotEmpty ?? false)
                                         ? 1.0
                                         : 0.3,
                                     child: Icon(
@@ -252,7 +253,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
                                       size: 24,
                                     ),
                                   ),
-                            onPressed: payment.fileName.isNotEmpty
+                            onPressed: (payment.fileName?.isNotEmpty ?? false)
                                 ? () => _downloadReceipt(payment)
                                 : null,
                             padding: EdgeInsets.zero,

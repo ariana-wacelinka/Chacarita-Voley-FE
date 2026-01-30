@@ -10,8 +10,8 @@ class Pay {
   final String date; // "2025-01-20" formato
   final String? createdAt; // "2026-01-24T20:04:24.201587" formato ISO
   final String? updateAt; // "2026-01-24T20:04:24.201587" formato ISO
-  final String fileName;
-  final String fileUrl;
+  final String? fileName;
+  final String? fileUrl;
 
   // Player opcional (viene del backend en getAllPays)
   final Player? player;
@@ -28,8 +28,8 @@ class Pay {
     required this.date,
     this.createdAt,
     this.updateAt,
-    required this.fileName,
-    required this.fileUrl,
+    this.fileName,
+    this.fileUrl,
     this.player,
     this.userName,
     this.dni,
@@ -101,8 +101,8 @@ class Pay {
       date: json['date'] as String,
       createdAt: json['createdAt'] as String?,
       updateAt: json['updateAt'] as String?,
-      fileName: json['fileName'] as String,
-      fileUrl: json['fileUrl'] as String,
+      fileName: json['fileName'] as String?,
+      fileUrl: json['fileUrl'] as String?,
       player: json['player'] != null
           ? Player.fromJson(json['player'] as Map<String, dynamic>)
           : null,

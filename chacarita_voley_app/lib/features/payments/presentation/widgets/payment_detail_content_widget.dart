@@ -84,7 +84,9 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
 
           // Sección Comprobante de Pago
           GestureDetector(
-            onTap: widget.payment.fileName.isNotEmpty ? _downloadReceipt : null,
+            onTap: (widget.payment.fileName?.isNotEmpty ?? false)
+                ? _downloadReceipt
+                : null,
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -116,10 +118,11 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              if (widget.payment.fileName.isNotEmpty) ...[
-                                const SizedBox(height: 4),
+                              if (widget.payment.fileName?.isNotEmpty ??
+                                  false) ...[
+                                const SizedBox(height: 8),
                                 Text(
-                                  widget.payment.fileName.split('/').last,
+                                  widget.payment.fileName!.split('/').last,
                                   style: TextStyle(
                                     color: tokens.gray,
                                     fontSize: 13,
@@ -145,10 +148,10 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                     )
                   else
                     Icon(
-                      widget.payment.fileName.isNotEmpty
+                      (widget.payment.fileName?.isNotEmpty ?? false)
                           ? Icons.file_download
                           : Icons.file_download_off,
-                      color: widget.payment.fileName.isNotEmpty
+                      color: (widget.payment.fileName?.isNotEmpty ?? false)
                           ? tokens.text
                           : tokens.gray,
                     ),
@@ -205,7 +208,7 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
     try {
       await FileUploadService.downloadPaymentReceiptWithNotification(
         paymentId: widget.payment.id,
-        fileName: widget.payment.fileName,
+        fileName: widget.payment.fileName ?? 'comprobante.pdf',
       );
 
       if (mounted) {
