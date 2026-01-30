@@ -37,7 +37,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
 
   Future<void> _loadPayment() async {
     try {
-      final payment = _repository.getPaymentById(widget.paymentId);
+      final payment = await _repository.getPayById(widget.paymentId);
 
       if (payment != null) {
         setState(() {
