@@ -325,9 +325,59 @@ class PayRepository implements PayRepositoryInterface {
   }
 
   @override
-  Future<Pay> updatePay(UpdatePayInput input) {
-    // TODO: implement updatePay
-    throw UnimplementedError();
+  Future<Pay> updatePay(UpdatePayInput input) async {
+    final inputMap = {
+      if (input.fileName != null) 'fileName': input.fileName,
+      if (input.fileUrl != null) 'fileUrl': input.fileUrl,
+      if (input.amount != null) 'amount': input.amount,
+      if (input.date != null) 'date': input.date,
+    };
+
+    print('🔷 UpdatePay Mutation:');
+    print('ID: ${input.id}');
+    print('Input: $inputMap');
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql('''
+          mutation UpdatePay(\$id: ID!, \$input: UpdatePayInput!) {
+            updatePay(id: \$id, input: \$input) {
+              id
+              state
+              amount
+              date
+              fileName
+              fileUrl
+              createdAt
+              updateAt
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
+            }
+          }
+        '''),
+        variables: {'id': input.id, 'input': inputMap},
+      ),
+    );
+
+    if (result.hasException) {
+      print('❌ UpdatePay Exception: ${result.exception}');
+      throw result.exception!;
+    }
+
+    final payData = result.data!['updatePay'] as Map<String, dynamic>;
+    final updatedPay = Pay.fromJson(payData);
+
+    // Actualizar caché
+    _paysCache[updatedPay.id] = updatedPay;
+
+    return updatedPay;
   }
 
   // Agrega getPayById, etc.

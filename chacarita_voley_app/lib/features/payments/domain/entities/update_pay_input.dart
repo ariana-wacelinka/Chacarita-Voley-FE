@@ -4,7 +4,6 @@ class UpdatePayInput {
   final String? fileUrl;
   final String? date;
   final double? amount;
-  final String? state;
 
   const UpdatePayInput({
     required this.id,
@@ -12,7 +11,6 @@ class UpdatePayInput {
     this.fileUrl,
     this.date,
     this.amount,
-    this.state,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,7 +20,6 @@ class UpdatePayInput {
       if (fileUrl != null) 'fileUrl': fileUrl,
       if (date != null) 'date': date,
       if (amount != null) 'amount': amount,
-      if (state != null) 'state': state,
     };
   }
 }

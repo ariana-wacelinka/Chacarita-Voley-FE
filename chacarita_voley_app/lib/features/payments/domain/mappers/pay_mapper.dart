@@ -46,7 +46,6 @@ class PayMapper {
       fileUrl: pay.fileUrl,
       date: isoDate,
       amount: pay.amount,
-      state: pay.status.name.toUpperCase(),
     );
   }
 }

@@ -13,7 +13,9 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
-  const PaymentsValidationPage({super.key});
+  final String? refresh;
+
+  const PaymentsValidationPage({super.key, this.refresh});
 
   @override
   State<PaymentsValidationPage> createState() => _PaymentsValidationPageState();
@@ -46,6 +48,16 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     _repository = PayRepository();
     _loadStats();
     _loadPays();
+  }
+
+  @override
+  void didUpdateWidget(PaymentsValidationPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Si cambia el parámetro refresh, recargar datos
+    if (oldWidget.refresh != widget.refresh && widget.refresh != null) {
+      _loadStats();
+      _loadPays();
+    }
   }
 
   Future<void> _loadStats() async {

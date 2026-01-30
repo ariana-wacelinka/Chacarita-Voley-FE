@@ -73,7 +73,9 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/payments',
           name: 'payments',
-          builder: (_, __) => const PaymentsValidationPage(),
+          builder: (_, state) => PaymentsValidationPage(
+            refresh: state.uri.queryParameters['refresh'],
+          ),
         ),
         GoRoute(
           path: '/teams',

@@ -138,7 +138,10 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
           ),
         );
 
-        context.go('/payments'); // O ruta de lista de pagos / validaciones
+        // Navegar de vuelta y forzar refresh con timestamp único
+        context.go(
+          '/payments?refresh=${DateTime.now().millisecondsSinceEpoch}',
+        );
       }
     } catch (e) {
       if (mounted) {
