@@ -32,7 +32,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   Future<void> _loadPayment() async {
     setState(() => _isLoading = true);
     try {
-      final payment = _paymentRepository.getPaymentById(widget.paymentId);
+      final payment = await _paymentRepository.getPayById(widget.paymentId);
       if (payment != null) {
         setState(() {
           _payment = payment;

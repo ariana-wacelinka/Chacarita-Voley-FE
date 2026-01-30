@@ -1,7 +1,9 @@
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 
 class PaymentDetailContent extends StatefulWidget {
@@ -14,7 +16,7 @@ class PaymentDetailContent extends StatefulWidget {
 }
 
 class _PaymentDetailContentState extends State<PaymentDetailContent> {
-  bool _isDownloaded = false;
+  bool _isDownloading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,19 +79,8 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
           const SizedBox(height: 16),
 
           // Sección Comprobante de Pago
-          // Sección Comprobante de Pago
           GestureDetector(
-            onTap: () {
-              // Lógica para descargar o ver comprobante
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Descargando ${widget.payment.fileName}'),
-                ),
-              );
-              setState(() {
-                _isDownloaded = true;
-              });
-            },
+            onTap: widget.payment.fileName.isNotEmpty ? _downloadReceipt : null,
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -100,28 +91,63 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.description_outlined,
-                        color: tokens.text,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Comprobante de Pago',
-                        style: TextStyle(
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
                           color: tokens.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          size: 24,
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Comprobante de Pago',
+                                style: TextStyle(
+                                  color: tokens.text,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (widget.payment.fileName.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.payment.fileName.split('/').last,
+                                  style: TextStyle(
+                                    color: tokens.gray,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_isDownloading)
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(tokens.text),
                       ),
-                    ],
-                  ),
-                  Icon(
-                    _isDownloaded ? Icons.download_done : Icons.file_download,
-                    color: tokens.text,
-                  ),
+                    )
+                  else
+                    Icon(
+                      widget.payment.fileName.isNotEmpty
+                          ? Icons.file_download
+                          : Icons.file_download_off,
+                      color: widget.payment.fileName.isNotEmpty
+                          ? tokens.text
+                          : tokens.gray,
+                    ),
                 ],
               ),
             ),
@@ -167,6 +193,39 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
         ],
       ),
     );
+  }
+
+  Future<void> _downloadReceipt() async {
+    setState(() => _isDownloading = true);
+
+    try {
+      await FileUploadService.downloadPaymentReceiptWithNotification(
+        paymentId: widget.payment.id,
+        fileName: widget.payment.fileName,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comprobante descargado exitosamente'),
+            backgroundColor: context.tokens.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar comprobante: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
   }
 
   // Fila para detalles (hora/fecha)

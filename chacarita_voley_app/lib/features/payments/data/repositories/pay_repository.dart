@@ -271,9 +271,51 @@ class PayRepository implements PayRepositoryInterface {
   }
 
   @override
-  Future<Pay?> getPayById(String id) {
-    // TODO: implement getPayById
-    throw UnimplementedError();
+  Future<Pay?> getPayById(String id) async {
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql('''
+            query GetPayById(\$id: ID!) {
+              getPayById(id: \$id) {
+                id
+                state
+                amount
+                date
+                fileName
+                fileUrl
+                createdAt
+                updateAt
+                player {
+                  id
+                  person {
+                    id
+                    name
+                    surname
+                    dni
+                  }
+                }
+              }
+            }
+          '''),
+          variables: {'id': id},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        print('❌ [getPayById] Exception: ${result.exception}');
+        return null;
+      }
+
+      final payData = result.data?['getPayById'];
+      if (payData == null) return null;
+
+      return Pay.fromJson(payData as Map<String, dynamic>);
+    } catch (e) {
+      print('❌ [getPayById] Error: $e');
+      return null;
+    }
   }
 
   @override
