@@ -93,7 +93,8 @@ class UserRepository implements UserRepositoryInterface {
         state
         period
         pay {
-          time
+          createdAt
+          updateAt
           state
           id
           fileUrl

@@ -60,7 +60,11 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                 _buildDetailRow(
                   icon: Icons.access_time_outlined,
                   label: 'Hora:',
-                  value: widget.payment.time.substring(0, 5),
+                  value:
+                      (widget.payment.updateAt ??
+                              widget.payment.createdAt ??
+                              '')
+                          .substring(11, 16),
                   context: context,
                 ),
                 const SizedBox(height: 12),
