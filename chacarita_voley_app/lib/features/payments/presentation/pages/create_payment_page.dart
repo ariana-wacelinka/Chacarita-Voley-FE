@@ -34,33 +34,11 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     User selectedUser,
     String dueId,
   ) async {
-    print('🔵 Iniciando creación de pago...');
-    print('Usuario: ${selectedUser.nombreCompleto} (${selectedUser.id})');
-    print('Monto: ${newPay.amount}');
-    print('Fecha: ${newPay.date}');
-    print('Archivo: ${newPay.fileName}');
-    print('FileURL: ${newPay.fileUrl}');
-    print('Estado: ${newPay.status.name}');
-    print('DueId: $dueId');
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final input = PayMapper.toCreateInput(newPay, dueId);
-      print('🟡 CreatePayInput generado:');
-      print('  - dueId: ${input.dueId}');
-      print('  - amount: ${input.amount}');
-      print('  - date: ${input.date}');
-      print('  - fileName: ${input.fileName}');
-      print('  - fileUrl: ${input.fileUrl}');
-      print('  - state: ${input.state}');
-
-      print('🟡 Ejecutando mutation createPay...');
-      final result = await _createPaymentUseCase.execute(input);
-      print('🟢 Pago creado exitosamente! ID: ${result.id}');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -99,12 +77,6 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         ); // O a historial si userId presente: '/users/${newPayment.userId}/payments'
       }
     } catch (e) {
-      print('🔴 ERROR al crear pago:');
-      print('Tipo: ${e.runtimeType}');
-      print('Mensaje: $e');
-      print('Stack trace:');
-      print(StackTrace.current);
-
       // Determinar el mensaje de error apropiado
       String errorMessage = 'Error al registrar pago';
 
@@ -141,7 +113,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                 ),
               ],
             ),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -209,7 +181,9 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         child: _isLoading
             ? Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(tokens.redToRosita),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               )
             : SingleChildScrollView(

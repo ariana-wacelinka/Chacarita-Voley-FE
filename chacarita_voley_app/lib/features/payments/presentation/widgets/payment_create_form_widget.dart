@@ -568,7 +568,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               widget.onSave(newPayment, _selectedUser!, _selectedDue!.id);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
