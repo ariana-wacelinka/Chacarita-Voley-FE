@@ -2,13 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/permissions_service.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  List<String> _userRoles = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRoles();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    setState(() {
+      _userRoles = roles ?? [];
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final currentLocation = GoRouterState.of(context).uri.path;
+
+    if (_isLoading) {
+      return Drawer(
+        backgroundColor: context.tokens.drawer,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Drawer(
       backgroundColor: context.tokens.drawer,
@@ -75,51 +106,56 @@ class AppDrawer extends StatelessWidget {
                       context.go('/home');
                     },
                   ),
-                  _DrawerItem(
-                    icon: Icons.people,
-                    title: 'Gestión de Usuarios',
-                    isSelected: currentLocation == '/users',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/users');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.payment,
-                    title: 'Gestión de Cuotas',
-                    isSelected: currentLocation == '/payments',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/payments');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.notifications,
-                    title: 'Gestión de Notificaciones',
-                    isSelected: currentLocation == '/notifications',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/notifications');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.sports_volleyball,
-                    title: 'Gestión de Equipos',
-                    isSelected: currentLocation == '/teams',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/teams');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.calendar_today,
-                    title: 'Gestión de Entrenamientos',
-                    isSelected: currentLocation == '/trainings',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/trainings');
-                    },
-                  ),
+                  if (PermissionsService.canAccessUsers(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.people,
+                      title: 'Gestión de Usuarios',
+                      isSelected: currentLocation == '/users',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users');
+                      },
+                    ),
+                  if (PermissionsService.canAccessPayments(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.payment,
+                      title: 'Gestión de Cuotas',
+                      isSelected: currentLocation == '/payments',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/payments');
+                      },
+                    ),
+                  if (PermissionsService.canAccessNotifications(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.notifications,
+                      title: 'Gestión de Notificaciones',
+                      isSelected: currentLocation == '/notifications',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/notifications');
+                      },
+                    ),
+                  if (PermissionsService.canAccessTeams(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.sports_volleyball,
+                      title: 'Gestión de Equipos',
+                      isSelected: currentLocation == '/teams',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/teams');
+                      },
+                    ),
+                  if (PermissionsService.canAccessTrainings(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.calendar_today,
+                      title: 'Gestión de Entrenamientos',
+                      isSelected: currentLocation == '/trainings',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/trainings');
+                      },
+                    ),
                 ],
               ),
             ),
