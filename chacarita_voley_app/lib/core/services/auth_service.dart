@@ -320,10 +320,14 @@ class AuthService {
   }
 
   Future<List<String>?> getUserRoles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rolesJson = prefs.getString(_userRolesKey);
-    if (rolesJson == null) return null;
-    return List<String>.from(json.decode(rolesJson));
+    // MOCK: Retornar solo rol PROFESSOR
+    return ['PROFESSOR'];
+
+    // Código original comentado:
+    // final prefs = await SharedPreferences.getInstance();
+    // final rolesJson = prefs.getString(_userRolesKey);
+    // if (rolesJson == null) return null;
+    // return List<String>.from(json.decode(rolesJson));
   }
 
   Future<bool> isLoggedIn() async {

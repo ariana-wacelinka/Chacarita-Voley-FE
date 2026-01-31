@@ -11,6 +11,8 @@ import '../../../../app/di.dart';
 import '../../domain/models/home_stats.dart';
 import '../../domain/models/notification_preview.dart';
 import '../../domain/models/training_preview.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -24,11 +26,23 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<NotificationPreview> _notifications = [];
   List<TrainingPreview> _trainings = [];
   bool _isLoading = true;
+  List<String> _userRoles = [];
 
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _loadData();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -129,29 +143,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  QuickActionCard(
-                    title: 'Gestionar cuotas',
-                    icon: Symbols.credit_card,
-                    onTap: () => context.go('/payments'),
-                  ),
-                  const SizedBox(height: 12),
-                  QuickActionCard(
-                    title: 'Gestionar usuarios',
-                    icon: Symbols.group,
-                    onTap: () => context.go('/users'),
-                  ),
-                  const SizedBox(height: 12),
-                  QuickActionCard(
-                    title: 'Gestionar notificaciones',
-                    icon: Symbols.notifications,
-                    onTap: () => context.go('/notifications'),
-                  ),
-                  const SizedBox(height: 12),
-                  QuickActionCard(
-                    title: 'Gestionar equipos',
-                    icon: Symbols.sports_volleyball,
-                    onTap: () => context.go('/teams'),
-                  ),
+                  if (PermissionsService.canAccessPayments(_userRoles))
+                    QuickActionCard(
+                      title: 'Gestionar cuotas',
+                      icon: Symbols.credit_card,
+                      onTap: () => context.go('/payments'),
+                    ),
+                  if (PermissionsService.canAccessPayments(_userRoles))
+                    const SizedBox(height: 12),
+                  if (PermissionsService.canAccessUsers(_userRoles))
+                    QuickActionCard(
+                      title: 'Gestionar usuarios',
+                      icon: Symbols.group,
+                      onTap: () => context.go('/users'),
+                    ),
+                  if (PermissionsService.canAccessUsers(_userRoles))
+                    const SizedBox(height: 12),
+                  if (PermissionsService.canAccessNotifications(_userRoles))
+                    QuickActionCard(
+                      title: 'Gestionar notificaciones',
+                      icon: Symbols.notifications,
+                      onTap: () => context.go('/notifications'),
+                    ),
+                  if (PermissionsService.canAccessNotifications(_userRoles))
+                    const SizedBox(height: 12),
+                  if (PermissionsService.canAccessTeams(_userRoles))
+                    QuickActionCard(
+                      title: 'Gestionar equipos',
+                      icon: Symbols.sports_volleyball,
+                      onTap: () => context.go('/teams'),
+                    ),
+                  if (PermissionsService.canAccessTeams(_userRoles))
+                    const SizedBox(height: 12),
                   const SizedBox(height: 32),
 
                   Text(

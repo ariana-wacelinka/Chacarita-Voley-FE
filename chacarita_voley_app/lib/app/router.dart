@@ -53,22 +53,50 @@ final appRouter = GoRouter(
     final roles = await authService.getUserRoles() ?? [];
     final path = state.matchedLocation;
 
+    // Usuarios
     if (path.startsWith('/users') &&
         !PermissionsService.canAccessUsers(roles)) {
       return '/home';
     }
-    if (path.startsWith('/payments') &&
-        !PermissionsService.canAccessPayments(roles)) {
+    if (path == '/users/register' && !PermissionsService.canCreateUser(roles)) {
       return '/home';
     }
+    if (path.contains('/edit') &&
+        path.startsWith('/users') &&
+        !PermissionsService.canEditUser(roles)) {
+      return '/home';
+    }
+
+    // Pagos - validación principal y edición
+    if (path == '/payments' && !PermissionsService.canAccessPayments(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/create') &&
+        !PermissionsService.canCreatePayment(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/edit') &&
+        !PermissionsService.canEditPayment(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/detail') &&
+        !PermissionsService.canValidatePayments(roles)) {
+      return '/home';
+    }
+
+    // Notificaciones
     if (path.startsWith('/notifications') &&
         !PermissionsService.canAccessNotifications(roles)) {
       return '/home';
     }
+
+    // Equipos
     if (path.startsWith('/teams') &&
         !PermissionsService.canAccessTeams(roles)) {
       return '/home';
     }
+
+    // Entrenamientos
     if (path.startsWith('/trainings') &&
         !PermissionsService.canAccessTrainings(roles)) {
       return '/home';
