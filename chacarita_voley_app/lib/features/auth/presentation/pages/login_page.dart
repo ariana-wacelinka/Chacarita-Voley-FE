@@ -34,6 +34,18 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
 
+      print('✅ Login response recibido, obteniendo información del usuario...');
+
+      // Obtener información del usuario
+      final user = await _authService.getCurrentUser();
+      if (user != null) {
+        print('✅ Información del usuario obtenida exitosamente');
+        print('   Usuario: ${user.fullName}');
+        print('   Roles: ${user.roles}');
+      } else {
+        print('⚠️ No se pudo obtener la información del usuario');
+      }
+
       // Login exitoso, intentar actualizar el token
       try {
         GraphQLClientFactory.updateToken(response.accessToken);

@@ -33,14 +33,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Future<void> _loadData() async {
     try {
-      print('🔵 Iniciando carga de datos...');
       final repository = ref.read(homeRepositoryProvider);
       final stats = await repository.getStats();
-      print('🟢 Stats cargadas: ${stats.totalMembers}');
       final notifications = await repository.getScheduledNotifications();
-      print('🟢 Notificaciones cargadas: ${notifications.length}');
       final trainings = await repository.getTodayTrainings();
-      print('🟢 Entrenamientos cargados: ${trainings.length}');
       if (mounted) {
         setState(() {
           _stats = stats;
@@ -48,13 +44,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           _trainings = trainings;
           _isLoading = false;
         });
-        print(
-          '🟢 Estado actualizado con ${_notifications.length} notificaciones y ${_trainings.length} entrenamientos',
-        );
       }
-    } catch (e, stackTrace) {
-      print('🔴 Error en _loadData: $e');
-      print('🔴 StackTrace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _stats = HomeStats.empty();
