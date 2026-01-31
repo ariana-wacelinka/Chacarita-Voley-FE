@@ -5,6 +5,8 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/team_list_item.dart';
 import '../../data/repositories/team_repository.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 enum _TeamMenuAction { view, edit, delete }
 
@@ -29,11 +31,28 @@ class _TeamsPageState extends State<TeamsPage> {
   static const int _teamsPerPage = 12;
   int _currentPage = 0;
 
+  List<String> _userRoles = [];
+  bool _canEdit = false;
+  bool _canDelete = false;
+
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _teamsFuture = _repository.getTeamsListItems(page: 0, size: _teamsPerPage);
     _totalElementsFuture = _repository.getTotalTeams();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _canEdit = PermissionsService.canEditTeam(_userRoles);
+        _canDelete = PermissionsService.canDeleteTeam(_userRoles);
+      });
+    }
   }
 
   @override
@@ -442,57 +461,60 @@ class _TeamsPageState extends State<TeamsPage> {
                                                       ],
                                                     ),
                                                   ),
-                                                  PopupMenuItem(
-                                                    value: _TeamMenuAction.edit,
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Symbols.edit,
-                                                          size: 18,
-                                                          color: context
-                                                              .tokens
-                                                              .text,
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 8,
-                                                        ),
-                                                        Text(
-                                                          'Modificar',
-                                                          style: TextStyle(
+                                                  if (_canEdit)
+                                                    PopupMenuItem(
+                                                      value:
+                                                          _TeamMenuAction.edit,
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Symbols.edit,
+                                                            size: 18,
                                                             color: context
                                                                 .tokens
                                                                 .text,
                                                           ),
-                                                        ),
-                                                      ],
+                                                          const SizedBox(
+                                                            width: 8,
+                                                          ),
+                                                          Text(
+                                                            'Modificar',
+                                                            style: TextStyle(
+                                                              color: context
+                                                                  .tokens
+                                                                  .text,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                  PopupMenuItem(
-                                                    value:
-                                                        _TeamMenuAction.delete,
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Symbols.delete,
-                                                          size: 18,
-                                                          color: context
-                                                              .tokens
-                                                              .redToRosita,
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 8,
-                                                        ),
-                                                        Text(
-                                                          'Eliminar',
-                                                          style: TextStyle(
+                                                  if (_canDelete)
+                                                    PopupMenuItem(
+                                                      value: _TeamMenuAction
+                                                          .delete,
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Symbols.delete,
+                                                            size: 18,
                                                             color: context
                                                                 .tokens
                                                                 .redToRosita,
                                                           ),
-                                                        ),
-                                                      ],
+                                                          const SizedBox(
+                                                            width: 8,
+                                                          ),
+                                                          Text(
+                                                            'Eliminar',
+                                                            style: TextStyle(
+                                                              color: context
+                                                                  .tokens
+                                                                  .redToRosita,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
                                                 ],
                                               ),
                                             ),
