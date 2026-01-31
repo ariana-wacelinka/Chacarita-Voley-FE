@@ -544,7 +544,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: context.tokens.background,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: context.tokens.stroke),
                   ),
@@ -1011,7 +1013,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: context.tokens.background,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: context.tokens.stroke),
             ),
@@ -1077,7 +1078,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: context.tokens.background,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: context.tokens.stroke),
             ),

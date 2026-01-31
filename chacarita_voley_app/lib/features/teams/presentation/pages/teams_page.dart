@@ -208,7 +208,9 @@ class _TeamsPageState extends State<TeamsPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: context.tokens.background,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: context.tokens.stroke),
                 ),
