@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  static const String _themeKey = 'theme_mode';
+  static const String _themeKey =
+      'theme_mode_v2'; // Cambiado para evitar conflicto con valor antiguo
+  static const String _oldThemeKey = 'theme_mode'; // Key antigua
   ThemeMode _themeMode = ThemeMode.system;
 
   ThemeMode get themeMode => _themeMode;
@@ -13,11 +15,20 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _loadThemeFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Limpiar valor antiguo si existe
+    if (prefs.containsKey(_oldThemeKey)) {
+      await prefs.remove(_oldThemeKey);
+      print('🗑️ Limpiado valor antiguo de tema');
+    }
+
     if (!prefs.containsKey(_themeKey)) {
       _themeMode = ThemeMode.system;
+      print('🎨 Usando tema del sistema por defecto');
     } else {
       final themeValue = prefs.getString(_themeKey);
       _themeMode = _themeModeFromString(themeValue);
+      print('🎨 Tema cargado: $_themeMode');
     }
     notifyListeners();
   }
