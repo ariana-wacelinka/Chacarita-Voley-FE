@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/network/graphql_client_factory.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,6 +13,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
   bool _rememberMe = true;
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -24,10 +27,39 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    context.go('/home');
+
+    try {
+      final response = await _authService.login(
+        email: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      // Login exitoso, intentar actualizar el token
+      try {
+        GraphQLClientFactory.updateToken(response.accessToken);
+      } catch (e) {
+        // Si falla actualizar el token, solo logueamos pero seguimos
+        print('⚠️ Error actualizando token en GraphQL: $e');
+      }
+
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      // Solo mostramos error si el login falló
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al iniciar sesión: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
