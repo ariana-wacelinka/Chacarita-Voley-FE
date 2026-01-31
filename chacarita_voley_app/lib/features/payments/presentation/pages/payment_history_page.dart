@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../../domain/entities/pay_state.dart';
+import '../../domain/entities/pay_page.dart';
 import '../widgets/payment_history_content_widget.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
@@ -28,8 +30,15 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   int _currentPage = 0;
   static const int _itemsPerPage = 7;
+  int _totalElements = 0;
+  int _totalPages = 0;
+  bool _hasNext = false;
+  bool _hasPrevious = false;
+
   DateTime? _startDate;
   DateTime? _endDate;
+
+  final Map<String, bool> _downloadingFiles = {};
 
   @override
   void initState() {
@@ -42,151 +51,106 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     setState(() => _isLoading = true);
 
     try {
-      final pays = _payRepository.getPaymentByUserId(widget.userId);
+      final payPage = await _payRepository.getPaysByPlayerId(
+        playerId: widget.userId,
+        page: _currentPage,
+        size: _itemsPerPage,
+        dateFrom: _startDate?.toIso8601String().split('T')[0],
+        dateTo: _endDate?.toIso8601String().split('T')[0],
+      );
+
       if (!mounted) return;
 
       setState(() {
-        _payments = pays.isNotEmpty ? pays : _getDummyPayments();
+        _payments = payPage.content;
+        _totalElements = payPage.totalElements;
+        _totalPages = payPage.totalPages;
+        _hasNext = payPage.hasNext;
+        _hasPrevious = payPage.hasPrevious;
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _payments = _getDummyPayments();
         _isLoading = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Error al cargar historial de pagos'),
+          content: Text('Error al cargar historial de pagos: $e'),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
     }
   }
 
-  // Datos dummy para visualización (hardcodeados, ordenados por fecha descendente)
-  List<Pay> _getDummyPayments() {
-    return [
-      Pay(
-        id: '1',
-        status: PayState.validated,
-        amount: 20000.0,
-        date: '2025-11-09',
-        createdAt: '2025-11-09T10:00:00.000',
-        fileName: 'comprobante_nov9.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_nov9.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '2',
-        status: PayState.validated,
-        amount: 20000.0,
-        date: '2025-10-15',
-        createdAt: '2025-10-15T10:00:00.000',
-        fileName: 'comprobante_oct15.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_oct15.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '3',
-        status: PayState.rejected,
-        amount: 20000.0,
-        date: '2025-09-20',
-        createdAt: '2025-09-20T10:00:00.000',
-        fileName: 'comprobante_sep20.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_sep20.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '4',
-        status: PayState.pending,
-        amount: 20000.0,
-        date: '2025-08-05',
-        createdAt: '2025-08-05T10:00:00.000',
-        fileName: 'comprobante_aug5.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_aug5.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '5',
-        status: PayState.validated,
-        amount: 20000.0,
-        date: '2025-07-12',
-        createdAt: '2025-07-12T10:00:00.000',
-        fileName: 'comprobante_jul12.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_jul12.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '6',
-        status: PayState.validated,
-        amount: 20000.0,
-        date: '2025-06-25',
-        createdAt: '2025-06-25T10:00:00.000',
-        fileName: 'comprobante_jun25.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_jun25.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-      Pay(
-        id: '7',
-        status: PayState.validated,
-        amount: 20000.0,
-        date: '2025-05-01',
-        createdAt: '2025-05-01T10:00:00.000',
-        fileName: 'comprobante_may1.pdf',
-        fileUrl: 'https://ejemplo.com/comprobante_may1.pdf',
-        userName: widget.userName,
-        dni: '12345678',
-      ),
-    ];
-  }
+  Future<void> _handleDownload(Pay payment) async {
+    if (payment.fileName == null || payment.fileName!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No hay comprobante disponible'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+      return;
+    }
 
-  List<Pay> get _filteredPayments {
-    return _payments.where((payment) {
-      bool afterStart =
-          _startDate == null ||
-          payment.paymentDate.isAfter(
-            _startDate!.subtract(const Duration(days: 1)),
-          );
-      bool beforeEnd =
-          _endDate == null ||
-          payment.paymentDate.isBefore(_endDate!.add(const Duration(days: 1)));
-      return afterStart && beforeEnd;
-    }).toList();
-  }
+    setState(() {
+      _downloadingFiles[payment.id] = true;
+    });
 
-  List<Pay> get _displayedPayments {
-    final filtered = _filteredPayments;
-    final start = _currentPage * _itemsPerPage;
-    final end = (start + _itemsPerPage).clamp(0, filtered.length);
-    return filtered.sublist(start, end);
+    try {
+      await FileUploadService.downloadPaymentReceiptWithNotification(
+        paymentId: payment.id,
+        fileName: payment.fileName!,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comprobante descargado'),
+            backgroundColor: context.tokens.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar: $e'),
+            backgroundColor: context.tokens.redToRosita,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _downloadingFiles.remove(payment.id);
+        });
+      }
+    }
   }
 
   void _nextPage() {
-    if ((_currentPage + 1) * _itemsPerPage < _filteredPayments.length) {
+    if (_hasNext) {
       setState(() => _currentPage++);
+      _loadPays();
     }
   }
 
   void _previousPage() {
-    if (_currentPage > 0) {
+    if (_hasPrevious) {
       setState(() => _currentPage--);
+      _loadPays();
     }
   }
 
   int get _startItem =>
-      _filteredPayments.isEmpty ? 0 : _currentPage * _itemsPerPage + 1;
+      _totalElements == 0 ? 0 : _currentPage * _itemsPerPage + 1;
 
   int get _endItem =>
-      ((_currentPage + 1) * _itemsPerPage).clamp(0, _filteredPayments.length);
+      ((_currentPage + 1) * _itemsPerPage).clamp(0, _totalElements);
 
   void _onFiltersChanged(DateTime? startDate, DateTime? endDate) {
     setState(() {
@@ -194,6 +158,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       _endDate = endDate;
       _currentPage = 0;
     });
+    _loadPays();
   }
 
   @override
@@ -246,16 +211,18 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: PaymentHistoryContent(
-                        payments: _displayedPayments,
+                        payments: _payments,
                         allPayments: _payments,
                         userName: widget.userName,
                         userId: widget.userId,
                         onFiltersChanged: _onFiltersChanged,
+                        onDownload: _handleDownload,
+                        downloadingFiles: _downloadingFiles,
                       ),
                     ),
                   ),
                 ),
-                if (_filteredPayments.isNotEmpty) _buildPagination(tokens),
+                if (_totalElements > 0) _buildPagination(tokens),
               ],
             ),
       floatingActionButton: SizedBox(
@@ -298,16 +265,16 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            onPressed: _currentPage > 0 ? _previousPage : null,
+            onPressed: _hasPrevious ? _previousPage : null,
             icon: Icon(
               Symbols.chevron_left,
-              color: _currentPage > 0 ? tokens.text : tokens.placeholder,
+              color: _hasPrevious ? tokens.text : tokens.placeholder,
               size: 20,
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            '$_startItem-$_endItem de ${_filteredPayments.length}',
+            '$_startItem-$_endItem de $_totalElements',
             style: TextStyle(
               color: tokens.text,
               fontSize: 14,
@@ -316,16 +283,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed:
-                (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
-                ? _nextPage
-                : null,
+            onPressed: _hasNext ? _nextPage : null,
             icon: Icon(
               Symbols.chevron_right,
-              color:
-                  (_currentPage + 1) * _itemsPerPage < _filteredPayments.length
-                  ? tokens.text
-                  : tokens.placeholder,
+              color: _hasNext ? tokens.text : tokens.placeholder,
               size: 20,
             ),
           ),

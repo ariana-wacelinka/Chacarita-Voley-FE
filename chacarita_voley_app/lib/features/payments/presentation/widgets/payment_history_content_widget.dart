@@ -11,6 +11,8 @@ class PaymentHistoryContent extends StatefulWidget {
   final String userName;
   final String userId;
   final Function(DateTime?, DateTime?) onFiltersChanged;
+  final Function(Pay)? onDownload;
+  final Map<String, bool>? downloadingFiles;
 
   const PaymentHistoryContent({
     super.key,
@@ -19,6 +21,8 @@ class PaymentHistoryContent extends StatefulWidget {
     required this.userName,
     required this.userId,
     required this.onFiltersChanged,
+    this.onDownload,
+    this.downloadingFiles,
   });
 
   @override
@@ -317,19 +321,25 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
           ),
           const SizedBox(width: 12),
           IconButton(
-            icon: Icon(Symbols.download, color: tokens.placeholder, size: 20),
+            icon: widget.downloadingFiles?[payment.id] == true
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        tokens.placeholder,
+                      ),
+                    ),
+                  )
+                : Icon(Symbols.download, color: tokens.placeholder, size: 20),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Descargando ${payment.fileName ?? "comprobante"}',
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed:
+                (payment.fileName?.isNotEmpty ?? false) &&
+                    widget.downloadingFiles?[payment.id] != true
+                ? () => widget.onDownload?.call(payment)
+                : null,
           ),
         ],
       ),

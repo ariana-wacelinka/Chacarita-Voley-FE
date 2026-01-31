@@ -101,6 +101,85 @@ class PayRepository implements PayRepositoryInterface {
     );
   }
 
+  /// Nueva query para obtener pagos de un jugador específico con filtros y paginado
+  Future<PayPage> getPaysByPlayerId({
+    required String playerId,
+    int page = 0,
+    int size = 10,
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final Map<String, dynamic> filtersMap = {'playerId': playerId};
+
+    if (dateFrom != null && dateFrom.isNotEmpty) {
+      filtersMap['dateFrom'] = dateFrom;
+    }
+    if (dateTo != null && dateTo.isNotEmpty) {
+      filtersMap['dateTo'] = dateTo;
+    }
+
+    final result = await _query(
+      QueryOptions(
+        document: gql('''
+          query GetPaysByPlayerId(\$page: Int!, \$size: Int!, \$filters: PayFilterInput!) {
+            getAllPays(page: \$page, size: \$size, filters: \$filters) {
+              totalPages
+              totalElements
+              pageSize
+              pageNumber
+              hasPrevious
+              hasNext
+              content {
+                state
+                amount
+                date
+                fileName
+                fileUrl
+                id
+                createdAt
+                updateAt
+                player {
+                  id
+                  person {
+                    id
+                    name
+                    surname
+                    dni
+                  }
+                }
+              }
+            }
+          }
+        '''),
+        variables: {'page': page, 'size': size, 'filters': filtersMap},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) throw result.exception!;
+
+    final data = result.data!['getAllPays'] as Map<String, dynamic>;
+
+    final pays = (data['content'] as List)
+        .map((json) => Pay.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    // Actualizar caché
+    for (final pay in pays) {
+      _paysCache[pay.id] = pay;
+    }
+
+    return PayPage(
+      content: pays,
+      totalElements: data['totalElements'] as int,
+      totalPages: data['totalPages'] as int,
+      pageNumber: data['pageNumber'] as int,
+      pageSize: data['pageSize'] as int,
+      hasNext: data['hasNext'] as bool,
+      hasPrevious: data['hasPrevious'] as bool,
+    );
+  }
+
   // Métodos auxiliares (usando datos dummy hasta implementar GraphQL)
   Pay? getPaymentById(String id) {
     // Buscar en caché primero
