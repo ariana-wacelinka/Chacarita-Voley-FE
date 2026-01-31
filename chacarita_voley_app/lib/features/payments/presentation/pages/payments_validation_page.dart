@@ -196,7 +196,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
           onPressed: () {
             context.go('/payments/create');
           },
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
