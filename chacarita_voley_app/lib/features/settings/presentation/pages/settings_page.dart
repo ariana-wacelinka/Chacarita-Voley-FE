@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../app/theme/theme_provider.dart';
+import '../../../../core/services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -12,6 +13,74 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final _authService = AuthService();
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro que deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _logout();
+            },
+            child: Text(
+              'Cerrar sesión',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    try {
+      await _authService.logout();
+      if (mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error al cerrar sesión: $e',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+            elevation: 6,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -53,30 +122,33 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 32),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.tokens.card1,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.tokens.stroke, width: 1),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.logout,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Cerrar Sesión',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            GestureDetector(
+              onTap: _showLogoutDialog,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.tokens.card1,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.tokens.stroke, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.logout,
                       color: Theme.of(context).colorScheme.error,
-                      fontWeight: FontWeight.w500,
+                      size: 24,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    Text(
+                      'Cerrar Sesión',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

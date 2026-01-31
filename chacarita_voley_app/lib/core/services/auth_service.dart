@@ -239,6 +239,60 @@ class AuthService {
     await prefs.setString(_userRolesKey, json.encode(user.roles));
   }
 
+  /// Cambiar contraseña del usuario autenticado
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('No hay sesión activa');
+      }
+
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final url = Uri.parse('$restBaseUrl/api/auth/change-password');
+
+      print('🔐 Cambiando contraseña en: $url');
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: json.encode({'newPassword': newPassword}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏱️ Timeout en cambio de contraseña');
+              throw Exception('Timeout al cambiar contraseña');
+            },
+          );
+
+      print('📡 Status code: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
+
+      // 200 OK o 204 No Content son exitosos
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Contraseña cambiada exitosamente');
+        return;
+      } else if (response.statusCode == 401) {
+        print('❌ Contraseña actual incorrecta');
+        throw Exception('La contraseña actual es incorrecta');
+      } else {
+        print('❌ Error al cambiar contraseña: ${response.statusCode}');
+        final errorBody = response.body;
+        throw Exception('Error al cambiar contraseña: $errorBody');
+      }
+    } catch (e) {
+      print('🔥 Error en cambio de contraseña: $e');
+      rethrow;
+    }
+  }
+
   Future<void> _saveTokens({
     required String accessToken,
     required String refreshToken,
