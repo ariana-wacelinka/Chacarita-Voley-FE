@@ -242,13 +242,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _paginatedNotifications.length,
-                          itemBuilder: (context, index) {
-                            final notification = _paginatedNotifications[index];
-                            return _buildNotificationCard(notification);
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            _loadNotifications();
+                            await Future.delayed(
+                              const Duration(milliseconds: 500),
+                            );
                           },
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _paginatedNotifications.length,
+                            itemBuilder: (context, index) {
+                              final notification =
+                                  _paginatedNotifications[index];
+                              return _buildNotificationCard(notification);
+                            },
+                          ),
                         ),
                 ),
                 if (_filteredNotifications.isNotEmpty) _buildPagination(),

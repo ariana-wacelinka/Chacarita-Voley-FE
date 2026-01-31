@@ -3,18 +3,18 @@ enum DueState { PAID, PENDING, OVERDUE }
 enum PayState { PENDING, APPROVED, REJECTED }
 
 class Pay {
-  final String id;
-  final String date;
-  final double amount;
+  final String? id;
+  final String? date;
+  final double? amount;
   final PayState state;
   final String? fileUrl;
   final String? fileName;
   final String? time;
 
   Pay({
-    required this.id,
-    required this.date,
-    required this.amount,
+    this.id,
+    this.date,
+    this.amount,
     required this.state,
     this.fileUrl,
     this.fileName,
@@ -23,9 +23,11 @@ class Pay {
 
   factory Pay.fromJson(Map<String, dynamic> json) {
     return Pay(
-      id: json['id'] as String,
-      date: json['date'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      id: json['id'] as String?,
+      date: json['date'] as String?,
+      amount: json['amount'] != null
+          ? (json['amount'] as num).toDouble()
+          : null,
       state: PayState.values.firstWhere(
         (e) => e.name == json['state'],
         orElse: () => PayState.PENDING,

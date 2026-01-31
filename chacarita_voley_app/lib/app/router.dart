@@ -1,4 +1,9 @@
+import 'package:chacarita_voley_app/features/payments/presentation/pages/edit_payments_page.dart';
+import 'package:chacarita_voley_app/features/payments/presentation/pages/create_payment_page.dart';
+import 'package:chacarita_voley_app/features/payments/presentation/pages/payment_detail_page.dart';
 import 'package:go_router/go_router.dart';
+import '../features/payments/presentation/pages/payments_validation_page.dart';
+import '../features/payments/presentation/pages/payment_history_page.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login_page.dart';
@@ -68,7 +73,9 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/payments',
           name: 'payments',
-          builder: (_, __) => const _Page(text: 'Gestión de Cuotas'),
+          builder: (_, state) => PaymentsValidationPage(
+            refresh: state.uri.queryParameters['refresh'],
+          ),
         ),
         GoRoute(
           path: '/teams',
@@ -97,6 +104,30 @@ final appRouter = GoRouter(
       ],
     ),
 
+    //Ruta persnalizada de Payments
+    GoRoute(
+      path: '/payments/create',
+      name: 'payments-create',
+      builder: (_, state) => CreatePaymentPage(
+        userId: state.uri.queryParameters['userId'],
+        userName: state.uri.queryParameters['userName'],
+      ),
+    ),
+    GoRoute(
+      path: '/payments/detail/:id',
+      name: 'payments-detail',
+      builder: (_, state) => PaymentDetailPage(
+        paymentId: state.pathParameters['id']!,
+        userName: state.uri.queryParameters['userName'],
+      ),
+    ),
+    GoRoute(
+      path: '/payments/edit/:id',
+      name: 'payments-edit',
+      builder: (_, state) =>
+          EditPaymentsPage(paymentId: state.pathParameters['id']!),
+    ),
+
     GoRoute(
       path: '/users/register',
       name: 'users-register',
@@ -117,6 +148,14 @@ final appRouter = GoRouter(
       name: 'users-attendance',
       builder: (_, state) =>
           AttendanceHistoryPage(userId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/users/:id/payments',
+      name: 'users-payments',
+      builder: (_, state) => PaymentHistoryPage(
+        userId: state.pathParameters['id']!,
+        userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+      ),
     ),
     GoRoute(
       path: '/users/:id/notification',
@@ -216,7 +255,7 @@ String _titleForLocation(String loc) {
   const map = {
     '/home': '',
     '/users': 'Gestión de Usuarios',
-    '/payments': 'Gestión de Cuotas',
+    '/payments': 'Validación de Pagos',
     '/teams': 'Gestión de Equipos',
     '/notifications': 'Gestión de Notificaciones',
     '/trainings': 'Gestión de Entrenamientos',
@@ -230,17 +269,4 @@ String? _subtitleForLocation(GoRouterState state) {
     return state.uri.queryParameters['teamName'];
   }
   return null;
-}
-
-class _Page extends StatelessWidget {
-  const _Page({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(text, style: Theme.of(context).textTheme.headlineSmall),
-    );
-  }
 }

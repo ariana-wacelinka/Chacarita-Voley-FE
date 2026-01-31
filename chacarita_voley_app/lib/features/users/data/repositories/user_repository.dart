@@ -93,7 +93,8 @@ class UserRepository implements UserRepositoryInterface {
         state
         period
         pay {
-          time
+          createdAt
+          updateAt
           state
           id
           fileUrl
@@ -151,6 +152,36 @@ class UserRepository implements UserRepositoryInterface {
           $_personFieldsForNotifications
         }
         totalElements
+      }
+    }
+  ''';
+
+  String _getAllPersonsForPaymentsQuery() => '''
+    query GetAllPersonsForPayments(\$page: Int!, \$size: Int!, \$search: String) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: PLAYER}) {
+        content {
+          id
+          name
+          surname
+          dni
+          player {
+            id
+            currentDue {
+              id
+              state
+              pay {
+                id
+                state
+              }
+            }
+          }
+        }
+        hasNext
+        hasPrevious
+        pageNumber
+        pageSize
+        totalElements
+        totalPages
       }
     }
   ''';
@@ -274,6 +305,29 @@ class UserRepository implements UserRepositoryInterface {
         .toList();
   }
 
+  Future<List<User>> getUsersForPayments({String? searchQuery}) async {
+    final result = await _query(
+      QueryOptions(
+        document: gql(_getAllPersonsForPaymentsQuery()),
+        variables: {'page': 0, 'size': 10, 'search': searchQuery ?? ''},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final content =
+        (result.data?['getAllPersons']?['content'] as List<dynamic>?) ??
+        const [];
+
+    return content
+        .whereType<Map<String, dynamic>>()
+        .map(_mapPersonToUser)
+        .toList();
+  }
+
   @override
   Future<int> getTotalUsers({
     String? role,
@@ -349,7 +403,6 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     final input = _mapUserToUpdateInput(user);
-    print('📤 Update input: $input');
 
     final result = await _mutate(
       MutationOptions(
@@ -358,19 +411,14 @@ class UserRepository implements UserRepositoryInterface {
       ),
     );
 
-    print('📥 Update result hasException: ${result.hasException}');
     if (result.hasException) {
-      print('❌ Update exception: ${result.exception.toString()}');
       throw Exception(result.exception.toString());
     }
 
-    print('📦 Update result data: ${result.data}');
     final data = result.data?['updatePerson'] as Map<String, dynamic>?;
     if (data == null) {
-      print('⚠️ updatePerson data is null');
       throw Exception('Respuesta inválida de updatePerson');
     }
-    print('✅ Update successful, mapping to User');
     return _mapPersonToUser(data);
   }
 
@@ -414,8 +462,6 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   User _mapPersonToUser(Map<String, dynamic> person) {
-    // Query minimal: NO trae gender, birthDate, email, phone, player, professor
-    // Query full: trae TODO
     final gender = (person['gender'] as String?) ?? 'OTHER';
     final parsedGender = switch (gender) {
       'MALE' => Gender.masculino,
@@ -484,14 +530,10 @@ class UserRepository implements UserRepositoryInterface {
     if (player != null) {
       final currentDueData = player['currentDue'] as Map<String, dynamic>?;
       if (currentDueData != null) {
-        print('🔍 currentDueData: $currentDueData');
         try {
           currentDue = CurrentDue.fromJson(currentDueData);
-          print('✅ currentDue parsed: state=${currentDue.state}');
           estadoCuota = EstadoCuotaExtension.fromDueState(currentDue.state);
-          print('✅ estadoCuota mapped: $estadoCuota');
         } catch (e) {
-          print('❌ Error parsing currentDue: $e');
           estadoCuota = EstadoCuota.alDia;
         }
       }
@@ -737,6 +779,56 @@ class UserRepository implements UserRepositoryInterface {
       return AssistanceStats.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // Método para obtener cuotas por playerId con filtros de estado
+  Future<List<CurrentDue>> getAllDuesByPlayerId(
+    String playerId, {
+    List<DueState>? states,
+  }) async {
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql('''
+            query GetAllDues(\$playerId: ID!, \$states: [DuesState!]) {
+              getAllDues(filters: {playerId: \$playerId, states: \$states}) {
+                content {
+                  id
+                  period
+                  state
+                  amount
+                  pay {
+                    state
+                  }
+                }
+              }
+            }
+          '''),
+          variables: {
+            'playerId': playerId,
+            if (states != null && states.isNotEmpty)
+              'states': states.map((s) => s.name.toUpperCase()).toList(),
+          },
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+      if (result.hasException) {
+        print('❌ [getAllDuesByPlayerId] Exception: ${result.exception}');
+        throw result.exception!;
+      }
+
+      final content = result.data?['getAllDues']?['content'] as List?;
+
+      if (content == null) return [];
+
+      final dues = content
+          .map((json) => CurrentDue.fromJson(json as Map<String, dynamic>))
+          .toList();
+      return dues;
+    } catch (e) {
+      print('❌ [getAllDuesByPlayerId] Error: $e');
+      return [];
     }
   }
 }

@@ -73,6 +73,41 @@ class AppScaffold extends StatelessWidget {
                         ),
                       ],
                     ),
+    // final currentPath = GoRouterState.of(context).uri.path;
+    // return Scaffold(
+    //   appBar: AppBar(title: Text(title)),
+    //   drawer:
+    //       drawer ??
+    //       Drawer(
+    //         child: SafeArea(
+    //           child: Column(
+    //             children: [
+    //               const ListTile(
+    //                 leading: Icon(Icons.home),
+    //                 title: Text('Inicio'),
+    //               ),
+    //               ListTile(
+    //                 leading: const Icon(Icons.payment),
+    //                 title: const Text('Gestión de cuotas'),
+    //                 selected: currentPath == '/payments',
+    //                 onTap: () {
+    //                   context.goNamed('payments');
+    //                   Navigator.pop(context);
+    //                 },
+    //               ),
+    //               //TODO pruebas para ver las pantallas
+    //               ListTile(
+    //                 leading: const Icon(Icons.payment),
+    //                 title: const Text('history'),
+    //                 selected: currentPath == '/payments_history',
+    //                 onTap: () {
+    //                   context.goNamed('history');
+    //                   Navigator.pop(context);
+    //                 },
+    //               ),
+    //               //Fin pruebas pantallas
+    //             ],
+    //           ),
             ),
           ),
           backgroundColor: context.tokens.drawer,
