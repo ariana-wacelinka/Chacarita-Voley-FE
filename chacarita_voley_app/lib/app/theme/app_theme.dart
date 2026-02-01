@@ -279,10 +279,10 @@ class AppTheme {
     onTertiary: Colors.black,
     error: const Color(0xFFFFB4A9),
     onError: const Color(0xFF680003),
-    background: const Color(0xFF000000),
+    background: const Color.fromARGB(255, 20, 20, 20),
 
     onBackground: Colors.white,
-    surface: const Color(0xFF121212),
+    surface: const Color.fromARGB(255, 20, 20, 20),
     onSurface: Colors.white,
     outline: _rgba(255, 255, 255, 0.5),
 
@@ -299,7 +299,7 @@ class AppTheme {
     permanentWhite: const Color(0xFFFFFFFF),
     gray: const Color(0xFFDEDEDE),
     text: const Color(0xFFFFFFFF),
-    background: const Color(0xFF000000),
+    background: const Color.fromARGB(255, 15, 15, 15),
     lightGray: _rgba(50, 50, 50, 0.7),
     redToRosita: const Color(0xFFFF6262),
     placeholder: _rgba(255, 255, 255, 0.7),
