@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../../domain/entities/pay_state.dart';
@@ -27,6 +29,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   late final PayRepository _payRepository;
   List<Pay> _payments = [];
   bool _isLoading = true;
+  List<String> _userRoles = [];
 
   int _currentPage = 0;
   static const int _itemsPerPage = 7;
@@ -44,7 +47,27 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   void initState() {
     super.initState();
     _payRepository = PayRepository();
+    _loadUserRoles();
     _loadPays();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+      });
+    }
+  }
+
+  void _handleBack() {
+    final isPlayer = PermissionsService.isPlayer(_userRoles);
+    if (isPlayer) {
+      context.go('/home');
+    } else {
+      context.go('/users/${widget.userId}/view');
+    }
   }
 
   Future<void> _loadPays() async {
@@ -164,6 +187,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final isPlayer = PermissionsService.isPlayer(_userRoles);
 
     return Scaffold(
       backgroundColor: tokens.background,
@@ -172,7 +196,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: () => context.go('/users/${widget.userId}/view'),
+          onPressed: _handleBack,
         ),
         title: Column(
           mainAxisSize: MainAxisSize.min,
@@ -185,14 +209,15 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              widget.userName,
-              style: TextStyle(
-                color: tokens.placeholder,
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+            if (!isPlayer)
+              Text(
+                widget.userName,
+                style: TextStyle(
+                  color: tokens.placeholder,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
           ],
         ),
         centerTitle: true,

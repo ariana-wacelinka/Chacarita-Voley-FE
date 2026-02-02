@@ -4,13 +4,13 @@ import '../../../../app/theme/app_theme.dart';
 class NotificationItem extends StatelessWidget {
   final String title;
   final bool isImportant;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const NotificationItem({
     super.key,
     required this.title,
     required this.isImportant,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

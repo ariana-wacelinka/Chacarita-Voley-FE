@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,6 +15,25 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final _authService = AuthService();
+  List<String> _userRoles = [];
+  int? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final roles = await _authService.getUserRoles();
+    final userId = await _authService.getUserId();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _userId = userId;
+      });
+    }
+  }
 
   void _showLogoutDialog() {
     showDialog(
@@ -89,6 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
         themeProvider.themeMode == ThemeMode.dark ||
         (themeProvider.themeMode == ThemeMode.system &&
             systemBrightness == Brightness.dark);
+    final isPlayer = PermissionsService.isPlayer(_userRoles);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -96,6 +117,35 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Sección de perfil para jugadores
+            if (isPlayer && _userId != null) ...[
+              _buildSectionCard(
+                context,
+                icon: Icons.person,
+                title: 'Mi Perfil',
+                items: [
+                  _SettingItem(
+                    icon: Icons.account_circle,
+                    title: 'Ver mi perfil',
+                    showArrow: true,
+                    onTap: () => context.go('/users/$_userId'),
+                  ),
+                  _SettingItem(
+                    icon: Icons.credit_card,
+                    title: 'Mis pagos',
+                    showArrow: true,
+                    onTap: () => context.go('/users/$_userId/payments'),
+                  ),
+                  _SettingItem(
+                    icon: Icons.check_circle,
+                    title: 'Mis asistencias',
+                    showArrow: true,
+                    onTap: () => context.go('/users/$_userId/attendance'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             _buildSectionCard(
               context,
               icon: Icons.settings,

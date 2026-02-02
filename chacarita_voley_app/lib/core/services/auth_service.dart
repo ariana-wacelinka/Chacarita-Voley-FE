@@ -320,14 +320,23 @@ class AuthService {
   }
 
   Future<List<String>?> getUserRoles() async {
-    // MOCK: Retornar solo rol PROFESSOR
-    return ['PROFESSOR'];
+    // MOCK: Retornar solo rol ADMIN
+    return ['PLAYER'];
 
     // Código original comentado:
     // final prefs = await SharedPreferences.getInstance();
     // final rolesJson = prefs.getString(_userRolesKey);
     // if (rolesJson == null) return null;
     // return List<String>.from(json.decode(rolesJson));
+  }
+
+  Future<int?> getUserId() async {
+    // MOCK: Retornar un ID de jugador de prueba
+    return 1; // Cambia esto al ID real cuando lo necesites
+
+    // Código original comentado:
+    // final prefs = await SharedPreferences.getInstance();
+    // return prefs.getInt(_userIdKey);
   }
 
   Future<bool> isLoggedIn() async {

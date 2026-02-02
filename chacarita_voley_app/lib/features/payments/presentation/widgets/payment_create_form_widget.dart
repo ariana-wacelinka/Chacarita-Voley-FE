@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 import '../../../users/domain/entities/gender.dart';
 import '../../../users/domain/entities/user.dart';
@@ -43,6 +45,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   User? _selectedUser;
+  List<String> _userRoles = [];
+  bool _isPlayer = false;
 
   // Cuotas del jugador seleccionado
   List<CurrentDue> _availableDues = [];
@@ -55,10 +59,45 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _loadUsers();
     _searchController.addListener(_onSearchChanged);
     if (widget.initialUserId != null) {
       _loadInitialUser();
+    }
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
+
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _isPlayer = PermissionsService.isPlayer(_userRoles);
+      });
+
+      // Si es player, cargar automáticamente su usuario
+      if (_isPlayer && userId != null) {
+        _loadPlayerUser(userId.toString());
+      }
+    }
+  }
+
+  Future<void> _loadPlayerUser(String userId) async {
+    final repo = UserRepository();
+    try {
+      final user = await repo.getUserById(userId);
+      if (user != null && mounted) {
+        setState(() {
+          _selectedUser = user;
+          _searchController.text = user.nombreCompleto;
+        });
+        _loadDuesForPlayer(user);
+      }
+    } catch (e) {
+      print('⚠️ Error cargando usuario del player: $e');
     }
   }
 
@@ -265,8 +304,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 ],
               ),
               const SizedBox(height: 16),
-              if (widget.initialUserId != null && _selectedUser != null)
-                // Mostrar solo el nombre cuando viene de historial
+              if ((widget.initialUserId != null || _isPlayer) &&
+                  _selectedUser != null)
+                // Mostrar solo el nombre cuando viene de historial o es player
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -302,8 +342,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                     ],
                   ),
                 )
-              else
-                // Mostrar buscador normal
+              else if (!_isPlayer)
+                // Mostrar buscador normal solo si NO es player
                 Column(
                   children: [
                     TextField(

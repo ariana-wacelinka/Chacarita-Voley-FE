@@ -7,7 +7,7 @@ class TrainingItem extends StatelessWidget {
   final String subtitle;
   final String time;
   final String attendance;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const TrainingItem({
     super.key,
@@ -15,7 +15,7 @@ class TrainingItem extends StatelessWidget {
     required this.subtitle,
     required this.time,
     required this.attendance,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

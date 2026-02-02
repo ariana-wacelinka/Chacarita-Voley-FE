@@ -13,6 +13,7 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   List<String> _userRoles = [];
+  int? _userId;
   bool _isLoading = true;
 
   @override
@@ -24,8 +25,10 @@ class _AppDrawerState extends State<AppDrawer> {
   Future<void> _loadUserRoles() async {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
     setState(() {
       _userRoles = roles ?? [];
+      _userId = userId;
       _isLoading = false;
     });
   }
@@ -106,6 +109,33 @@ class _AppDrawerState extends State<AppDrawer> {
                       context.go('/home');
                     },
                   ),
+                  // Opciones para jugadores
+                  if (PermissionsService.isPlayer(_userRoles) &&
+                      _userId != null) ...[
+                    _DrawerItem(
+                      icon: Icons.payment,
+                      title: 'Gestionar pagos',
+                      isSelected: currentLocation.contains(
+                        '/users/$_userId/payments',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users/$_userId/payments');
+                      },
+                    ),
+                    _DrawerItem(
+                      icon: Icons.check_circle,
+                      title: 'Visualizar asistencias',
+                      isSelected: currentLocation.contains(
+                        '/users/$_userId/attendance',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users/$_userId/attendance');
+                      },
+                    ),
+                  ],
+                  // Opciones para admin y profesor
                   if (PermissionsService.canAccessUsers(_userRoles))
                     _DrawerItem(
                       icon: Icons.people,

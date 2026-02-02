@@ -9,11 +9,17 @@ class PermissionsService {
   }
 
   static bool canEditUser(List<String> roles) {
-    return roles.contains('ADMIN');
+    // Jugador puede editar su propio perfil (verificar en runtime que sea su propio ID)
+    // Admin puede editar cualquier usuario
+    return roles.contains('ADMIN') || roles.contains('PLAYER');
   }
 
   static bool canViewUser(List<String> roles) {
-    return roles.contains('ADMIN') || roles.contains('PROFESSOR');
+    // Jugador puede ver su propio perfil
+    // Admin y Profesor pueden ver todos
+    return roles.contains('ADMIN') ||
+        roles.contains('PROFESSOR') ||
+        roles.contains('PLAYER');
   }
 
   static bool canSendUserNotification(List<String> roles) {
@@ -30,6 +36,7 @@ class PermissionsService {
 
   // CUOTAS/PAGOS
   static bool canAccessPayments(List<String> roles) {
+    // Admin accede a la gestión completa de pagos de todos
     return roles.contains('ADMIN');
   }
 
@@ -38,11 +45,22 @@ class PermissionsService {
   }
 
   static bool canCreatePayment(List<String> roles) {
-    return roles.contains('ADMIN');
+    // Jugador puede crear sus propios pagos (subir comprobantes)
+    // Admin puede crear pagos de cualquiera
+    return roles.contains('ADMIN') || roles.contains('PLAYER');
   }
 
   static bool canEditPayment(List<String> roles) {
-    return roles.contains('ADMIN');
+    // Jugador puede editar sus propios pagos pendientes
+    // Admin puede editar cualquier pago
+    return roles.contains('ADMIN') || roles.contains('PLAYER');
+  }
+
+  static bool canViewPaymentDetail(List<String> roles) {
+    // Todos pueden ver detalles de pagos (los jugadores solo los suyos)
+    return roles.contains('ADMIN') ||
+        roles.contains('PLAYER') ||
+        roles.contains('PROFESSOR');
   }
 
   // NOTIFICACIONES
@@ -80,5 +98,22 @@ class PermissionsService {
   // HOME
   static bool canAccessHome(List<String> roles) {
     return roles.isNotEmpty;
+  }
+
+  // JUGADOR - Acceso a su propia información
+  static bool canViewOwnPayments(List<String> roles) {
+    return roles.contains('PLAYER') ||
+        roles.contains('PROFESSOR') ||
+        roles.contains('ADMIN');
+  }
+
+  static bool canViewOwnAttendance(List<String> roles) {
+    return roles.contains('PLAYER') ||
+        roles.contains('PROFESSOR') ||
+        roles.contains('ADMIN');
+  }
+
+  static bool isPlayer(List<String> roles) {
+    return roles.contains('PLAYER');
   }
 }

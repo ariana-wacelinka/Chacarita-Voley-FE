@@ -53,8 +53,19 @@ final appRouter = GoRouter(
     final roles = await authService.getUserRoles() ?? [];
     final path = state.matchedLocation;
 
-    // Usuarios
+    // Permitir a los jugadores acceder a su propio historial
+    final isOwnPaymentHistory =
+        path.contains('/payments') && path.startsWith('/users/');
+    final isOwnAttendanceHistory =
+        path.contains('/attendance') && path.startsWith('/users/');
+    final isOwnProfile =
+        RegExp(r'^/users/\d+$').hasMatch(path) && !path.contains('/edit');
+
+    // Usuarios - excluir historial propio de pagos y asistencias
     if (path.startsWith('/users') &&
+        !isOwnPaymentHistory &&
+        !isOwnAttendanceHistory &&
+        !isOwnProfile &&
         !PermissionsService.canAccessUsers(roles)) {
       return '/home';
     }

@@ -27,6 +27,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<TrainingPreview> _trainings = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
+  int? _userId;
 
   @override
   void initState() {
@@ -38,9 +39,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _loadUserRoles() async {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
+        _userId = userId;
       });
     }
   }
@@ -74,6 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final stats = _stats ?? HomeStats.empty();
+    final isPlayer = PermissionsService.isPlayer(_userRoles);
 
     return Scaffold(
       backgroundColor: context.tokens.background,
@@ -90,50 +94,53 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatsCard(
-                          title: 'Socios totales',
-                          value: stats.totalMembers.toString(),
-                          icon: Symbols.group,
-                          color: context.tokens.text,
+                  // Stats cards solo para ADMIN y PROFESSOR
+                  if (!isPlayer) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatsCard(
+                            title: 'Socios totales',
+                            value: stats.totalMembers.toString(),
+                            icon: Symbols.group,
+                            color: context.tokens.text,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatsCard(
-                          title: 'Pagos vencidos',
-                          value: stats.totalOverdueDues.toString(),
-                          icon: Symbols.warning,
-                          color: Theme.of(context).colorScheme.primary,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: StatsCard(
+                            title: 'Pagos vencidos',
+                            value: stats.totalOverdueDues.toString(),
+                            icon: Symbols.warning,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatsCard(
-                          title: 'Entrenamientos hoy',
-                          value: stats.totalTrainingToday.toString(),
-                          icon: Symbols.calendar_today,
-                          color: context.tokens.text,
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatsCard(
+                            title: 'Entrenamientos hoy',
+                            value: stats.totalTrainingToday.toString(),
+                            icon: Symbols.calendar_today,
+                            color: context.tokens.text,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatsCard(
-                          title: 'Notificaciones',
-                          value: stats.totalScheduledNotifications.toString(),
-                          icon: Symbols.notifications,
-                          color: context.tokens.text,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: StatsCard(
+                            title: 'Notificaciones',
+                            value: stats.totalScheduledNotifications.toString(),
+                            icon: Symbols.notifications,
+                            color: context.tokens.text,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                  ],
 
                   Text(
                     'Acciones rápidas',
@@ -143,38 +150,58 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (PermissionsService.canAccessPayments(_userRoles))
+
+                  // Acciones para JUGADORES
+                  if (isPlayer && _userId != null) ...[
                     QuickActionCard(
-                      title: 'Gestionar cuotas',
+                      title: 'Gestionar pagos',
                       icon: Symbols.credit_card,
-                      onTap: () => context.go('/payments'),
+                      onTap: () => context.go('/users/$_userId/payments'),
                     ),
-                  if (PermissionsService.canAccessPayments(_userRoles))
                     const SizedBox(height: 12),
-                  if (PermissionsService.canAccessUsers(_userRoles))
                     QuickActionCard(
-                      title: 'Gestionar usuarios',
-                      icon: Symbols.group,
-                      onTap: () => context.go('/users'),
+                      title: 'Visualizar asistencias',
+                      icon: Symbols.check_circle,
+                      onTap: () => context.go('/users/$_userId/attendance'),
                     ),
-                  if (PermissionsService.canAccessUsers(_userRoles))
                     const SizedBox(height: 12),
-                  if (PermissionsService.canAccessNotifications(_userRoles))
-                    QuickActionCard(
-                      title: 'Gestionar notificaciones',
-                      icon: Symbols.notifications,
-                      onTap: () => context.go('/notifications'),
-                    ),
-                  if (PermissionsService.canAccessNotifications(_userRoles))
-                    const SizedBox(height: 12),
-                  if (PermissionsService.canAccessTeams(_userRoles))
-                    QuickActionCard(
-                      title: 'Gestionar equipos',
-                      icon: Symbols.sports_volleyball,
-                      onTap: () => context.go('/teams'),
-                    ),
-                  if (PermissionsService.canAccessTeams(_userRoles))
-                    const SizedBox(height: 12),
+                  ],
+
+                  // Acciones para ADMIN y PROFESSOR
+                  if (!isPlayer) ...[
+                    if (PermissionsService.canAccessPayments(_userRoles))
+                      QuickActionCard(
+                        title: 'Gestionar cuotas',
+                        icon: Symbols.credit_card,
+                        onTap: () => context.go('/payments'),
+                      ),
+                    if (PermissionsService.canAccessPayments(_userRoles))
+                      const SizedBox(height: 12),
+                    if (PermissionsService.canAccessUsers(_userRoles))
+                      QuickActionCard(
+                        title: 'Gestionar usuarios',
+                        icon: Symbols.group,
+                        onTap: () => context.go('/users'),
+                      ),
+                    if (PermissionsService.canAccessUsers(_userRoles))
+                      const SizedBox(height: 12),
+                    if (PermissionsService.canAccessNotifications(_userRoles))
+                      QuickActionCard(
+                        title: 'Gestionar notificaciones',
+                        icon: Symbols.notifications,
+                        onTap: () => context.go('/notifications'),
+                      ),
+                    if (PermissionsService.canAccessNotifications(_userRoles))
+                      const SizedBox(height: 12),
+                    if (PermissionsService.canAccessTeams(_userRoles))
+                      QuickActionCard(
+                        title: 'Gestionar equipos',
+                        icon: Symbols.sports_volleyball,
+                        onTap: () => context.go('/teams'),
+                      ),
+                    if (PermissionsService.canAccessTeams(_userRoles))
+                      const SizedBox(height: 12),
+                  ],
                   const SizedBox(height: 32),
 
                   Text(
@@ -187,9 +214,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 16),
                   if (_notifications.isEmpty)
                     NotificationItem(
-                      title: 'No hay notificaciones programadas',
+                      title: isPlayer
+                          ? 'No tienes notificaciones pendientes'
+                          : 'No hay notificaciones programadas',
                       isImportant: false,
-                      onTap: () => context.go('/notifications'),
+                      onTap: isPlayer
+                          ? null
+                          : () => context.go('/notifications'),
                     )
                   else
                     ..._notifications.asMap().entries.map((entry) {
@@ -203,14 +234,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: NotificationItem(
                           title: notification.title,
                           isImportant: false,
-                          onTap: () => context.go('/notifications'),
+                          onTap: isPlayer
+                              ? null
+                              : () => context.go('/notifications'),
                         ),
                       );
                     }),
                   const SizedBox(height: 32),
 
                   Text(
-                    'Entrenamientos hoy',
+                    isPlayer
+                        ? 'Entrenamientos los próximos 7 días'
+                        : 'Entrenamientos hoy',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: context.tokens.text,
                       fontWeight: FontWeight.w600,
@@ -220,10 +255,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   if (_trainings.isEmpty)
                     TrainingItem(
                       category: 'Sin entrenamientos',
-                      subtitle: 'No hay entrenamientos programados para hoy',
+                      subtitle: isPlayer
+                          ? 'No tienes entrenamientos programados esta semana'
+                          : 'No hay entrenamientos programados para hoy',
                       time: '--:--',
                       attendance: '-/-',
-                      onTap: () => context.go('/trainings'),
+                      onTap: isPlayer ? null : () => context.go('/trainings'),
                     )
                   else
                     ..._trainings.asMap().entries.map((entry) {
@@ -239,7 +276,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           time: training.formattedTime,
                           attendance:
                               '${training.attendance}/${training.totalPlayers}',
-                          onTap: () => context.go('/trainings/${training.id}'),
+                          onTap: isPlayer
+                              ? null
+                              : () => context.go('/trainings/${training.id}'),
                         ),
                       );
                     }),
