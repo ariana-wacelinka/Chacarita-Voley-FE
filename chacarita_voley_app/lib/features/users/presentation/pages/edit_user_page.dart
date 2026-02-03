@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/update_user_usecase.dart';
 import '../../data/repositories/user_repository.dart';
 import '../widgets/user_form_widget.dart';
+import '../widgets/player_profile_form_widget.dart';
 
 class EditUserPage extends StatefulWidget {
   final String userId;
@@ -23,13 +26,30 @@ class _EditUserPageState extends State<EditUserPage> {
   bool _isLoading = false;
   bool _isLoadingUser = true;
   String? _loadError;
+  List<String> _userRoles = [];
+  int? _currentUserId;
+  bool _isOwnProfile = false;
 
   @override
   void initState() {
     super.initState();
     _userRepository = UserRepository();
     _updateUserUseCase = UpdateUserUseCase(_userRepository);
+    _loadUserRoles();
     _loadUser();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _currentUserId = userId;
+        _isOwnProfile = userId.toString() == widget.userId;
+      });
+    }
   }
 
   Future<void> _loadUser() async {
@@ -57,7 +77,9 @@ class _EditUserPageState extends State<EditUserPage> {
     });
 
     try {
+      print('\u2699\ufe0f Ejecutando actualización de usuario...');
       await _updateUserUseCase.execute(user);
+      print('\u2705 Usuario actualizado exitosamente');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,6 +117,12 @@ class _EditUserPageState extends State<EditUserPage> {
         context.pop(true);
       }
     } catch (e) {
+      print('\u274c Error al actualizar usuario:');
+      print('  Tipo de error: ${e.runtimeType}');
+      print('  Mensaje: $e');
+      print('  Stack trace:');
+      print(StackTrace.current);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -239,11 +267,18 @@ class _EditUserPageState extends State<EditUserPage> {
               )
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: UserFormWidget(
-                  initialUser: _user,
-                  onSave: _handleUpdateUser,
-                  submitButtonText: 'Guardar cambios',
-                ),
+                child:
+                    (_isOwnProfile && PermissionsService.isPlayer(_userRoles))
+                    ? PlayerProfileFormWidget(
+                        initialUser: _user!,
+                        onSave: _handleUpdateUser,
+                      )
+                    : UserFormWidget(
+                        initialUser: _user,
+                        onSave: _handleUpdateUser,
+                        submitButtonText: 'Guardar cambios',
+                        currentUserRoles: _userRoles,
+                      ),
               ),
       ),
     );

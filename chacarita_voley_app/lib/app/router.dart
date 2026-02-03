@@ -51,22 +51,46 @@ final appRouter = GoRouter(
     }
 
     final roles = await authService.getUserRoles() ?? [];
+    final userId = await authService.getUserId();
     final path = state.matchedLocation;
+
+    print('🔀 Router redirect - Path: $path');
+    print('👤 User roles: $roles');
+    print('🆔 User ID: $userId');
+
+    // Extraer el ID de la URL si existe
+    final userIdInPath = RegExp(r'/users/(\d+)').firstMatch(path)?.group(1);
+    print('🔢 User ID en path: $userIdInPath');
 
     // Permitir a los jugadores acceder a su propio historial
     final isOwnPaymentHistory =
-        path.contains('/payments') && path.startsWith('/users/');
+        path.contains('/payments') &&
+        path.startsWith('/users/') &&
+        userIdInPath == userId.toString();
     final isOwnAttendanceHistory =
-        path.contains('/attendance') && path.startsWith('/users/');
+        path.contains('/attendance') &&
+        path.startsWith('/users/') &&
+        userIdInPath == userId.toString();
     final isOwnProfile =
-        RegExp(r'^/users/\d+$').hasMatch(path) && !path.contains('/edit');
+        RegExp(r'^/users/\d+/view$').hasMatch(path) &&
+        userIdInPath == userId.toString();
+    final isOwnEdit =
+        RegExp(r'^/users/\d+/edit$').hasMatch(path) &&
+        userIdInPath == userId.toString();
+
+    print('💳 isOwnPaymentHistory: $isOwnPaymentHistory');
+    print('✅ isOwnAttendanceHistory: $isOwnAttendanceHistory');
+    print('👨 isOwnProfile: $isOwnProfile');
+    print('✏️ isOwnEdit: $isOwnEdit');
 
     // Usuarios - excluir historial propio de pagos y asistencias
     if (path.startsWith('/users') &&
         !isOwnPaymentHistory &&
         !isOwnAttendanceHistory &&
         !isOwnProfile &&
+        !isOwnEdit &&
         !PermissionsService.canAccessUsers(roles)) {
+      print('❌ Bloqueando acceso a /users - Redirigiendo a /home');
       return '/home';
     }
     if (path == '/users/register' && !PermissionsService.canCreateUser(roles)) {
@@ -74,6 +98,7 @@ final appRouter = GoRouter(
     }
     if (path.contains('/edit') &&
         path.startsWith('/users') &&
+        !isOwnEdit &&
         !PermissionsService.canEditUser(roles)) {
       return '/home';
     }

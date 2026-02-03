@@ -321,7 +321,7 @@ class AuthService {
 
   Future<List<String>?> getUserRoles() async {
     // MOCK: Retornar solo rol ADMIN
-    return ['PLAYER'];
+    return ['PROFESSOR', 'PLAYER'];
 
     // Código original comentado:
     // final prefs = await SharedPreferences.getInstance();

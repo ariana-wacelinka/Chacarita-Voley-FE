@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../app/layout/app_drawer.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
@@ -30,6 +31,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   List<Pay> _payments = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
+  int? _currentUserId;
+  bool _isOwnPaymentHistory = false;
 
   int _currentPage = 0;
   static const int _itemsPerPage = 7;
@@ -54,17 +57,24 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   Future<void> _loadUserRoles() async {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
+        _currentUserId = userId;
+        _isOwnPaymentHistory = userId.toString() == widget.userId;
       });
     }
   }
 
   void _handleBack() {
-    final isPlayer = PermissionsService.isPlayer(_userRoles);
-    if (isPlayer) {
-      context.go('/home');
+    if (_isOwnPaymentHistory) {
+      final isPlayer = PermissionsService.isPlayer(_userRoles);
+      if (isPlayer) {
+        context.go('/home');
+      } else {
+        context.go('/settings');
+      }
     } else {
       context.go('/users/${widget.userId}/view');
     }
@@ -191,13 +201,16 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
     return Scaffold(
       backgroundColor: tokens.background,
+      drawer: (isPlayer && _isOwnPaymentHistory) ? const AppDrawer() : null,
       appBar: AppBar(
         backgroundColor: tokens.card1,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: _handleBack,
-        ),
+        leading: (isPlayer && _isOwnPaymentHistory)
+            ? null
+            : IconButton(
+                icon: Icon(Symbols.arrow_back, color: tokens.text),
+                onPressed: _handleBack,
+              ),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

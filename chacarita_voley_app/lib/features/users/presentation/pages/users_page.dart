@@ -34,6 +34,7 @@ class _UsersPageState extends State<UsersPage> {
   List<String> _userRoles = [];
   bool _canCreate = false;
   bool _canEdit = false;
+  bool _canDelete = false;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _UsersPageState extends State<UsersPage> {
       _userRoles = roles ?? [];
       _canCreate = PermissionsService.canCreateUser(_userRoles);
       _canEdit = PermissionsService.canEditUser(_userRoles);
+      _canDelete = PermissionsService.canDeleteUser(_userRoles);
     });
   }
 
@@ -654,7 +656,7 @@ class _UsersPageState extends State<UsersPage> {
                                                     ],
                                                   ),
                                                 ),
-                                              if (_canEdit)
+                                              if (_canDelete)
                                                 PopupMenuItem(
                                                   onTap: () {
                                                     Future.microtask(() {

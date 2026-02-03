@@ -2,6 +2,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../domain/models/home_stats.dart';
 import '../../domain/models/notification_preview.dart';
 import '../../domain/models/training_preview.dart';
+import '../../domain/models/delivery_preview.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 
 class HomeRepository {
@@ -161,7 +162,63 @@ class HomeRepository {
         );
       }).toList();
       return trainings;
+    } catch (e) {
+      return [];
+    }
+  }
 
+  Future<List<DeliveryPreview>> getPlayerDeliveries(String personId) async {
+    // Obtener fecha actual y hace 7 días en hora argentina (UTC-3)
+    final now = DateTime.now().toUtc().add(const Duration(hours: -3));
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+    final sentTo =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final sentFrom =
+        '${sevenDaysAgo.year}-${sevenDaysAgo.month.toString().padLeft(2, '0')}-${sevenDaysAgo.day.toString().padLeft(2, '0')}';
+
+    final query =
+        '''
+      query GetPlayerDeliveries {
+        getAllDeliveries(
+          page: 0
+          size: 10
+          filters: {recipientId: "$personId", sentFrom: "$sentFrom", sentTo: "$sentTo", status: SENT}
+        ) {
+          content {
+            id
+            notification {
+              title
+              message
+            }
+          }
+        }
+      }
+    ''';
+
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(query),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        return [];
+      }
+
+      final content = result.data?['getAllDeliveries']?['content'] as List?;
+
+      if (content == null || content.isEmpty) {
+        return [];
+      }
+
+      final deliveries = content
+          .map((json) => DeliveryPreview.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return deliveries;
     } catch (e) {
       return [];
     }

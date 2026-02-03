@@ -4,25 +4,22 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/gender.dart';
 
-class UserFormWidget extends StatefulWidget {
-  final User? initialUser;
+class PlayerProfileFormWidget extends StatefulWidget {
+  final User initialUser;
   final Function(User) onSave;
-  final String submitButtonText;
-  final List<String> currentUserRoles;
 
-  const UserFormWidget({
+  const PlayerProfileFormWidget({
     super.key,
-    this.initialUser,
+    required this.initialUser,
     required this.onSave,
-    required this.submitButtonText,
-    this.currentUserRoles = const [],
   });
 
   @override
-  State<UserFormWidget> createState() => _UserFormWidgetState();
+  State<PlayerProfileFormWidget> createState() =>
+      _PlayerProfileFormWidgetState();
 }
 
-class _UserFormWidgetState extends State<UserFormWidget> {
+class _PlayerProfileFormWidgetState extends State<PlayerProfileFormWidget> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
@@ -33,16 +30,11 @@ class _UserFormWidgetState extends State<UserFormWidget> {
 
   DateTime? _fechaNacimiento;
   Gender? _generoSeleccionado;
-  Set<UserType> _tiposSeleccionados = {UserType.jugador};
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialUser != null) {
-      _initializeWithUser(widget.initialUser!);
-    } else {
-      _generoSeleccionado = Gender.masculino;
-    }
+    _initializeWithUser(widget.initialUser);
   }
 
   void _initializeWithUser(User user) {
@@ -50,11 +42,10 @@ class _UserFormWidgetState extends State<UserFormWidget> {
     _apellidoController.text = user.apellido;
     _dniController.text = user.dni;
     _emailController.text = user.email;
-    _celularController.text = user.telefono;
+    _celularController.text = user.telefono ?? '';
     _fechaNacimiento = user.fechaNacimiento;
     _fechaNacimientoController.text = _formatDate(user.fechaNacimiento);
     _generoSeleccionado = user.genero;
-    _tiposSeleccionados = Set.from(user.tipos);
   }
 
   @override
@@ -73,10 +64,10 @@ class _UserFormWidgetState extends State<UserFormWidget> {
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _fechaNacimiento ?? DateTime(2000),
-      firstDate: DateTime(1920),
+      initialDate: _fechaNacimiento ?? DateTime.now(),
+      firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
@@ -100,16 +91,11 @@ class _UserFormWidgetState extends State<UserFormWidget> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate() && _fechaNacimiento != null) {
-      // Si no es admin, preservar roles originales
-      final isAdmin = widget.currentUserRoles.contains('ADMIN');
-      final tipos = !isAdmin && widget.initialUser != null
-          ? widget.initialUser!.tipos
-          : _tiposSeleccionados;
-
+      // Preservar todos los datos originales del usuario, solo actualizar campos editables
       final user = User(
-        id: widget.initialUser?.id,
-        playerId: widget.initialUser?.playerId,
-        professorId: widget.initialUser?.professorId,
+        id: widget.initialUser.id,
+        playerId: widget.initialUser.playerId,
+        professorId: widget.initialUser.professorId,
         dni: _dniController.text,
         nombre: _nombreController.text,
         apellido: _apellidoController.text,
@@ -117,62 +103,28 @@ class _UserFormWidgetState extends State<UserFormWidget> {
         genero: _generoSeleccionado!,
         email: _emailController.text,
         telefono: _celularController.text,
-        equipo: 'CHR',
-        tipos: tipos,
-        estadoCuota: EstadoCuota.alDia,
+        equipo: widget.initialUser.equipo,
+        tipos: widget.initialUser.tipos, // Preservar roles originales
+        estadoCuota: widget.initialUser.estadoCuota,
       );
+
+      print('\ud83d\udce6 Datos a enviar:');
+      print('  ID: ${user.id}');
+      print('  PlayerId: ${user.playerId}');
+      print('  ProfessorId: ${user.professorId}');
+      print('  DNI: ${user.dni}');
+      print('  Nombre: ${user.nombre}');
+      print('  Apellido: ${user.apellido}');
+      print('  Fecha Nacimiento: ${user.fechaNacimiento}');
+      print('  Género: ${user.genero}');
+      print('  Email: ${user.email}');
+      print('  Teléfono: ${user.telefono}');
+      print('  Equipo: ${user.equipo}');
+      print('  Tipos: ${user.tipos}');
+      print('  Estado Cuota: ${user.estadoCuota}');
 
       widget.onSave(user);
     }
-  }
-
-  Widget _buildUserTypeCard(UserType type, IconData icon) {
-    final isSelected = _tiposSeleccionados.contains(type);
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (isSelected) {
-            // Solo permitir deseleccionar si hay más de un tipo seleccionado
-            if (_tiposSeleccionados.length > 1) {
-              _tiposSeleccionados.remove(type);
-            }
-          } else {
-            _tiposSeleccionados.add(type);
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.tokens.card1,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.tokens.stroke, width: 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: context.tokens.placeholder, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                type.displayName,
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Symbols.check,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -182,54 +134,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mostrar sección de roles solo si es ADMIN
-          if (widget.currentUserRoles.contains('ADMIN')) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.tokens.card1,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.tokens.stroke),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Symbols.shield,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Tipo de Usuario',
-                        style: TextStyle(
-                          color: context.tokens.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildUserTypeCard(
-                    UserType.jugador,
-                    Symbols.sports_volleyball,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildUserTypeCard(UserType.profesor, Symbols.school),
-                  const SizedBox(height: 8),
-                  _buildUserTypeCard(
-                    UserType.administrador,
-                    Symbols.admin_panel_settings,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-
+          // Datos Personales
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -255,7 +160,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
                 Row(
                   children: [
                     Expanded(
@@ -307,7 +211,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +264,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'DNI *',
                   style: TextStyle(
@@ -401,7 +304,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   },
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'Fecha de nacimiento *',
                   style: TextStyle(
@@ -416,7 +318,10 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   readOnly: true,
                   onTap: _selectDate,
                   decoration: InputDecoration(
-                    hintText: 'DD/MM/AAAA',
+                    suffixIcon: Icon(
+                      Symbols.calendar_month,
+                      color: context.tokens.text,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: context.tokens.stroke),
@@ -431,24 +336,19 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                         color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    suffixIcon: Icon(
-                      Symbols.calendar_month,
-                      color: context.tokens.placeholder,
-                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                   ),
                   validator: (value) {
-                    if (_fechaNacimiento == null) {
+                    if (value == null || value.isEmpty) {
                       return 'Campo requerido';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'Género *',
                   style: TextStyle(
@@ -459,7 +359,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<Gender>(
-                  initialValue: _generoSeleccionado,
+                  value: _generoSeleccionado,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -480,18 +380,15 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                       vertical: 8,
                     ),
                   ),
-                  items: Gender.values.map((gender) {
+                  items: Gender.values.map((Gender gender) {
                     return DropdownMenuItem<Gender>(
                       value: gender,
-                      child: Text(
-                        gender.displayName,
-                        style: TextStyle(color: context.tokens.text),
-                      ),
+                      child: Text(_getGenderDisplayName(gender)),
                     );
                   }).toList(),
-                  onChanged: (value) {
+                  onChanged: (Gender? newValue) {
                     setState(() {
-                      _generoSeleccionado = value;
+                      _generoSeleccionado = newValue;
                     });
                   },
                   validator: (value) {
@@ -506,6 +403,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
           ),
           const SizedBox(height: 24),
 
+          // Datos de Contacto
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -535,7 +433,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'Email *',
                   style: TextStyle(
@@ -579,7 +476,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   },
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'Celular *',
                   style: TextStyle(
@@ -622,8 +518,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
+          // Botón Guardar
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -635,9 +532,9 @@ class _UserFormWidgetState extends State<UserFormWidget> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                widget.submitButtonText,
-                style: const TextStyle(
+              child: const Text(
+                'Guardar cambios',
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -648,5 +545,16 @@ class _UserFormWidgetState extends State<UserFormWidget> {
         ],
       ),
     );
+  }
+
+  String _getGenderDisplayName(Gender gender) {
+    switch (gender) {
+      case Gender.masculino:
+        return 'Masculino';
+      case Gender.femenino:
+        return 'Femenino';
+      case Gender.otro:
+        return 'Otro';
+    }
   }
 }

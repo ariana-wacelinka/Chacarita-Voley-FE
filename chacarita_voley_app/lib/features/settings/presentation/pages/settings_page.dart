@@ -110,6 +110,7 @@ class _SettingsPageState extends State<SettingsPage> {
         (themeProvider.themeMode == ThemeMode.system &&
             systemBrightness == Brightness.dark);
     final isPlayer = PermissionsService.isPlayer(_userRoles);
+    final hasPlayerRole = _userRoles.contains('PLAYER');
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -117,8 +118,8 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sección de perfil para jugadores
-            if (isPlayer && _userId != null) ...[
+            // Sección de perfil para cualquier usuario con rol PLAYER
+            if (hasPlayerRole && _userId != null) ...[
               _buildSectionCard(
                 context,
                 icon: Icons.person,
@@ -128,20 +129,31 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: Icons.account_circle,
                     title: 'Ver mi perfil',
                     showArrow: true,
-                    onTap: () => context.go('/users/$_userId'),
+                    onTap: () {
+                      print('🔍 Settings - Ver mi perfil clicked');
+                      print('👤 userId: $_userId');
+                      print('🎭 isPlayer: $isPlayer');
+                      print('🎭 hasPlayerRole: $hasPlayerRole');
+                      final route = '/users/$_userId/view';
+                      print('🚀 Navegando a: $route');
+                      context.go(route);
+                    },
                   ),
-                  _SettingItem(
-                    icon: Icons.credit_card,
-                    title: 'Mis pagos',
-                    showArrow: true,
-                    onTap: () => context.go('/users/$_userId/payments'),
-                  ),
-                  _SettingItem(
-                    icon: Icons.check_circle,
-                    title: 'Mis asistencias',
-                    showArrow: true,
-                    onTap: () => context.go('/users/$_userId/attendance'),
-                  ),
+                  // Mostrar pagos y asistencias solo para admin/profesor con rol player
+                  if (!isPlayer) ...[
+                    _SettingItem(
+                      icon: Icons.credit_card,
+                      title: 'Mis pagos',
+                      showArrow: true,
+                      onTap: () => context.go('/users/$_userId/payments'),
+                    ),
+                    _SettingItem(
+                      icon: Icons.check_circle,
+                      title: 'Mis asistencias',
+                      showArrow: true,
+                      onTap: () => context.go('/users/$_userId/attendance'),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),

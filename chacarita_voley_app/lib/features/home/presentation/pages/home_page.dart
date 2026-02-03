@@ -11,6 +11,7 @@ import '../../../../app/di.dart';
 import '../../domain/models/home_stats.dart';
 import '../../domain/models/notification_preview.dart';
 import '../../domain/models/training_preview.dart';
+import '../../domain/models/delivery_preview.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
 
@@ -24,6 +25,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   HomeStats? _stats;
   List<NotificationPreview> _notifications = [];
+  List<DeliveryPreview> _deliveries = [];
   List<TrainingPreview> _trainings = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
@@ -51,22 +53,41 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _loadData() async {
     try {
       final repository = ref.read(homeRepositoryProvider);
+      final isPlayer = PermissionsService.isPlayer(_userRoles);
+
       final stats = await repository.getStats();
-      final notifications = await repository.getScheduledNotifications();
       final trainings = await repository.getTodayTrainings();
-      if (mounted) {
-        setState(() {
-          _stats = stats;
-          _notifications = notifications;
-          _trainings = trainings;
-          _isLoading = false;
-        });
+
+      // Si es player exclusivo, cargar deliveries; sino cargar notificaciones
+      if (isPlayer && _userId != null) {
+        final deliveries = await repository.getPlayerDeliveries(
+          _userId.toString(),
+        );
+        if (mounted) {
+          setState(() {
+            _stats = stats;
+            _deliveries = deliveries;
+            _trainings = trainings;
+            _isLoading = false;
+          });
+        }
+      } else {
+        final notifications = await repository.getScheduledNotifications();
+        if (mounted) {
+          setState(() {
+            _stats = stats;
+            _notifications = notifications;
+            _trainings = trainings;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _stats = HomeStats.empty();
           _notifications = [];
+          _deliveries = [];
           _trainings = [];
           _isLoading = false;
         });
@@ -212,34 +233,58 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_notifications.isEmpty)
-                    NotificationItem(
-                      title: isPlayer
-                          ? 'No tienes notificaciones pendientes'
-                          : 'No hay notificaciones programadas',
-                      isImportant: false,
-                      onTap: isPlayer
-                          ? null
-                          : () => context.go('/notifications'),
-                    )
-                  else
-                    ..._notifications.asMap().entries.map((entry) {
-                      final notification = entry.value;
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: entry.key < _notifications.length - 1
-                              ? 12
-                              : 0,
-                        ),
-                        child: NotificationItem(
-                          title: notification.title,
-                          isImportant: false,
-                          onTap: isPlayer
-                              ? null
-                              : () => context.go('/notifications'),
-                        ),
-                      );
-                    }),
+
+                  // Notificaciones para ADMIN/PROFESOR
+                  if (!isPlayer) ...[
+                    if (_notifications.isEmpty)
+                      NotificationItem(
+                        title: 'No hay notificaciones programadas',
+                        isImportant: false,
+                        onTap: () => context.go('/notifications'),
+                      )
+                    else
+                      ..._notifications.asMap().entries.map((entry) {
+                        final notification = entry.value;
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: entry.key < _notifications.length - 1
+                                ? 12
+                                : 0,
+                          ),
+                          child: NotificationItem(
+                            title: notification.title,
+                            isImportant: false,
+                            onTap: () => context.go('/notifications'),
+                          ),
+                        );
+                      }),
+                  ],
+
+                  // Deliveries para JUGADORES
+                  if (isPlayer) ...[
+                    if (_deliveries.isEmpty)
+                      NotificationItem(
+                        title: 'No tienes notificaciones de la última semana',
+                        isImportant: false,
+                        onTap: null,
+                      )
+                    else
+                      ..._deliveries.asMap().entries.map((entry) {
+                        final delivery = entry.value;
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: entry.key < _deliveries.length - 1 ? 12 : 0,
+                          ),
+                          child: NotificationItem(
+                            title: delivery.title,
+                            subtitle: delivery.message,
+                            isImportant: false,
+                            onTap: null,
+                          ),
+                        );
+                      }),
+                  ],
+
                   const SizedBox(height: 32),
 
                   Text(

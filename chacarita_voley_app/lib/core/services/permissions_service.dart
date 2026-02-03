@@ -11,7 +11,13 @@ class PermissionsService {
   static bool canEditUser(List<String> roles) {
     // Jugador puede editar su propio perfil (verificar en runtime que sea su propio ID)
     // Admin puede editar cualquier usuario
-    return roles.contains('ADMIN') || roles.contains('PLAYER');
+    return roles.contains('ADMIN') ||
+        roles.contains('PROFESSOR') ||
+        roles.contains('PLAYER');
+  }
+
+  static bool canDeleteUser(List<String> roles) {
+    return roles.contains('ADMIN');
   }
 
   static bool canViewUser(List<String> roles) {
@@ -113,7 +119,11 @@ class PermissionsService {
         roles.contains('ADMIN');
   }
 
+  /// Retorna true solo si el usuario es ÚNICAMENTE jugador
+  /// Si tiene rol PROFESSOR o ADMIN además de PLAYER, retorna false
   static bool isPlayer(List<String> roles) {
-    return roles.contains('PLAYER');
+    return roles.contains('PLAYER') &&
+        !roles.contains('PROFESSOR') &&
+        !roles.contains('ADMIN');
   }
 }
