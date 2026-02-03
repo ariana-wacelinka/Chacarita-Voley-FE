@@ -34,8 +34,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadUserRoles();
-    _loadData();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadUserRoles();
+    await _loadData();
   }
 
   Future<void> _loadUserRoles() async {
@@ -56,13 +60,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       final isPlayer = PermissionsService.isPlayer(_userRoles);
 
       final stats = await repository.getStats();
-      final trainings = await repository.getTodayTrainings();
 
-      // Si es player exclusivo, cargar deliveries; sino cargar notificaciones
+      // Si es player exclusivo, cargar deliveries y entrenamientos del player
       if (isPlayer && _userId != null) {
         final deliveries = await repository.getPlayerDeliveries(
           _userId.toString(),
         );
+        final trainings = await repository.getPlayerTrainings(
+          _userId.toString(),
+        );
+        print('🔍 DEBUG: HomePage recibió ${trainings.length} entrenamientos');
         if (mounted) {
           setState(() {
             _stats = stats;
@@ -73,6 +80,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
       } else {
         final notifications = await repository.getScheduledNotifications();
+        final trainings = await repository.getTodayTrainings();
         if (mounted) {
           setState(() {
             _stats = stats;

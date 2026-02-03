@@ -168,6 +168,96 @@ class HomeRepository {
     }
   }
 
+  Future<List<TrainingPreview>> getPlayerTrainings(String playerId) async {
+    // Obtener fecha actual y 6 días adelante en hora argentina (UTC-3)
+    final now = DateTime.now().toUtc().add(const Duration(hours: -3));
+    final sixDaysLater = now.add(const Duration(days: 6));
+
+    final dateFrom =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dateTo =
+        '${sixDaysLater.year}-${sixDaysLater.month.toString().padLeft(2, '0')}-${sixDaysLater.day.toString().padLeft(2, '0')}';
+
+    final query =
+        '''
+      query GetPlayerTrainings {
+        getAllSessions(
+          page: 0
+          size: 20
+          filters: {playerId: "$playerId", dateFrom: "$dateFrom", dateTo: "$dateTo"}
+        ) {
+          content {
+            id
+            date
+            startTime
+            endTime
+            location
+            trainingType
+            status
+            countOfPlayers
+            countOfAssisted
+            team {
+              id
+              abbreviation
+              players {
+                id
+              }
+              professors {
+                person {
+                  name
+                  surname
+                }
+              }
+            }
+            training {
+              id
+              dayOfWeek
+            }
+          }
+        }
+      }
+    ''';
+
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(query),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        return [];
+      }
+
+      final content = result.data?['getAllSessions']?['content'] as List?;
+
+      if (content == null || content.isEmpty) {
+        return [];
+      }
+
+      print(
+        '🔍 DEBUG: getPlayerTrainings recibió ${content.length} entrenamientos',
+      );
+
+      final trainings = content.map((json) {
+        final dateString = json['date'] as String?;
+        return TrainingPreview.fromJson(
+          json as Map<String, dynamic>,
+          dateString ?? '',
+        );
+      }).toList();
+
+      print(
+        '🔍 DEBUG: getPlayerTrainings parseó ${trainings.length} entrenamientos',
+      );
+
+      return trainings;
+    } catch (e) {
+      return [];
+    }
+  }
+
   Future<List<DeliveryPreview>> getPlayerDeliveries(String personId) async {
     // Obtener fecha actual y hace 7 días en hora argentina (UTC-3)
     final now = DateTime.now().toUtc().add(const Duration(hours: -3));
