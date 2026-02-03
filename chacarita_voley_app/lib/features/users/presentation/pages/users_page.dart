@@ -6,6 +6,8 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/user.dart';
 import '../../data/repositories/user_repository.dart';
 import '../widgets/delete_user_dialog.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({super.key});
@@ -29,10 +31,27 @@ class _UsersPageState extends State<UsersPage> {
   static const int _usersPerPage = 12;
   int _currentPage = 0;
 
+  List<String> _userRoles = [];
+  bool _canCreate = false;
+  bool _canEdit = false;
+  bool _canDelete = false;
+
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _loadUsers();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    setState(() {
+      _userRoles = roles ?? [];
+      _canCreate = PermissionsService.canCreateUser(_userRoles);
+      _canEdit = PermissionsService.canEditUser(_userRoles);
+      _canDelete = PermissionsService.canDeleteUser(_userRoles);
+    });
   }
 
   @override
@@ -168,7 +187,9 @@ class _UsersPageState extends State<UsersPage> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: context.tokens.background,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: context.tokens.stroke),
                       ),
@@ -580,86 +601,89 @@ class _UsersPageState extends State<UsersPage> {
                                                   ],
                                                 ),
                                               ),
-                                              PopupMenuItem(
-                                                onTap: () {
-                                                  Future.microtask(() async {
-                                                    final updated =
-                                                        await context.push(
-                                                          '/users/${user.id}/edit',
-                                                        );
-                                                    if (updated == true &&
-                                                        mounted) {
-                                                      setState(() {
-                                                        _usersFuture =
-                                                            _repository.getUsers(
-                                                              searchQuery:
-                                                                  _searchQuery
-                                                                      .isEmpty
-                                                                  ? null
-                                                                  : _searchQuery,
-                                                              page:
-                                                                  _currentPage,
-                                                              size:
-                                                                  _usersPerPage,
-                                                            );
-                                                        _totalElementsFuture =
-                                                            _repository.getTotalUsers(
-                                                              searchQuery:
-                                                                  _searchQuery
-                                                                      .isEmpty
-                                                                  ? null
-                                                                  : _searchQuery,
-                                                            );
-                                                      });
-                                                    }
-                                                  });
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Symbols.edit,
-                                                      size: 18,
-                                                      color:
-                                                          context.tokens.text,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      'Modificar',
-                                                      style: TextStyle(
+                                              if (_canEdit)
+                                                PopupMenuItem(
+                                                  onTap: () {
+                                                    Future.microtask(() async {
+                                                      final updated =
+                                                          await context.push(
+                                                            '/users/${user.id}/edit',
+                                                          );
+                                                      if (updated == true &&
+                                                          mounted) {
+                                                        setState(() {
+                                                          _usersFuture =
+                                                              _repository.getUsers(
+                                                                searchQuery:
+                                                                    _searchQuery
+                                                                        .isEmpty
+                                                                    ? null
+                                                                    : _searchQuery,
+                                                                page:
+                                                                    _currentPage,
+                                                                size:
+                                                                    _usersPerPage,
+                                                              );
+                                                          _totalElementsFuture =
+                                                              _repository.getTotalUsers(
+                                                                searchQuery:
+                                                                    _searchQuery
+                                                                        .isEmpty
+                                                                    ? null
+                                                                    : _searchQuery,
+                                                              );
+                                                        });
+                                                      }
+                                                    });
+                                                  },
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Symbols.edit,
+                                                        size: 18,
                                                         color:
                                                             context.tokens.text,
                                                       ),
-                                                    ),
-                                                  ],
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Modificar',
+                                                        style: TextStyle(
+                                                          color: context
+                                                              .tokens
+                                                              .text,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                              PopupMenuItem(
-                                                onTap: () {
-                                                  Future.microtask(() {
-                                                    _showDeleteDialog(user);
-                                                  });
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Symbols.delete,
-                                                      size: 18,
-                                                      color: context
-                                                          .tokens
-                                                          .redToRosita,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      'Eliminar',
-                                                      style: TextStyle(
+                                              if (_canDelete)
+                                                PopupMenuItem(
+                                                  onTap: () {
+                                                    Future.microtask(() {
+                                                      _showDeleteDialog(user);
+                                                    });
+                                                  },
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Symbols.delete,
+                                                        size: 18,
                                                         color: context
                                                             .tokens
                                                             .redToRosita,
                                                       ),
-                                                    ),
-                                                  ],
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Eliminar',
+                                                        style: TextStyle(
+                                                          color: context
+                                                              .tokens
+                                                              .redToRosita,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
                                         ),
@@ -749,11 +773,13 @@ class _UsersPageState extends State<UsersPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/users/register'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Symbols.add, color: Colors.white),
-      ),
+      floatingActionButton: _canCreate
+          ? FloatingActionButton(
+              onPressed: () => context.go('/users/register'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Symbols.add, color: Colors.white),
+            )
+          : null,
     );
   }
 

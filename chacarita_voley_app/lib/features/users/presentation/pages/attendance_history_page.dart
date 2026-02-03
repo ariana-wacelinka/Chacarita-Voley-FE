@@ -4,6 +4,9 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../app/layout/app_drawer.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 import '../../domain/entities/assistance.dart';
 import '../../domain/entities/assistance_stats.dart';
 import '../../domain/entities/user.dart';
@@ -23,6 +26,9 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   User? _user;
   bool _isLoading = true;
   String? _loadError;
+  List<String> _userRoles = [];
+  int? _currentUserId;
+  bool _isOwnAttendance = false;
 
   List<Assistance> _attendanceHistory = [];
   int _currentPage = 0;
@@ -40,7 +46,34 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     super.initState();
     _userRepository = UserRepository();
     initializeDateFormatting('es');
+    _loadUserRoles();
     _loadInitialData();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _currentUserId = userId;
+        _isOwnAttendance = userId.toString() == widget.userId;
+      });
+    }
+  }
+
+  void _handleBack() {
+    if (_isOwnAttendance) {
+      final isPlayer = PermissionsService.isPlayer(_userRoles);
+      if (isPlayer) {
+        context.go('/home');
+      } else {
+        context.go('/settings');
+      }
+    } else {
+      context.go('/users/${widget.userId}/view');
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -150,16 +183,21 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isPlayer = PermissionsService.isPlayer(_userRoles);
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: context.tokens.background,
+        drawer: (isPlayer && _isOwnAttendance) ? const AppDrawer() : null,
         appBar: AppBar(
           backgroundColor: context.tokens.card1,
           elevation: 0,
-          leading: IconButton(
-            icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-            onPressed: () => context.pop(),
-          ),
+          leading: (isPlayer && _isOwnAttendance)
+              ? null
+              : IconButton(
+                  icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+                  onPressed: _handleBack,
+                ),
           title: Text(
             'Historial de Asistencias',
             style: TextStyle(
@@ -182,13 +220,16 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
 
     return Scaffold(
       backgroundColor: context.tokens.background,
+      drawer: (isPlayer && _isOwnAttendance) ? const AppDrawer() : null,
       appBar: AppBar(
         backgroundColor: context.tokens.card1,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.pop(),
-        ),
+        leading: (isPlayer && _isOwnAttendance)
+            ? null
+            : IconButton(
+                icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+                onPressed: _handleBack,
+              ),
         title: Column(
           children: [
             Text(

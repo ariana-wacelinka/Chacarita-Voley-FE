@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -14,6 +15,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
 
   bool _isCurrentPasswordVisible = false;
   bool _isNewPasswordVisible = false;
@@ -321,6 +323,68 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+        elevation: 6,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+        elevation: 6,
+      ),
+    );
+  }
+
   Future<void> _changePassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -331,28 +395,46 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await _authService.changePassword(
+        currentPassword: _currentPasswordController.text,
+        newPassword: _newPasswordController.text,
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Contraseña cambiada exitosamente'),
-            backgroundColor: context.tokens.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        _showSuccessSnackBar(
+          'Contraseña cambiada exitosamente. Por favor inicia sesión nuevamente',
         );
 
-        context.pop();
+        // Esperar un momento antes de cerrar sesión
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (mounted) {
+          // Cerrar sesión y redirigir al login
+          await _authService.logout();
+          if (mounted) {
+            context.go('/login');
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cambiar contraseña: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        // Determinar el tipo de error
+        String errorMessage = 'Error al cambiar contraseña';
+
+        final errorString = e.toString();
+        if (errorString.contains('incorrecta') || errorString.contains('401')) {
+          errorMessage = 'La contraseña actual es incorrecta';
+        } else if (errorString.contains('Timeout') ||
+            errorString.contains('timeout')) {
+          errorMessage = 'Tiempo de espera agotado. Verifica tu conexión';
+        } else if (errorString.contains('SocketException') ||
+            errorString.contains('network')) {
+          errorMessage = 'Error de conexión. Verifica tu red';
+        } else if (errorString.contains('sesión')) {
+          errorMessage = 'Sesión expirada. Por favor inicia sesión nuevamente';
+        }
+
+        _showErrorSnackBar(errorMessage);
       }
     } finally {
       if (mounted) {

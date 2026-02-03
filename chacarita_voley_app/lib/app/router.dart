@@ -31,9 +31,115 @@ import '../features/notifications/presentation/pages/view_notification_page.dart
 import '../features/notifications/presentation/pages/edit_notification_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/settings/presentation/pages/change_password_page.dart';
+import '../core/services/auth_service.dart';
+import '../core/services/permissions_service.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) async {
+    final isLoginPage = state.matchedLocation == '/login';
+
+    if (isLoginPage) {
+      return null;
+    }
+
+    final authService = AuthService();
+    final token = await authService.getToken();
+
+    if (token == null) {
+      return '/login';
+    }
+
+    final roles = await authService.getUserRoles() ?? [];
+    final userId = await authService.getUserId();
+    final path = state.matchedLocation;
+
+    print('🔀 Router redirect - Path: $path');
+    print('👤 User roles: $roles');
+    print('🆔 User ID: $userId');
+
+    // Extraer el ID de la URL si existe
+    final userIdInPath = RegExp(r'/users/(\d+)').firstMatch(path)?.group(1);
+    print('🔢 User ID en path: $userIdInPath');
+
+    // Permitir a los jugadores acceder a su propio historial
+    final isOwnPaymentHistory =
+        path.contains('/payments') &&
+        path.startsWith('/users/') &&
+        userIdInPath == userId.toString();
+    final isOwnAttendanceHistory =
+        path.contains('/attendance') &&
+        path.startsWith('/users/') &&
+        userIdInPath == userId.toString();
+    final isOwnProfile =
+        RegExp(r'^/users/\d+/view$').hasMatch(path) &&
+        userIdInPath == userId.toString();
+    final isOwnEdit =
+        RegExp(r'^/users/\d+/edit$').hasMatch(path) &&
+        userIdInPath == userId.toString();
+
+    print('💳 isOwnPaymentHistory: $isOwnPaymentHistory');
+    print('✅ isOwnAttendanceHistory: $isOwnAttendanceHistory');
+    print('👨 isOwnProfile: $isOwnProfile');
+    print('✏️ isOwnEdit: $isOwnEdit');
+
+    // Usuarios - excluir historial propio de pagos y asistencias
+    if (path.startsWith('/users') &&
+        !isOwnPaymentHistory &&
+        !isOwnAttendanceHistory &&
+        !isOwnProfile &&
+        !isOwnEdit &&
+        !PermissionsService.canAccessUsers(roles)) {
+      print('❌ Bloqueando acceso a /users - Redirigiendo a /home');
+      return '/home';
+    }
+    if (path == '/users/register' && !PermissionsService.canCreateUser(roles)) {
+      return '/home';
+    }
+    if (path.contains('/edit') &&
+        path.startsWith('/users') &&
+        !isOwnEdit &&
+        !PermissionsService.canEditUser(roles)) {
+      return '/home';
+    }
+
+    // Pagos - validación principal y edición
+    if (path == '/payments' && !PermissionsService.canAccessPayments(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/create') &&
+        !PermissionsService.canCreatePayment(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/edit') &&
+        !PermissionsService.canEditPayment(roles)) {
+      return '/home';
+    }
+    if (path.startsWith('/payments/detail') &&
+        !PermissionsService.canValidatePayments(roles)) {
+      return '/home';
+    }
+
+    // Notificaciones
+    if (path.startsWith('/notifications') &&
+        !PermissionsService.canAccessNotifications(roles)) {
+      return '/home';
+    }
+
+    // Equipos
+    if (path.startsWith('/teams') &&
+        !PermissionsService.canAccessTeams(roles)) {
+      return '/home';
+    }
+
+    // Entrenamientos
+    if (path.startsWith('/trainings') &&
+        !PermissionsService.canAccessTrainings(roles)) {
+      return '/home';
+    }
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',

@@ -170,10 +170,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? startTimeTo,
     String? statusValue,
     String? teamId,
+    String? playerId,
   }) =>
       '''
     query GetAllSessions(\$page: Int!, \$size: Int!) {
-      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, teamId: "${teamId ?? ''}"}) {
+      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, teamId: "${teamId ?? ''}", playerId: "${playerId ?? ''}"}) {
         totalPages
         totalElements
         pageSize
@@ -276,6 +277,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? startTimeTo,
     TrainingStatus? status,
     String? teamId,
+    String? playerId,
     int page = 0,
     int size = 10,
   }) async {
@@ -289,6 +291,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             startTimeTo: startTimeTo,
             statusValue: status?.backendValue,
             teamId: teamId,
+            playerId: playerId,
           ),
         ),
         variables: {'page': page, 'size': size},

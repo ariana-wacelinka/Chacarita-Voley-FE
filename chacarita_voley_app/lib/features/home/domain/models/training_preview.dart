@@ -19,39 +19,53 @@ class TrainingPreview {
     Map<String, dynamic> json,
     String todayDate,
   ) {
-    final team = json['team'] as Map<String, dynamic>;
-    final players = (team['players'] as List?) ?? [];
-    final professors = (team['professors'] as List?) ?? [];
+    final team = json['team'] as Map<String, dynamic>?;
+    final professors = (team?['professors'] as List?) ?? [];
 
     // Obtener el primer profesor
     String professorName = 'Sin profesor';
     if (professors.isNotEmpty) {
       final firstProf = professors[0] as Map<String, dynamic>;
-      final person = firstProf['person'] as Map<String, dynamic>;
-      final name = person['name'] as String? ?? '';
-      final surname = person['surname'] as String? ?? '';
+      final person = firstProf['person'] as Map<String, dynamic>?;
+      final name = person?['name'] as String? ?? '';
+      final surname = person?['surname'] as String? ?? '';
       professorName = '$surname $name'.trim();
     }
 
-    // Calcular asistencia del día
-    int attendance = 0;
-    for (var player in players) {
-      final assistances = (player['assistances'] as List?) ?? [];
-      final todayAssistance = assistances.firstWhere(
-        (a) => a['date'] == todayDate && a['assistance'] == true,
-        orElse: () => null,
-      );
-      if (todayAssistance != null) {
-        attendance++;
+    // Usar countOfPlayers y countOfAssisted si están disponibles
+    int totalPlayers = json['countOfPlayers'] as int? ?? 0;
+    int attendance = json['countOfAssisted'] as int? ?? 0;
+
+    // Si no están disponibles, calcular desde el array (para compatibilidad)
+    if (totalPlayers == 0 && team != null) {
+      final players = (team['players'] as List?) ?? [];
+      totalPlayers = players.length;
+
+      // Calcular asistencia del día
+      for (var player in players) {
+        final assistances = (player['assistances'] as List?) ?? [];
+        final todayAssistance = assistances.firstWhere(
+          (a) => a['date'] == todayDate && a['assistance'] == true,
+          orElse: () => null,
+        );
+        if (todayAssistance != null) {
+          attendance++;
+        }
       }
     }
 
+    // Usar abbreviation si está disponible, sino name
+    String teamName =
+        team?['abbreviation'] as String? ??
+        team?['name'] as String? ??
+        'Sin nombre';
+
     return TrainingPreview(
       id: json['id'] as String,
-      teamName: team['name'] as String? ?? 'Sin nombre',
+      teamName: teamName,
       startTime: json['startTime'] as String? ?? '00:00:00',
       professorName: professorName,
-      totalPlayers: players.length,
+      totalPlayers: totalPlayers,
       attendance: attendance,
     );
   }

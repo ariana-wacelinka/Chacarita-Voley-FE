@@ -96,7 +96,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final notification = await _repository.getNotificationById(widget.notificationId);
+      final notification = await _repository.getNotificationById(
+        widget.notificationId,
+      );
 
       if (!mounted) return;
 
@@ -656,7 +658,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                           onPressed: _selectDate,
                         ),
                         filled: true,
-                        fillColor: context.tokens.background,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
@@ -697,7 +698,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                           onPressed: _selectTime,
                         ),
                         filled: true,
-                        fillColor: context.tokens.background,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
@@ -769,7 +769,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                     labelText: 'Frecuencia *',
                     hintText: 'Seleccionar frecuencia...',
                     filled: true,
-                    fillColor: context.tokens.background,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
@@ -841,7 +840,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
               decoration: InputDecoration(
                 labelText: 'Título *',
                 filled: true,
-                fillColor: context.tokens.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
@@ -875,7 +873,6 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
               decoration: InputDecoration(
                 labelText: 'Mensaje *',
                 filled: true,
-                fillColor: context.tokens.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
@@ -941,49 +938,43 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
             label: 'Seleccionar todos',
             isSelected: _recipientFilter == 'todos',
             enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(
-              () {
-                if (_recipientFilter == 'todos') {
-                  _recipientFilter = null;
-                } else {
-                  _recipientFilter = 'todos';
-                  _selectedTeams.clear();
-                  _selectedPlayers.clear();
-                }
-              },
-            ),
+            onTap: () => setState(() {
+              if (_recipientFilter == 'todos') {
+                _recipientFilter = null;
+              } else {
+                _recipientFilter = 'todos';
+                _selectedTeams.clear();
+                _selectedPlayers.clear();
+              }
+            }),
           ),
           _buildFilterChip(
             label: 'Cuota vencida',
             isSelected: _recipientFilter == 'vencida',
             enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(
-              () {
-                if (_recipientFilter == 'vencida') {
-                  _recipientFilter = null;
-                } else {
-                  _recipientFilter = 'vencida';
-                  _selectedTeams.clear();
-                  _selectedPlayers.clear();
-                }
-              },
-            ),
+            onTap: () => setState(() {
+              if (_recipientFilter == 'vencida') {
+                _recipientFilter = null;
+              } else {
+                _recipientFilter = 'vencida';
+                _selectedTeams.clear();
+                _selectedPlayers.clear();
+              }
+            }),
           ),
           _buildFilterChip(
             label: 'Cuota pendiente',
             isSelected: _recipientFilter == 'pendiente',
             enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(
-              () {
-                if (_recipientFilter == 'pendiente') {
-                  _recipientFilter = null;
-                } else {
-                  _recipientFilter = 'pendiente';
-                  _selectedTeams.clear();
-                  _selectedPlayers.clear();
-                }
-              },
-            ),
+            onTap: () => setState(() {
+              if (_recipientFilter == 'pendiente') {
+                _recipientFilter = null;
+              } else {
+                _recipientFilter = 'pendiente';
+                _selectedTeams.clear();
+                _selectedPlayers.clear();
+              }
+            }),
           ),
         ],
       ),
@@ -1020,7 +1011,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                 hintText: 'Buscar por nombre...',
                 prefixIcon: const Icon(Symbols.search, size: 20),
                 filled: true,
-                fillColor: context.tokens.background,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.grey.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
@@ -1079,7 +1072,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                             setState(() {
                               if (value == true) {
                                 _selectedTeams.add(team.id);
-                                _recipientFilter = null; // Clear filter when selecting team
+                                _recipientFilter =
+                                    null; // Clear filter when selecting team
                               } else {
                                 _selectedTeams.remove(team.id);
                               }
@@ -1135,7 +1129,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                 hintText: 'Buscar por nombre o DNI...',
                 prefixIcon: const Icon(Symbols.search, size: 20),
                 filled: true,
-                fillColor: context.tokens.background,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.grey.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
@@ -1196,7 +1192,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                             setState(() {
                               if (value == true) {
                                 _selectedPlayers.add(player.id ?? '');
-                                _recipientFilter = null; // Clear filter when selecting player
+                                _recipientFilter =
+                                    null; // Clear filter when selecting player
                               } else {
                                 _selectedPlayers.remove(player.id ?? '');
                               }
@@ -1453,15 +1450,15 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           color: isSelected
               ? Theme.of(context).colorScheme.primary
               : enabled
-                  ? context.tokens.card1
-                  : context.tokens.card1.withOpacity(0.5),
+              ? context.tokens.card1
+              : context.tokens.card1.withOpacity(0.5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
                 : enabled
-                    ? context.tokens.stroke
-                    : context.tokens.stroke.withOpacity(0.3),
+                ? context.tokens.stroke
+                : context.tokens.stroke.withOpacity(0.3),
           ),
         ),
         child: Row(
@@ -1473,8 +1470,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                 color: isSelected
                     ? Colors.white
                     : enabled
-                        ? context.tokens.text
-                        : context.tokens.text.withOpacity(0.3),
+                    ? context.tokens.text
+                    : context.tokens.text.withOpacity(0.3),
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
