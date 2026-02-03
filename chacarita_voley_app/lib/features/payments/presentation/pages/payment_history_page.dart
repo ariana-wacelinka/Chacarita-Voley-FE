@@ -11,6 +11,8 @@ import '../../data/repositories/pay_repository.dart';
 import '../../domain/entities/pay_state.dart';
 import '../../domain/entities/pay_page.dart';
 import '../widgets/payment_history_content_widget.dart';
+import '../../../users/domain/entities/due.dart' show CurrentDue;
+import '../../../users/data/repositories/user_repository.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
   final String userId;
@@ -28,11 +30,13 @@ class PaymentHistoryPage extends StatefulWidget {
 
 class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   late final PayRepository _payRepository;
+  late final UserRepository _userRepository;
   List<Pay> _payments = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
   int? _currentUserId;
   bool _isOwnPaymentHistory = false;
+  CurrentDue? _currentDue;
 
   int _currentPage = 0;
   static const int _itemsPerPage = 7;
@@ -50,8 +54,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   void initState() {
     super.initState();
     _payRepository = PayRepository();
+    _userRepository = UserRepository();
     _loadUserRoles();
-    _loadPays();
+    _loadData();
   }
 
   Future<void> _loadUserRoles() async {
@@ -77,6 +82,24 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       }
     } else {
       context.go('/users/${widget.userId}/view');
+    }
+  }
+
+  Future<void> _loadData() async {
+    await _loadCurrentDue();
+    await _loadPays();
+  }
+
+  Future<void> _loadCurrentDue() async {
+    try {
+      final user = await _userRepository.getUserById(widget.userId);
+      if (mounted) {
+        setState(() {
+          _currentDue = user?.currentDue;
+        });
+      }
+    } catch (e) {
+      // No es crítico si falla, continuar sin currentDue
     }
   }
 
@@ -245,7 +268,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               children: [
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: _loadPays,
+                    onRefresh: _loadData,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: PaymentHistoryContent(
@@ -253,6 +276,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                         allPayments: _payments,
                         userName: widget.userName,
                         userId: widget.userId,
+                        currentDue: _currentDue,
                         onFiltersChanged: _onFiltersChanged,
                         onDownload: _handleDownload,
                         downloadingFiles: _downloadingFiles,

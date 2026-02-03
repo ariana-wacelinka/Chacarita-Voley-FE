@@ -431,7 +431,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Período:',
+                    'Cuota:',
                     style: TextStyle(
                       color: context.tokens.placeholder,
                       fontSize: 14,
