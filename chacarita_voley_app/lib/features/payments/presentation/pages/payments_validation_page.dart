@@ -852,8 +852,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       ),
                     ],
                   ),
-                if (payment.status == PayState.validated ||
-                    payment.status == PayState.rejected)
+                if (payment.status == PayState.rejected)
                   Container(
                     height: 40,
                     decoration: BoxDecoration(
