@@ -6,6 +6,8 @@ import '../../domain/entities/team.dart';
 import '../../domain/entities/team_type.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../../users/data/repositories/user_repository.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/permissions_service.dart';
 
 enum _MemberMenuAction {
   viewUser,
@@ -28,6 +30,30 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   late final UserRepository _userRepository;
   Team? _team;
   bool _isLoading = true;
+  List<String> _userRoles = [];
+  bool _canEdit = false;
+  bool _canEditUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = TeamRepository();
+    _userRepository = UserRepository();
+    _loadUserRoles();
+    _loadTeam();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _canEdit = PermissionsService.canEditTeam(_userRoles);
+        _canEditUser = PermissionsService.canEditUser(_userRoles);
+      });
+    }
+  }
 
   String _resolveUserIdForMember(TeamMember member) {
     return member.dni;
@@ -375,14 +401,6 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
         );
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _repository = TeamRepository();
-    _userRepository = UserRepository();
-    _loadTeam();
   }
 
   Future<void> _loadTeam() async {
@@ -885,40 +903,43 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                     },
                                     itemBuilder: (_) {
                                       if (_team!.tipo == TeamType.competitivo) {
-                                        return const [
-                                          PopupMenuItem(
+                                        return [
+                                          const PopupMenuItem(
                                             value: _MemberMenuAction
                                                 .viewCompetitiveData,
                                             child: Text(
                                               'Ver datos competitivos',
                                             ),
                                           ),
-                                          PopupMenuItem(
-                                            value: _MemberMenuAction
-                                                .editCompetitiveData,
-                                            child: Text(
-                                              'Modificar datos competitivos',
+                                          if (_canEdit)
+                                            const PopupMenuItem(
+                                              value: _MemberMenuAction
+                                                  .editCompetitiveData,
+                                              child: Text(
+                                                'Modificar datos competitivos',
+                                              ),
                                             ),
-                                          ),
-                                          PopupMenuItem(
+                                          const PopupMenuItem(
                                             value: _MemberMenuAction.viewUser,
                                             child: Text('Visualizar jugador'),
                                           ),
-                                          PopupMenuItem(
-                                            value: _MemberMenuAction.editUser,
-                                            child: Text('Modificar usuario'),
-                                          ),
+                                          if (_canEditUser)
+                                            const PopupMenuItem(
+                                              value: _MemberMenuAction.editUser,
+                                              child: Text('Modificar usuario'),
+                                            ),
                                         ];
                                       } else {
-                                        return const [
-                                          PopupMenuItem(
+                                        return [
+                                          const PopupMenuItem(
                                             value: _MemberMenuAction.viewUser,
                                             child: Text('Ver'),
                                           ),
-                                          PopupMenuItem(
-                                            value: _MemberMenuAction.editUser,
-                                            child: Text('Modificar'),
-                                          ),
+                                          if (_canEditUser)
+                                            const PopupMenuItem(
+                                              value: _MemberMenuAction.editUser,
+                                              child: Text('Modificar'),
+                                            ),
                                         ];
                                       }
                                     },
@@ -1073,48 +1094,51 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
             ),
             const SizedBox(height: 20),
 
-            // Botón Modificar equipo
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  context.go('/teams/edit/${_team!.id}');
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.tokens.secondaryButton,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            // Botones de edición solo para ADMIN
+            if (_canEdit) ...[
+              // Botón Modificar equipo
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    context.go('/teams/edit/${_team!.id}');
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: context.tokens.secondaryButton,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Symbols.edit, size: 18),
+                  label: const Text(
+                    'Modificar equipo',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
-                icon: const Icon(Symbols.edit, size: 18),
-                label: const Text(
-                  'Modificar equipo',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Botón Eliminar equipo
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _handleDeleteTeam,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              // Botón Eliminar equipo
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _handleDeleteTeam,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Symbols.delete, size: 18),
+                  label: const Text(
+                    'Eliminar equipo',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
-                icon: const Icon(Symbols.delete, size: 18),
-                label: const Text(
-                  'Eliminar equipo',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
               ),
-            ),
+            ],
             const SizedBox(height: 20),
           ],
         ),

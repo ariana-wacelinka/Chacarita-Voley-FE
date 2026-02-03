@@ -3,14 +3,16 @@ import '../../../../app/theme/app_theme.dart';
 
 class NotificationItem extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final bool isImportant;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const NotificationItem({
     super.key,
     required this.title,
+    this.subtitle,
     required this.isImportant,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -25,11 +27,26 @@ class NotificationItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(16),
-        child: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: context.tokens.text),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: context.tokens.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.tokens.text.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

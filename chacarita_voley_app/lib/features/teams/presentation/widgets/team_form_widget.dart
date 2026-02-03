@@ -288,7 +288,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                       Icon(
                         Symbols.shield,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: context.tokens.redToRosita,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -478,9 +478,12 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                       : () => _showSelectEntrenadoresDialog(
                                           context,
                                         ),
-                                  child: const Text(
+                                  child: Text(
                                     'Agregar entrenador',
-                                    style: TextStyle(fontSize: 13),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: context.tokens.redToRosita,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -494,9 +497,12 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                             onPressed: !_professorsLoaded
                                 ? null
                                 : () => _showSelectEntrenadoresDialog(context),
-                            child: const Text(
+                            child: Text(
                               'Agregar entrenador',
-                              style: TextStyle(fontSize: 13),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: context.tokens.redToRosita,
+                              ),
                             ),
                           ),
                         ),
@@ -715,7 +721,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                                     icon: Icon(
                                       Symbols.delete,
                                       size: 18,
-                                      color: colorScheme.primary,
+                                      color: context.tokens.redToRosita,
                                     ),
                                     onPressed: () => _removeMember(member.dni),
                                     tooltip: 'Eliminar',

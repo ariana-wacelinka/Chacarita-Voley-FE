@@ -1,13 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/permissions_service.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  List<String> _userRoles = [];
+  int? _userId;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRoles();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    final userId = await authService.getUserId();
+    setState(() {
+      _userRoles = roles ?? [];
+      _userId = userId;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final currentLocation = GoRouterState.of(context).uri.path;
+
+    if (_isLoading) {
+      return Drawer(
+        backgroundColor: context.tokens.drawer,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Drawer(
       backgroundColor: context.tokens.drawer,
@@ -74,51 +109,83 @@ class AppDrawer extends StatelessWidget {
                       context.go('/home');
                     },
                   ),
-                  _DrawerItem(
-                    icon: Icons.people,
-                    title: 'Gestión de Usuarios',
-                    isSelected: currentLocation == '/users',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/users');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.payment,
-                    title: 'Gestión de Cuotas',
-                    isSelected: currentLocation == '/payments',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/payments');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.notifications,
-                    title: 'Gestión de Notificaciones',
-                    isSelected: currentLocation == '/notifications',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/notifications');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.sports_volleyball,
-                    title: 'Gestión de Equipos',
-                    isSelected: currentLocation == '/teams',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/teams');
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.calendar_today,
-                    title: 'Gestión de Entrenamientos',
-                    isSelected: currentLocation == '/trainings',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go('/trainings');
-                    },
-                  ),
+                  // Opciones para jugadores
+                  if (PermissionsService.isPlayer(_userRoles) &&
+                      _userId != null) ...[
+                    _DrawerItem(
+                      icon: Icons.payment,
+                      title: 'Gestionar pagos',
+                      isSelected: currentLocation.contains(
+                        '/users/$_userId/payments',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users/$_userId/payments');
+                      },
+                    ),
+                    _DrawerItem(
+                      icon: Icons.check_circle,
+                      title: 'Visualizar asistencias',
+                      isSelected: currentLocation.contains(
+                        '/users/$_userId/attendance',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users/$_userId/attendance');
+                      },
+                    ),
+                  ],
+                  // Opciones para admin y profesor
+                  if (PermissionsService.canAccessUsers(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.people,
+                      title: 'Gestión de Usuarios',
+                      isSelected: currentLocation == '/users',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/users');
+                      },
+                    ),
+                  if (PermissionsService.canAccessPayments(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.payment,
+                      title: 'Gestión de Cuotas',
+                      isSelected: currentLocation == '/payments',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/payments');
+                      },
+                    ),
+                  if (PermissionsService.canAccessNotifications(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.notifications,
+                      title: 'Gestión de Notificaciones',
+                      isSelected: currentLocation == '/notifications',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/notifications');
+                      },
+                    ),
+                  if (PermissionsService.canAccessTeams(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.sports_volleyball,
+                      title: 'Gestión de Equipos',
+                      isSelected: currentLocation == '/teams',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/teams');
+                      },
+                    ),
+                  if (PermissionsService.canAccessTrainings(_userRoles))
+                    _DrawerItem(
+                      icon: Icons.calendar_today,
+                      title: 'Gestión de Entrenamientos',
+                      isSelected: currentLocation == '/trainings',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/trainings');
+                      },
+                    ),
                 ],
               ),
             ),
@@ -163,10 +230,9 @@ class AppDrawer extends StatelessWidget {
               child: const Text('Cancelar'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-
-                context.go('/');
+                await _logout(context);
               },
               child: Text(
                 'Cerrar Sesión',
@@ -177,6 +243,42 @@ class AppDrawer extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      final authService = AuthService();
+      await authService.logout();
+      if (context.mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorSnackBar(context, e.toString());
+      }
+    }
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(message, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.red.shade700,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.red.shade900, width: 1),
+      ),
+      duration: const Duration(seconds: 3),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }
 

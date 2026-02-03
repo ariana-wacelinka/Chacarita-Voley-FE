@@ -64,7 +64,6 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   Future<void> _saveAttendance() async {
     if (_training == null || !_hasChanges || _isSaving) return;
 
-    print('[_saveAttendance] Iniciando guardado de asistencia');
     setState(() {
       _isSaving = true;
     });
@@ -75,18 +74,13 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         _training!.attendances,
       );
 
-      print('[_saveAttendance] Asistencia guardada, actualizando estado');
-
       if (!mounted) {
-        print('[_saveAttendance] Widget no montado después de guardar');
         return;
       }
 
       setState(() {
         _hasChanges = false;
       });
-
-      print('[_saveAttendance] Mostrando SnackBar');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -96,21 +90,14 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         ),
       );
 
-      print('[_saveAttendance] Esperando antes de navegar');
-
       // Navegar de vuelta al detalle del entrenamiento
       await Future.delayed(const Duration(milliseconds: 400));
 
-      print('[_saveAttendance] Verificando mounted antes de navegar');
-
       if (!mounted) {
-        print('[_saveAttendance] Widget no montado antes de navegar');
         return;
       }
 
-      print('[_saveAttendance] Navegando a detalle del entrenamiento');
       context.pushReplacement('/trainings/${widget.trainingId}');
-      print('[_saveAttendance] Navegación completada');
     } catch (e) {
       print('[_saveAttendance] Error al guardar: $e');
       if (mounted) {
@@ -524,7 +511,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         child: ElevatedButton(
           onPressed: _isSaving ? null : _saveAttendance,
           style: ElevatedButton.styleFrom(
-            backgroundColor: context.tokens.gray,
+            backgroundColor: context.tokens.secondaryButton,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -545,7 +532,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Symbols.check, size: 18, color: Colors.white),
                     SizedBox(width: 8),
                     Text(
