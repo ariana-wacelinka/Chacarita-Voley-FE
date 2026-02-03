@@ -3,6 +3,7 @@ import '../../domain/models/home_stats.dart';
 import '../../domain/models/notification_preview.dart';
 import '../../domain/models/training_preview.dart';
 import '../../domain/models/delivery_preview.dart';
+import '../../domain/models/deliveries_page.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 
 class HomeRepository {
@@ -221,6 +222,60 @@ class HomeRepository {
       return deliveries;
     } catch (e) {
       return [];
+    }
+  }
+
+  Future<DeliveriesPage> getUserDeliveries({
+    required String personId,
+    int page = 0,
+    int size = 10,
+  }) async {
+    final query =
+        '''
+      query GetUserDeliveries {
+        getAllDeliveries(
+          page: $page
+          size: $size
+          filters: {recipientId: "$personId", sentFrom: "", sentTo: "", status: SENT}
+        ) {
+          totalPages
+          totalElements
+          pageSize
+          pageNumber
+          hasPrevious
+          hasNext
+          content {
+            id
+            notification {
+              title
+              message
+            }
+          }
+        }
+      }
+    ''';
+
+    try {
+      final result = await _query(
+        QueryOptions(
+          document: gql(query),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        return DeliveriesPage.empty();
+      }
+
+      final data = result.data?['getAllDeliveries'] as Map<String, dynamic>?;
+
+      if (data == null) {
+        return DeliveriesPage.empty();
+      }
+
+      return DeliveriesPage.fromJson(data);
+    } catch (e) {
+      return DeliveriesPage.empty();
     }
   }
 }
