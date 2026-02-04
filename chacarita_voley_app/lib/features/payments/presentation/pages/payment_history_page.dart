@@ -296,7 +296,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               '/payments/create?userId=${widget.userId}&userName=${Uri.encodeComponent(widget.userName)}',
             );
           },
-          backgroundColor: context.tokens.redToRosita,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -319,10 +319,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   Widget _buildPagination(AppTokens tokens) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: tokens.card1,
-        border: Border(top: BorderSide(color: tokens.stroke)),
-      ),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

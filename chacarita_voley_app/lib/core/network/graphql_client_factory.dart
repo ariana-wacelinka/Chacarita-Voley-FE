@@ -3,22 +3,32 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/io_client.dart';
 
 class GraphQLClientFactory {
-  static late final GraphQLClient client;
+  static late GraphQLClient client;
   static bool _initialized = false;
-  static late final String _baseUrl;
+  static late String _baseUrl;
   static String? _token;
 
   static void init({required String baseUrl, String? token}) {
+    if (_initialized) {
+      // Si ya está inicializado, solo actualizar el cliente
+      _updateClient(token);
+      return;
+    }
+
     _baseUrl = baseUrl;
     _token = token;
+    _updateClient(token);
+    _initialized = true;
+  }
 
+  static void _updateClient(String? token) {
     final httpClient = HttpClient()
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 15);
 
     final ioClient = IOClient(httpClient);
     final httpLink = HttpLink(
-      baseUrl,
+      _baseUrl,
       httpClient: ioClient,
       defaultHeaders: {'Connection': 'close'},
     );
@@ -38,8 +48,6 @@ class GraphQLClientFactory {
         watchQuery: Policies(fetch: FetchPolicy.cacheAndNetwork),
       ),
     );
-
-    _initialized = true;
   }
 
   static String get baseUrl {
@@ -59,7 +67,7 @@ class GraphQLClientFactory {
       );
     }
     _token = newToken;
-    init(baseUrl: _baseUrl, token: newToken);
+    _updateClient(newToken);
   }
 
   /// Ejecuta una operación con un cliente HTTP "fresh" (IOClient nuevo)

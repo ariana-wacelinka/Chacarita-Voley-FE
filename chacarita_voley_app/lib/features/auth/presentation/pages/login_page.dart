@@ -86,6 +86,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await _authService.login(
         email: _usernameController.text.trim(),
         password: _passwordController.text,
+        rememberMe: _rememberMe,
       );
 
       print('✅ Login response recibido, obteniendo información del usuario...');

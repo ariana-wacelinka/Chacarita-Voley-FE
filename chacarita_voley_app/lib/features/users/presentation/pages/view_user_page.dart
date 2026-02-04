@@ -14,8 +14,14 @@ import '../../../../core/services/permissions_service.dart';
 class ViewUserPage extends StatefulWidget {
   final String userId;
   final String? from;
+  final String? refresh;
 
-  const ViewUserPage({super.key, required this.userId, this.from});
+  const ViewUserPage({
+    super.key,
+    required this.userId,
+    this.from,
+    this.refresh,
+  });
 
   @override
   State<ViewUserPage> createState() => _ViewUserPageState();
@@ -38,6 +44,28 @@ class _ViewUserPageState extends State<ViewUserPage> {
     _deleteUserUseCase = DeleteUserUseCase(_userRepository);
     _loadUserRoles();
     _loadUser();
+
+    // Log para debug
+    print('🔍 ViewUserPage initState');
+    print('  userId: ${widget.userId}');
+    print('  from: ${widget.from}');
+    print('  refresh: ${widget.refresh}');
+  }
+
+  @override
+  void didUpdateWidget(ViewUserPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Log para debug
+    print('🔄 ViewUserPage didUpdateWidget');
+    print('  old refresh: ${oldWidget.refresh}');
+    print('  new refresh: ${widget.refresh}');
+
+    // Si cambió el parámetro refresh, recargar datos
+    if (widget.refresh != oldWidget.refresh && widget.refresh == 'true') {
+      print('✅ Recargando datos por refresh=true');
+      _loadUser();
+    }
   }
 
   Future<void> _loadUserRoles() async {
@@ -63,15 +91,18 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Future<void> _loadUser() async {
+    print('📥 _loadUser called for userId: ${widget.userId}');
     try {
       final user = await _userRepository.getUserById(widget.userId);
       if (!mounted) return;
+      print('✅ User loaded: ${user?.nombre} ${user?.apellido}');
       setState(() {
         _user = user;
         _isLoading = false;
         _errorMessage = null;
       });
     } catch (e) {
+      print('❌ Error loading user: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -868,53 +899,70 @@ class _ViewUserPageState extends State<ViewUserPage> {
   Widget _buildActionButtons(BuildContext context) {
     // Si es mi propio perfil, siempre puedo editarlo
     if (_isOwnProfile) {
-      // Mostrar botones (ocultar delete si es jugador único)
+      // Mostrar botón grande (ocultar delete si es jugador único)
       final isPlayerOnly =
           _userRoles.contains('PLAYER') &&
           !_userRoles.contains('ADMIN') &&
           !_userRoles.contains('PROFESSOR');
 
-      return Row(
+      return Column(
         children: [
-          if (!isPlayerOnly)
-            IconButton(
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
               onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Confirmar eliminación'),
-                    content: const Text(
-                      '¿Estás seguro de que deseas eliminar este usuario?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancelar'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                        child: const Text('Eliminar'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirm == true) {
-                  _showDeleteDialog(context);
+                final from = widget.from;
+                final route = from != null
+                    ? '/users/${widget.userId}/edit?from=$from'
+                    : '/users/${widget.userId}/edit';
+                final result = await context.push(route);
+                if (result == true && mounted) {
+                  _loadUser();
                 }
               },
-              icon: const Icon(Icons.delete),
-              color: Colors.red,
-              tooltip: 'Eliminar usuario',
+              icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
+              label: const Text(
+                'Modificar usuario',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.tokens.secondaryButton,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
-          IconButton(
-            onPressed: () => context.go('/users/${widget.userId}/edit'),
-            icon: const Icon(Icons.edit),
-            tooltip: 'Modificar usuario',
           ),
+          if (!isPlayerOnly) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showDeleteDialog(context),
+                icon: const Icon(Symbols.delete, color: Colors.white, size: 18),
+                label: const Text(
+                  'Eliminar usuario',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       );
     }
@@ -940,7 +988,10 @@ class _ViewUserPageState extends State<ViewUserPage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
-              final route = '/users/${widget.userId}/edit';
+              final from = widget.from;
+              final route = from != null
+                  ? '/users/${widget.userId}/edit?from=$from'
+                  : '/users/${widget.userId}/edit';
               print('✏️ Modificar usuario clicked');
               print('🔗 Navegando a: $route');
               print('👤 isOwnProfile: $_isOwnProfile');

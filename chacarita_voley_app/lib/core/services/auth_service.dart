@@ -11,12 +11,14 @@ class AuthService {
   static const String _userIdKey = 'user_id';
   static const String _userNameKey = 'user_name';
   static const String _userRolesKey = 'user_roles';
+  static const String _rememberMeKey = 'remember_me';
 
   /// Login con email y password
   /// Por ahora en modo desarrollo: permite entrar aunque falle
   Future<AuthResponse> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     try {
       // Construir URL REST (sin /graphql)
@@ -105,7 +107,11 @@ class AuthService {
           email: email,
         );
 
+        // Guardar preferencia de recordarme
+        await _saveRememberMe(rememberMe);
+
         print('✅ Login exitoso');
+        print('🔒 Recordarme: $rememberMe');
         return authResponse;
       } else {
         print('❌ Login falló: ${response.statusCode}');
@@ -304,6 +310,13 @@ class AuthService {
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setString(_emailKey, email);
 
+    // Logs para debugging con Postman
+    print('\n================ TOKENS GUARDADOS ================');
+    print('🔑 Access Token: $accessToken');
+    print('🔄 Refresh Token: $refreshToken');
+    print('📧 Email: $email');
+    print('==================================================\n');
+
     // Actualizar el token en GraphQLClient
     GraphQLClientFactory.updateToken(accessToken);
   }
@@ -311,6 +324,11 @@ class AuthService {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
   }
 
   Future<String?> getEmail() async {
@@ -340,6 +358,16 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
+  Future<void> _saveRememberMe(bool rememberMe) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_rememberMeKey, rememberMe);
+  }
+
+  Future<bool> shouldRememberSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_rememberMeKey) ?? false;
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
@@ -348,6 +376,7 @@ class AuthService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userRolesKey);
+    await prefs.remove(_rememberMeKey);
 
     // Limpiar el token en GraphQLClient
     GraphQLClientFactory.updateToken(null);

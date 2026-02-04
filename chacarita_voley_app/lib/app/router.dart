@@ -38,12 +38,25 @@ final appRouter = GoRouter(
   initialLocation: '/login',
   redirect: (context, state) async {
     final isLoginPage = state.matchedLocation == '/login';
+    final authService = AuthService();
 
+    // Si estamos en login, verificar si debemos mantener la sesión
     if (isLoginPage) {
+      final shouldRemember = await authService.shouldRememberSession();
+      final token = await authService.getToken();
+
+      print(
+        '🔐 En login page - shouldRemember: $shouldRemember, hasToken: ${token != null}',
+      );
+
+      // Si tiene "recordarme" activo y tiene token, redirigir a home
+      if (shouldRemember && token != null) {
+        print('✅ Sesión recordada, redirigiendo a /home');
+        return '/home';
+      }
       return null;
     }
 
-    final authService = AuthService();
     final token = await authService.getToken();
 
     if (token == null) {
@@ -242,7 +255,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/users/:id/edit',
       name: 'users-edit',
-      builder: (_, state) => EditUserPage(userId: state.pathParameters['id']!),
+      builder: (_, state) => EditUserPage(
+        userId: state.pathParameters['id']!,
+        from: state.uri.queryParameters['from'],
+      ),
     ),
     GoRoute(
       path: '/users/:id/view',
@@ -250,6 +266,7 @@ final appRouter = GoRouter(
       builder: (_, state) => ViewUserPage(
         userId: state.pathParameters['id']!,
         from: state.uri.queryParameters['from'],
+        refresh: state.uri.queryParameters['refresh'],
       ),
     ),
     GoRoute(
