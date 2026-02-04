@@ -13,8 +13,9 @@ import '../../../../core/services/permissions_service.dart';
 
 class ViewUserPage extends StatefulWidget {
   final String userId;
+  final String? from;
 
-  const ViewUserPage({super.key, required this.userId});
+  const ViewUserPage({super.key, required this.userId, this.from});
 
   @override
   State<ViewUserPage> createState() => _ViewUserPageState();
@@ -53,7 +54,8 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   void _handleBack() {
-    if (_isOwnProfile) {
+    // Usar el parámetro 'from' si está disponible
+    if (widget.from == 'settings') {
       context.go('/settings');
     } else {
       context.go('/users');
@@ -864,9 +866,64 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    // Si es mi propio perfil, siempre puedo editarlo
+    if (_isOwnProfile) {
+      // Mostrar botones (ocultar delete si es jugador único)
+      final isPlayerOnly =
+          _userRoles.contains('PLAYER') &&
+          !_userRoles.contains('ADMIN') &&
+          !_userRoles.contains('PROFESSOR');
+
+      return Row(
+        children: [
+          if (!isPlayerOnly)
+            IconButton(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Confirmar eliminación'),
+                    content: const Text(
+                      '¿Estás seguro de que deseas eliminar este usuario?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancelar'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  _showDeleteDialog(context);
+                }
+              },
+              icon: const Icon(Icons.delete),
+              color: Colors.red,
+              tooltip: 'Eliminar usuario',
+            ),
+          IconButton(
+            onPressed: () => context.go('/users/${widget.userId}/edit'),
+            icon: const Icon(Icons.edit),
+            tooltip: 'Modificar usuario',
+          ),
+        ],
+      );
+    }
+
+    // Si no es mi perfil, aplicar restricciones normales
     // Verificar si el profesor está intentando editar un admin
     final isProfessorEditingAdmin =
         _userRoles.contains('PROFESSOR') &&
+        !_userRoles.contains('ADMIN') &&
         _user?.tipos.contains(UserType.administrador) == true;
 
     if (!_canEdit || isProfessorEditingAdmin) {

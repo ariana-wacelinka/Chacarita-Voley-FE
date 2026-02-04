@@ -142,9 +142,6 @@ class TeamRepository implements TeamRepositoryInterface {
       'name': searchQuery ?? '',
     };
 
-    debugPrint('📤 getTeamsListItems called');
-    debugPrint('📤 Variables: $variables');
-
     final result = await _query(
       QueryOptions(
         document: gql(_getAllTeamsQuery(minimal: true)),
@@ -153,8 +150,6 @@ class TeamRepository implements TeamRepositoryInterface {
       ),
     );
 
-    debugPrint('📥 Raw GraphQL result: ${result.data}');
-
     if (result.hasException) {
       debugPrint('❌ GraphQL exception: ${result.exception}');
       throw Exception(result.exception.toString());
@@ -162,8 +157,6 @@ class TeamRepository implements TeamRepositoryInterface {
 
     final content =
         (result.data?['getAllTeams']?['content'] as List<dynamic>?) ?? const [];
-
-    debugPrint('📥 Teams count: ${content.length}');
 
     return content
         .whereType<Map<String, dynamic>>()
@@ -183,9 +176,6 @@ class TeamRepository implements TeamRepositoryInterface {
       'name': searchQuery ?? '',
     };
 
-    debugPrint('📤 getTeams called');
-    debugPrint('📤 Variables: $variables');
-
     final result = await _query(
       QueryOptions(
         document: gql(_getAllTeamsQuery(minimal: true)),
@@ -193,8 +183,6 @@ class TeamRepository implements TeamRepositoryInterface {
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
-
-    debugPrint('📥 Raw GraphQL result: ${result.data}');
 
     if (result.hasException) {
       debugPrint('❌ GraphQL exception: ${result.exception}');
@@ -205,8 +193,6 @@ class TeamRepository implements TeamRepositoryInterface {
 
     final content =
         (result.data?['getAllTeams']?['content'] as List<dynamic>?) ?? const [];
-
-    debugPrint('📥 Teams count: ${content.length}');
 
     return content
         .whereType<Map<String, dynamic>>()
@@ -360,16 +346,6 @@ class TeamRepository implements TeamRepositoryInterface {
   Team _mapTeamResponseToTeam(TeamResponseModel model) {
     final professors = model.professors ?? [];
 
-    if (kDebugMode) {
-      print('🏐 Mapping team: ${model.name}');
-      print('   Professors count: ${professors.length}');
-      for (var prof in professors) {
-        print(
-          '   Professor: ${prof.person?.name} ${prof.person?.surname} (ID: ${prof.id})',
-        );
-      }
-    }
-
     return Team(
       id: model.id,
       nombre: model.name,
@@ -426,11 +402,6 @@ class TeamRepository implements TeamRepositoryInterface {
   TeamDetail _mapToTeamDetail(TeamResponseModel model) {
     final professors = model.professors ?? [];
 
-    if (kDebugMode) {
-      print('🏐 Mapping TeamDetail: ${model.name}');
-      print('   Players count: ${model.players?.length ?? 0}');
-    }
-
     return TeamDetail(
       id: model.id,
       nombre: model.name,
@@ -458,10 +429,6 @@ class TeamRepository implements TeamRepositoryInterface {
                 numeroAfiliado: player.leagueId?.toString(),
                 numeroCamiseta: player.jerseyNumber?.toString(),
               );
-              
-              if (kDebugMode) {
-                print('   Player: ${member.nombre} ${member.apellido} - playerId: ${member.playerId}, personId: ${member.personId}, dni: ${member.dni}');
-              }
               
               return member;
             },

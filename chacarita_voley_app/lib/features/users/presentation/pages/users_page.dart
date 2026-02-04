@@ -578,7 +578,7 @@ class _UsersPageState extends State<UsersPage> {
                                                 onTap: () {
                                                   Future.microtask(() {
                                                     context.go(
-                                                      '/users/${user.id}/view',
+                                                      '/users/${user.id}/view?from=users',
                                                     );
                                                   });
                                                 },

@@ -2,8 +2,6 @@ import 'package:intl/intl.dart';
 import '../entities/pay.dart';
 import '../entities/create_pay_input.dart';
 import '../entities/update_pay_input.dart';
-import '../../../users/domain/entities/user.dart';
-
 class PayMapper {
   static final DateFormat _displayFormat = DateFormat('dd/MM/yyyy');
   static final DateFormat _isoFormat = DateFormat('yyyy-MM-dd');

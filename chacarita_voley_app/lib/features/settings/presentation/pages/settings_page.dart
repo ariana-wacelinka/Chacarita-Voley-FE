@@ -130,13 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: 'Ver mi perfil',
                     showArrow: true,
                     onTap: () {
-                      print('🔍 Settings - Ver mi perfil clicked');
-                      print('👤 userId: $_userId');
-                      print('🎭 isPlayer: $isPlayer');
-                      print('🎭 hasPlayerRole: $hasPlayerRole');
-                      final route = '/users/$_userId/view';
-                      print('🚀 Navegando a: $route');
-                      context.go(route);
+                      context.go('/users/$_userId/view?from=settings');
                     },
                   ),
                   // Mostrar pagos y asistencias solo para admin/profesor con rol player

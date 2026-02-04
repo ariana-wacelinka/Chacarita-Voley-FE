@@ -69,7 +69,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         final trainings = await repository.getPlayerTrainings(
           _userId.toString(),
         );
-        print('🔍 DEBUG: HomePage recibió ${trainings.length} entrenamientos');
         if (mounted) {
           setState(() {
             _stats = stats;

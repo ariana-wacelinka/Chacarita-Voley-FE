@@ -52,7 +52,7 @@ class GraphQLClientFactory {
   static String? get token => _token;
 
   /// Actualiza el token y reinicializa el cliente
-  static void updateToken(String newToken) {
+  static void updateToken(String? newToken) {
     if (!_initialized) {
       throw StateError(
         'GraphQLClientFactory.init must be called first before updating token',

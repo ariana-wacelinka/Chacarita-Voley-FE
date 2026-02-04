@@ -247,7 +247,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/users/:id/view',
       name: 'users-view',
-      builder: (_, state) => ViewUserPage(userId: state.pathParameters['id']!),
+      builder: (_, state) => ViewUserPage(
+        userId: state.pathParameters['id']!,
+        from: state.uri.queryParameters['from'],
+      ),
     ),
     GoRoute(
       path: '/users/:id/attendance',

@@ -80,9 +80,6 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   }
 
   Future<void> _downloadReceipt(Pay payment) async {
-    print('🔵 Descargando comprobante para pago ${payment.id}');
-    print('fileName: ${payment.fileName}');
-
     setState(() => _downloadingFiles[payment.id] = true);
 
     try {

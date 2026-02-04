@@ -594,18 +594,10 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       if (result != null && mounted) {
         // Subir el archivo al servidor usando updatePaymentReceipt
         try {
-          print('📤 Subiendo archivo al servidor...');
-          print('Payment ID: ${widget.payment.id}');
-          print('Archivo: ${result['fileName']}');
-
           final uploadResult = await FileUploadService.updatePaymentReceipt(
             paymentId: widget.payment.id,
             file: File(result['fileUrl']!),
           );
-
-          print('✅ Archivo subido exitosamente');
-          print('fileName: ${uploadResult['fileName']}');
-          print('fileUrl: ${uploadResult['fileUrl']}');
 
           if (mounted) {
             setState(() {

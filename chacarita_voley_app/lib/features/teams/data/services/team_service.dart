@@ -25,7 +25,6 @@ class TeamService implements TeamServiceInterface {
 
   @override
   Future<TeamResponseModel> createTeam(CreateTeamRequestModel request) async {
-    print('🔧 createTeam - input: ${request.toJson()}');
     final result = await _graphQLClient.mutate(
       MutationOptions(
         document: gql(_createTeamMutation),
@@ -38,7 +37,6 @@ class TeamService implements TeamServiceInterface {
       throw Exception(result.exception.toString());
     }
 
-    print('✅ createTeam success: ${result.data}');
     return TeamResponseModel.fromJson(
       result.data!['createTeam'] as Map<String, dynamic>,
     );
@@ -228,8 +226,6 @@ class TeamService implements TeamServiceInterface {
     List<String> playerIds,
   ) async {
     final playersIdsStr = playerIds.join(',');
-    print('🔧 addPlayersToTeam - teamId: $teamId, playersIds: $playersIdsStr');
-
     final result = await _graphQLClient.mutate(
       MutationOptions(
         document: gql(_addPlayersToTeamMutation),
@@ -242,7 +238,6 @@ class TeamService implements TeamServiceInterface {
       throw Exception(result.exception.toString());
     }
 
-    print('✅ addPlayersToTeam success');
     return TeamResponseModel.fromJson(
       result.data!['addPlayersToTeam'] as Map<String, dynamic>,
     );

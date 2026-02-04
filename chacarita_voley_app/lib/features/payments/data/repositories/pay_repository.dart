@@ -362,7 +362,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ ValidatePay Exception: ${result.exception}');
       throw result.exception!;
     }
 
@@ -409,7 +408,6 @@ class PayRepository implements PayRepositoryInterface {
       );
 
       if (result.hasException) {
-        print('❌ [getPayById] Exception: ${result.exception}');
         return null;
       }
 
@@ -418,7 +416,6 @@ class PayRepository implements PayRepositoryInterface {
 
       return Pay.fromJson(payData as Map<String, dynamic>);
     } catch (e) {
-      print('❌ [getPayById] Error: $e');
       return null;
     }
   }
@@ -455,7 +452,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ RejectPay Exception: ${result.exception}');
       throw result.exception!;
     }
 
@@ -476,10 +472,6 @@ class PayRepository implements PayRepositoryInterface {
       if (input.amount != null) 'amount': input.amount,
       if (input.date != null) 'date': input.date,
     };
-
-    print('🔷 UpdatePay Mutation:');
-    print('ID: ${input.id}');
-    print('Input: $inputMap');
 
     final result = await _mutate(
       MutationOptions(
@@ -511,7 +503,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ UpdatePay Exception: ${result.exception}');
       throw result.exception!;
     }
 
@@ -556,7 +547,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ SetPendingPay Exception: ${result.exception}');
       throw result.exception!;
     }
 

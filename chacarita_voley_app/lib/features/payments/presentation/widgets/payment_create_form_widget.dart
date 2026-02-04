@@ -116,8 +116,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     final repo = UserRepository();
     _allUsers = await repo
         .getUsersForPayments(); // Solo jugadores con player.id
-    if (_allUsers.isEmpty) {
-      _allUsers = _getDummyUsers(); // Fallback dummy
+      if (_allUsers.isEmpty) {
+        _allUsers = []; // Fallback empty list
     }
     _filteredUsers = [];
   }
@@ -133,9 +133,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   void _selectUser(User user) {
-    print(
-      '🔍 Usuario seleccionado: ${user.nombreCompleto} (ID: ${user.id}, PlayerID: ${user.playerId})',
-    );
     setState(() {
       _selectedUser = user;
       _searchController.text = user.nombreCompleto;
@@ -153,7 +150,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   Future<void> _loadDuesForPlayer(User user) async {
     // Validar que el usuario tenga playerId
     if (user.playerId == null) {
-      print('⚠️ Usuario ${user.nombreCompleto} no tiene playerId');
       setState(() {
         _availableDues = [];
         _selectedDue = null;
@@ -162,7 +158,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       return;
     }
 
-    print('🔄 Cargando cuotas para playerId: ${user.playerId}');
     setState(() => _isLoadingDues = true);
 
     try {
@@ -171,13 +166,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         user.playerId!,
         states: [DueState.PENDING, DueState.OVERDUE],
       );
-
-      print('✅ Cuotas obtenidas: ${dues.length}');
-      if (dues.isNotEmpty) {
-        print(
-          '📋 Cuotas: ${dues.map((d) => '${d.period} (${d.state}, pay: ${d.pay?.state})').join(', ')}',
-        );
-      }
 
       // Aplicar lógica de filtrado según estado de pago
       List<CurrentDue> filteredDues = dues;
@@ -188,9 +176,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         if (due.pay != null &&
             (due.pay!.state == PayState.PENDING ||
                 due.pay!.state == PayState.REJECTED)) {
-          print(
-            '⚠️ Cuota única con pago ${due.pay!.state} - mostrando mensaje',
-          );
           filteredDues = [];
         }
       }
@@ -203,9 +188,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         if (currentMonthDue.pay != null &&
             currentMonthDue.pay!.state == PayState.PENDING) {
-          print(
-            '⚠️ Cuota del mes actual con pago PENDING - filtrando solo OVERDUE',
-          );
           filteredDues = dues
               .where((due) => due.state == DueState.OVERDUE)
               .toList();
@@ -222,9 +204,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               (due) => due.state == DueState.PENDING,
               orElse: () => filteredDues.first,
             );
-            print(
-              '✅ Cuota seleccionada automáticamente: ${_selectedDue?.period}',
-            );
           }
         });
       }
@@ -237,38 +216,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         });
       }
     }
-  }
-
-  List<User> _getDummyUsers() {
-    return [
-      User(
-        id: '1',
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1990, 1, 1),
-        genero: Gender.masculino,
-        email: 'juan@example.com',
-        telefono: '123456789',
-        equipo: 'Equipo A',
-        tipos: {UserType.jugador},
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        id: '2',
-        dni: '87654321',
-        nombre: 'Maria',
-        apellido: 'Gonzalez',
-        fechaNacimiento: DateTime(1995, 5, 5),
-        genero: Gender.femenino,
-        email: 'maria@example.com',
-        telefono: '987654321',
-        equipo: 'Equipo B',
-        tipos: {UserType.jugador},
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      // Agrega más dummies si necesitas
-    ];
   }
 
   @override

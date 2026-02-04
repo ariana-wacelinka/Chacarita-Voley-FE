@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../environment.dart';
+import '../network/graphql_client_factory.dart';
 
 class AuthService {
   static const String _tokenKey = 'auth_token';
@@ -302,6 +303,9 @@ class AuthService {
     await prefs.setString(_tokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setString(_emailKey, email);
+
+    // Actualizar el token en GraphQLClient
+    GraphQLClientFactory.updateToken(accessToken);
   }
 
   Future<String?> getToken() async {
@@ -344,6 +348,9 @@ class AuthService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userRolesKey);
+
+    // Limpiar el token en GraphQLClient
+    GraphQLClientFactory.updateToken(null);
   }
 }
 

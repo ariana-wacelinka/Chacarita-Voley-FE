@@ -236,10 +236,6 @@ class HomeRepository {
         return [];
       }
 
-      print(
-        '🔍 DEBUG: getPlayerTrainings recibió ${content.length} entrenamientos',
-      );
-
       final trainings = content.map((json) {
         final dateString = json['date'] as String?;
         return TrainingPreview.fromJson(
@@ -247,10 +243,6 @@ class HomeRepository {
           dateString ?? '',
         );
       }).toList();
-
-      print(
-        '🔍 DEBUG: getPlayerTrainings parseó ${trainings.length} entrenamientos',
-      );
 
       return trainings;
     } catch (e) {

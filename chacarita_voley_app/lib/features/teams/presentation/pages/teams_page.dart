@@ -89,13 +89,9 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   void _onSearchChanged(String value) {
-    debugPrint('🔍 Search changed: "$value"');
-
     _debounceTimer?.cancel();
 
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      debugPrint('⏱️ Debounce fired for "$value"');
-
       setState(() {
         _searchQuery = value;
         _currentPage = 0;
@@ -259,13 +255,6 @@ class _TeamsPageState extends State<TeamsPage> {
               child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,
                 builder: (context, snapshot) {
-                  debugPrint(
-                    '🧱 FutureBuilder state: '
-                    'connection=${snapshot.connectionState} '
-                    'hasData=${snapshot.hasData} '
-                    'hasError=${snapshot.hasError}',
-                  );
-
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
                       child: CircularProgressIndicator(
@@ -300,8 +289,6 @@ class _TeamsPageState extends State<TeamsPage> {
                   }
 
                   final teams = snapshot.data ?? [];
-                  debugPrint('🧱 Teams in UI: ${teams.length}');
-
                   if (teams.isEmpty) {
                     return Center(
                       child: Column(

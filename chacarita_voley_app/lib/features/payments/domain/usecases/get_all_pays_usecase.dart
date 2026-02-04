@@ -1,8 +1,4 @@
-import 'dart:ffi';
-
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_page.dart';
-
-import '../entities/pay.dart';
 import '../entities/pay_filter_input.dart';
 import '../repositories/pay_repository_interface.dart';
 

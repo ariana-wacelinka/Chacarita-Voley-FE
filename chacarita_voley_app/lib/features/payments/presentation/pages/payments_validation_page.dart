@@ -100,13 +100,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         _hasNext = payPage.hasNext;
         _hasPrevious = payPage.hasPrevious;
         _isLoading = false;
-
-        // Debug: verificar fileName
-        for (final pay in _pays) {
-          print(
-            'Pay ${pay.id}: fileName="${pay.fileName}" (isEmpty: ${(pay.fileName?.isEmpty ?? true)})',
-          );
-        }
       });
     } catch (e) {
       setState(() => _isLoading = false);
