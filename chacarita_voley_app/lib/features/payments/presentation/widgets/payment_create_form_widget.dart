@@ -75,7 +75,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
-        _isPlayer = PermissionsService.isPlayer(_userRoles);
+        // Ocultar estado si el usuario tiene rol PLAYER (aunque tenga PROFESSOR/ADMIN)
+        _isPlayer = _userRoles.contains('PLAYER');
       });
 
       // Si es player, cargar automáticamente su usuario
@@ -109,6 +110,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       setState(() {
         _searchController.text = _selectedUser!.nombreCompleto;
       });
+      // Cargar cuotas del usuario pre-seleccionado
+      _loadDuesForPlayer(_selectedUser!);
     }
   }
 
@@ -116,8 +119,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     final repo = UserRepository();
     _allUsers = await repo
         .getUsersForPayments(); // Solo jugadores con player.id
-      if (_allUsers.isEmpty) {
-        _allUsers = []; // Fallback empty list
+    if (_allUsers.isEmpty) {
+      _allUsers = []; // Fallback empty list
     }
     _filteredUsers = [];
   }
@@ -468,36 +471,37 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         const SizedBox(height: 16),
 
-        // Sección Estado del pago con card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: tokens.card1,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.stroke),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.info_outline, color: tokens.text, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Estado del pago',
-                    style: TextStyle(
-                      color: tokens.text,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+        // Sección Estado del pago con card - Solo visible para ADMIN/PROFESOR
+        if (!_isPlayer)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: tokens.card1,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.stroke),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: tokens.text, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Estado del pago',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildStatusRadioGroup(tokens),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildStatusRadioGroup(tokens),
+              ],
+            ),
           ),
-        ),
 
         const SizedBox(height: 24),
 
@@ -506,10 +510,23 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
+              print('🔵 ========== BOTÓN REGISTRAR PAGO PRESIONADO ==========');
+
               if (_selectedUser == null ||
                   _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
+                print('❌ Validación fallida: campos incompletos');
+                print(
+                  '   - Usuario seleccionado: ${_selectedUser?.nombreCompleto ?? "null"}',
+                );
+                print('   - Cuota seleccionada: ${_selectedDue?.id ?? "null"}');
+                print('   - Monto: ${_montoController.text}');
+                print('   - Fecha: ${_fechaController.text}');
+                print(
+                  '=======================================================',
+                );
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Completa todos los campos requeridos'),
@@ -528,6 +545,13 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               );
 
               if (selectedDate.isAfter(todayDateOnly)) {
+                print('❌ Validación fallida: fecha futura');
+                print('   - Fecha seleccionada: $selectedDate');
+                print('   - Hoy: $todayDateOnly');
+                print(
+                  '=======================================================',
+                );
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text(
@@ -539,9 +563,22 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 return;
               }
 
+              print('✅ Validaciones pasadas, creando objeto Pay...');
+              print('👤 Usuario: ${_selectedUser!.nombreCompleto}');
+              print('🆔 Due ID: ${_selectedDue!.id}');
+              print('💰 Monto: ${_montoController.text}');
+              print('📅 Fecha: ${_fechaController.text}');
+              print(
+                '📊 Estado seleccionado: ${_isPlayer ? "PENDING (forzado por jugador)" : _selectedStatus.name}',
+              );
+              print('📄 Comprobante: ${_comprobanteFileName ?? "sin archivo"}');
+              print('=======================================================');
+
               final newPayment = payment_entities.Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-                status: _selectedStatus,
+                status: _isPlayer
+                    ? payment_state.PayState.pending
+                    : _selectedStatus,
                 amount: double.parse(_montoController.text),
                 date: _dateFormat.format(
                   _dateFormat.parse(_fechaController.text),

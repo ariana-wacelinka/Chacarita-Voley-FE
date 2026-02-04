@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
+import '../../domain/entities/create_pay_input.dart';
 import '../../domain/usecases/create_pay_usecase.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../widgets/payment_create_form_widget.dart'; // Import del nuevo widget
@@ -38,6 +40,29 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     });
 
     try {
+      // Convertir fecha de dd/MM/yyyy a yyyy-MM-dd (formato ISO)
+      final inputFormat = DateFormat('dd/MM/yyyy');
+      final outputFormat = DateFormat('yyyy-MM-dd');
+      final parsedDate = inputFormat.parse(newPay.date);
+      final isoDate = outputFormat.format(parsedDate);
+
+      // Crear input para el backend
+      final input = CreatePayInput(
+        dueId: dueId,
+        fileName: newPay.fileName != null && newPay.fileName!.isNotEmpty
+            ? newPay.fileName
+            : null,
+        fileUrl: newPay.fileUrl != null && newPay.fileUrl!.isNotEmpty
+            ? newPay.fileUrl
+            : null,
+        date: isoDate, // Usar fecha en formato ISO
+        amount: newPay.amount,
+        state: newPay.status.name.toUpperCase(),
+      );
+
+      // Llamada real al backend
+      final createdPay = await _createPaymentUseCase.execute(input);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -71,9 +96,13 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
           ),
         );
 
-        context.go(
-          '/payments',
-        ); // O a historial si userId presente: '/users/${newPayment.userId}/payments'
+        if (widget.userId != null && widget.userName != null) {
+          context.go(
+            '/users/${widget.userId}/payments?userName=${Uri.encodeComponent(widget.userName!)}',
+          );
+        } else {
+          context.go('/payments');
+        }
       }
     } catch (e) {
       // Determinar el mensaje de error apropiado

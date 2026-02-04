@@ -46,6 +46,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
     final userId = await authService.getUserId();
+
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];

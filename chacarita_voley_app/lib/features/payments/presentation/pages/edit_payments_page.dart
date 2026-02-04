@@ -96,6 +96,20 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
     }
   }
 
+  void _navigateBack() {
+    final state = GoRouterState.of(context);
+    final from = state.uri.queryParameters['from'];
+    final userId = state.uri.queryParameters['userId'];
+
+    if (from == 'payment-history' && userId != null) {
+      // Usar pop para volver y disparar el .then() en la página de origen
+      context.pop();
+    } else {
+      // Por defecto o si viene de 'validation', volver a la lista de validación
+      context.go('/payments');
+    }
+  }
+
   Future<void> _handleUpdatePayment(Pay updatedPay) async {
     // setState(() {
     //   _isLoading = true;
@@ -138,10 +152,8 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
           ),
         );
 
-        // Navegar de vuelta y forzar refresh con timestamp único
-        context.go(
-          '/payments?refresh=${DateTime.now().millisecondsSinceEpoch}',
-        );
+        // Navegar de vuelta según origen
+        _navigateBack();
       }
     } catch (e) {
       if (mounted) {
@@ -194,7 +206,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: () => context.go('/payments'), // O ruta anterior
+          onPressed: _navigateBack,
         ),
         title: Text(
           'Modificar Pago',
@@ -234,7 +246,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => context.go('/payments'),
+                    onPressed: _navigateBack,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: tokens.redToRosita,
                     ),

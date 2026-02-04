@@ -6,10 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 import '../environment.dart';
-import '../network/graphql_client_factory.dart';
+import 'auth_service.dart';
 
 class FileUploadService {
   static const bool _mockUpload = false;
@@ -112,7 +111,8 @@ class FileUploadService {
       );
       final request = http.MultipartRequest('POST', url);
 
-      final token = GraphQLClientFactory.token;
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
@@ -165,7 +165,8 @@ class FileUploadService {
 
     try {
       final url = Uri.parse(getPaymentReceiptUrl(paymentId: paymentId));
-      final token = GraphQLClientFactory.token;
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       // Solo agregar token si existe y no es el token mock de desarrollo
       final headers = token != null
           ? {'Authorization': 'Bearer $token'}
@@ -263,7 +264,8 @@ class FileUploadService {
 
       final request = http.MultipartRequest('PUT', url);
 
-      final token = GraphQLClientFactory.token;
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
         print('Token presente: ${token.length} caracteres');

@@ -859,7 +859,15 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          context.push('/payments/edit/${payment.id}');
+                          context
+                              .push(
+                                '/payments/edit/${payment.id}?from=validation',
+                              )
+                              .then((_) {
+                                // Recargar datos después de editar
+                                _loadStats();
+                                _loadPays();
+                              });
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(

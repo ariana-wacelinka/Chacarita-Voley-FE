@@ -12,6 +12,10 @@ class AuthService {
   static const String _userNameKey = 'user_name';
   static const String _userRolesKey = 'user_roles';
   static const String _rememberMeKey = 'remember_me';
+  static const String _tokenExpiresAtKey = 'token_expires_at';
+
+  // Lock para evitar múltiples refresh simultáneos
+  Future<AuthResponse?>? _refreshInFlight;
 
   /// Login con email y password
   /// Por ahora en modo desarrollo: permite entrar aunque falle
@@ -105,6 +109,7 @@ class AuthService {
           accessToken: authResponse.accessToken,
           refreshToken: authResponse.refreshToken,
           email: email,
+          expiresIn: authResponse.expiresIn,
         );
 
         // Guardar preferencia de recordarme
@@ -127,16 +132,19 @@ class AuthService {
   /// Obtener información del usuario autenticado
   Future<AuthUser?> getCurrentUser() async {
     try {
-      final token = await getToken();
-      if (token == null || token.isEmpty) {
-        print('❌ No hay token disponible');
+      // Usar getValidAccessToken() que maneja renovación proactiva
+      final token = await getValidAccessToken();
+      if (token == null) {
+        print('❌ No hay token válido disponible');
         return null;
       }
 
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/me');
 
-      print('👤 Obteniendo información del usuario: $url');
+      final half = (token.length / 2).ceil();
+      print('PARTE_1: ${token.substring(0, half)}');
+      print('PARTE_2: ${token.substring(half)}');
 
       final response = await http
           .get(
@@ -154,13 +162,9 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body completo: ${response.body}');
-
       // Manejar redirecciones
       if (response.statusCode == 301 || response.statusCode == 302) {
         final location = response.headers['location'];
-        print('🔄 Redirigido a: $location');
         if (location != null) {
           final redirectUrl = Uri.parse(location);
           final redirectResponse = await http.get(
@@ -169,9 +173,6 @@ class AuthService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-          );
-          print(
-            '📡 Status code después de redirección: ${redirectResponse.statusCode}',
           );
 
           if (redirectResponse.statusCode == 200) {
@@ -304,18 +305,18 @@ class AuthService {
     required String accessToken,
     required String refreshToken,
     required String email,
+    int? expiresIn,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setString(_emailKey, email);
 
-    // Logs para debugging con Postman
-    print('\n================ TOKENS GUARDADOS ================');
-    print('🔑 Access Token: $accessToken');
-    print('🔄 Refresh Token: $refreshToken');
-    print('📧 Email: $email');
-    print('==================================================\n');
+    // Guardar timestamp de expiración
+    if (expiresIn != null) {
+      final expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+      await prefs.setInt(_tokenExpiresAtKey, expiresAt.millisecondsSinceEpoch);
+    }
 
     // Actualizar el token en GraphQLClient
     GraphQLClientFactory.updateToken(accessToken);
@@ -324,6 +325,50 @@ class AuthService {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
+  }
+
+  /// Obtiene un access token válido, renovándolo proactivamente si está por expirar
+  Future<String?> getValidAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final expiresAtMs = prefs.getInt(_tokenExpiresAtKey);
+
+    if (token == null) {
+      print('❌ No hay token disponible');
+      return null;
+    }
+
+    // Si no tenemos timestamp de expiración, asumir que es válido
+    // (para retrocompatibilidad con tokens guardados sin expiresAt)
+    if (expiresAtMs == null) {
+      print('⚠️ Token sin timestamp de expiración, asumiendo válido');
+      return token;
+    }
+
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(expiresAtMs);
+    final now = DateTime.now();
+    final timeUntilExpiry = expiresAt.difference(now);
+
+    // Margen de seguridad: renovar si quedan menos de 60 segundos
+    if (timeUntilExpiry.inSeconds < 60) {
+      print('🔄 Token por expirar (${timeUntilExpiry.inSeconds}s), renovando proactivamente...');
+      
+      try {
+        final refreshed = await refreshToken();
+        if (refreshed != null) {
+          print('✅ Token renovado proactivamente');
+          return refreshed.accessToken;
+        } else {
+          print('❌ No se pudo renovar el token');
+          return null;
+        }
+      } catch (e) {
+        print('🔥 Error al renovar token proactivamente: $e');
+        return null;
+      }
+    }
+
+    return token;
   }
 
   Future<String?> getRefreshToken() async {
@@ -369,6 +414,47 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    try {
+      final refreshToken = await getRefreshToken();
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+        final url = Uri.parse('$restBaseUrl/api/auth/logout');
+
+        print('🚪 Llamando a logout endpoint: $url');
+
+        try {
+          final response = await http
+              .post(
+                url,
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({'refreshToken': refreshToken}),
+              )
+              .timeout(
+                const Duration(seconds: 10),
+                onTimeout: () {
+                  print('⏱️ Timeout en logout');
+                  throw Exception('Timeout al hacer logout');
+                },
+              );
+
+          print('📡 Logout status code: ${response.statusCode}');
+
+          if (response.statusCode == 200 || response.statusCode == 204) {
+            print('✅ Logout exitoso en backend');
+          } else {
+            print('⚠️ Logout en backend fallo: ${response.statusCode}');
+          }
+        } catch (e) {
+          print('❌ Error al llamar logout endpoint: $e');
+          // Continuar con limpieza local aunque falle el backend
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error obteniendo refresh token: $e');
+    }
+
+    // Limpiar datos locales siempre
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_refreshTokenKey);
@@ -377,9 +463,97 @@ class AuthService {
     await prefs.remove(_userNameKey);
     await prefs.remove(_userRolesKey);
     await prefs.remove(_rememberMeKey);
+    await prefs.remove(_tokenExpiresAtKey);
 
     // Limpiar el token en GraphQLClient
     GraphQLClientFactory.updateToken(null);
+    print('🧹 Datos locales limpiados');
+  }
+
+  /// Renovar el access token usando el refresh token
+  Future<AuthResponse?> refreshToken() async {
+    // Si ya hay un refresh en progreso, esperar a que termine
+    if (_refreshInFlight != null) {
+      print('⏳ Refresh ya en progreso, esperando...');
+      return _refreshInFlight!;
+    }
+
+    // Iniciar nuevo refresh y guardarlo para que otros esperen
+    _refreshInFlight = _doRefreshToken().whenComplete(() {
+      _refreshInFlight = null;
+    });
+
+    return _refreshInFlight!;
+  }
+
+  /// Lógica interna de refresh (llamada solo por refreshToken)
+  Future<AuthResponse?> _doRefreshToken() async {
+    try {
+      final currentRefreshToken = await getRefreshToken();
+
+      if (currentRefreshToken == null || currentRefreshToken.isEmpty) {
+        print('❌ No hay refresh token disponible');
+        return null;
+      }
+
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final url = Uri.parse('$restBaseUrl/api/auth/refresh');
+
+      print('🔄 Renovando token en: $url');
+
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'refreshToken': currentRefreshToken}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏱️ Timeout en refresh token');
+              throw Exception('Timeout al renovar token');
+            },
+          );
+
+      print('📡 Refresh status code: ${response.statusCode}');
+      print('📦 Refresh response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+
+        final authResponse = AuthResponse(
+          accessToken: data['accessToken'] as String,
+          refreshToken: data['refreshToken'] as String,
+          expiresIn: data['expiresIn'] as int,
+          tokenType: data['tokenType'] as String? ?? 'Bearer',
+        );
+
+        final email = await getEmail();
+        if (email != null) {
+          await _saveTokens(
+            accessToken: authResponse.accessToken,
+            refreshToken: authResponse.refreshToken,
+            email: email,
+            expiresIn: authResponse.expiresIn,
+          );
+        }
+
+        print('✅ Token renovado exitosamente');
+        return authResponse;
+      } else {
+        print('❌ Error al renovar token: ${response.statusCode}');
+        print('❌ Body: ${response.body}');
+        // Si el refresh token es inválido, limpiar sesión
+        if (response.statusCode == 401) {
+          print('🚨 Refresh token inválido, cerrando sesión');
+          await logout();
+        }
+        return null;
+      }
+    } catch (e) {
+      print('🔥 Error en refresh token: $e');
+      return null;
+    }
   }
 }
 

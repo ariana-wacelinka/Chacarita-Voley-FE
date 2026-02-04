@@ -188,6 +188,18 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     }
   }
 
+  void _handleEdit(Pay payment) {
+    print('✏️ Editando pago ${payment.id}');
+    context
+        .push(
+          '/payments/edit/${payment.id}?userId=${widget.userId}&userName=${Uri.encodeComponent(widget.userName)}&from=payment-history',
+        )
+        .then((_) {
+          // Recargar datos después de editar
+          _loadData();
+        });
+  }
+
   void _nextPage() {
     if (_hasNext) {
       setState(() => _currentPage++);
@@ -279,7 +291,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                         currentDue: _currentDue,
                         onFiltersChanged: _onFiltersChanged,
                         onDownload: _handleDownload,
+                        onEdit: _handleEdit,
                         downloadingFiles: _downloadingFiles,
+                        startDate: _startDate,
+                        endDate: _endDate,
                       ),
                     ),
                   ),
