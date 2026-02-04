@@ -79,8 +79,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         _isPlayer = _userRoles.contains('PLAYER');
       });
 
-      // Si es player, cargar automáticamente su usuario
-      if (_isPlayer && userId != null) {
+      // Si es player Y NO viene un initialUserId (no viene desde historial de otra persona),
+      // cargar automáticamente su usuario
+      if (_isPlayer && userId != null && widget.initialUserId == null) {
         _loadPlayerUser(userId.toString());
       }
     }

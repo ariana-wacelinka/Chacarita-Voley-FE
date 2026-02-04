@@ -14,10 +14,6 @@ class FileUploadService {
   static const bool _mockUpload = false;
   static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
 
-  static final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
-  static bool _notificationsInitialized = false;
-
   /// Obtiene el MediaType correcto según la extensión del archivo
   static MediaType _getMediaType(String fileName) {
     final extension = fileName.toLowerCase().split('.').last;
@@ -33,6 +29,10 @@ class FileUploadService {
         return MediaType('application', 'octet-stream');
     }
   }
+
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  static bool _notificationsInitialized = false;
 
   static Future<void> _initNotifications() async {
     if (_notificationsInitialized) return;
@@ -117,14 +117,11 @@ class FileUploadService {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      // Leer archivo como bytes y especificar Content-Type explícitamente
-      final fileBytes = await file.readAsBytes();
       final mediaType = _getMediaType(fileName);
       request.files.add(
-        http.MultipartFile.fromBytes(
+        await http.MultipartFile.fromPath(
           'file',
-          fileBytes,
-          filename: fileName,
+          file.path,
           contentType: mediaType,
         ),
       );
@@ -167,7 +164,6 @@ class FileUploadService {
       final url = Uri.parse(getPaymentReceiptUrl(paymentId: paymentId));
       final authService = AuthService();
       final token = await authService.getValidAccessToken();
-      // Solo agregar token si existe y no es el token mock de desarrollo
       final headers = token != null
           ? {'Authorization': 'Bearer $token'}
           : <String, String>{};
@@ -255,47 +251,25 @@ class FileUploadService {
       final url = Uri.parse(
         '${Environment.restBaseUrl}/api/pays/$paymentId/receipt',
       );
-
-      print('🔷 PUT Request Details:');
-      print('URL: $url');
-      print('File path: ${file.path}');
-      print('File exists: ${await file.exists()}');
-      print('File size: ${await file.length()} bytes');
-
       final request = http.MultipartRequest('PUT', url);
 
       final authService = AuthService();
       final token = await authService.getValidAccessToken();
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
-        print('Token presente: ${token.length} caracteres');
-      } else {
-        print('⚠️ Token ausente!');
       }
 
-      // Leer archivo como bytes y especificar Content-Type explícitamente
-      final fileBytes = await file.readAsBytes();
       final mediaType = _getMediaType(fileName);
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          fileBytes,
-          filename: fileName,
-          contentType: mediaType,
-        ),
+      final multipartFile = await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: mediaType,
       );
 
-      print('Headers: ${request.headers}');
-      print('Files count: ${request.files.length}');
-      print('Field name: ${request.files.first.field}');
-      print('Filename: ${request.files.first.filename}');
-      print('Content-Type: ${mediaType.mimeType}');
+      request.files.add(multipartFile);
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonData = json.decode(response.body);
