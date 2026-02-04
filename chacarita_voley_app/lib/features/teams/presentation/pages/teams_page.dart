@@ -34,6 +34,7 @@ class _TeamsPageState extends State<TeamsPage> {
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canDelete = false;
+  bool _canCreate = false;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _TeamsPageState extends State<TeamsPage> {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canDelete = PermissionsService.canDeleteTeam(_userRoles);
+        _canCreate = PermissionsService.canCreateTeam(_userRoles);
       });
     }
   }
@@ -606,23 +608,25 @@ class _TeamsPageState extends State<TeamsPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await context.push<bool>('/teams/register');
+      floatingActionButton: _canCreate
+          ? FloatingActionButton(
+              onPressed: () async {
+                final created = await context.push<bool>('/teams/register');
 
-          if (created == true && mounted) {
-            setState(() {
-              _teamsFuture = _repository.getTeamsListItems(
-                searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                page: _currentPage,
-                size: _teamsPerPage,
-              );
-            });
-          }
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Symbols.group_add, color: Colors.white),
-      ),
+                if (created == true && mounted) {
+                  setState(() {
+                    _teamsFuture = _repository.getTeamsListItems(
+                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+                      page: _currentPage,
+                      size: _teamsPerPage,
+                    );
+                  });
+                }
+              },
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Symbols.group_add, color: Colors.white),
+            )
+          : null,
     );
   }
 }

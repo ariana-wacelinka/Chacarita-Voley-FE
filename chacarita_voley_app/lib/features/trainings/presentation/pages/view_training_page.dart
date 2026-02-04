@@ -452,7 +452,7 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
             child: ElevatedButton(
               onPressed: () => _showDeleteDialog(context, training),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.redToRosita,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),

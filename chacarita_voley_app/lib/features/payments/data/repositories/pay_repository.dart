@@ -524,5 +524,50 @@ class PayRepository implements PayRepositoryInterface {
     return updatedPay;
   }
 
+  @override
+  Future<Pay> setPendingPay(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql('''
+          mutation SetPendingPay(\$id: ID!) {
+            setPendingPay(id: \$id) {
+              id
+              state
+              amount
+              date
+              fileName
+              fileUrl
+              createdAt
+              updateAt
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
+            }
+          }
+        '''),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      print('❌ SetPendingPay Exception: ${result.exception}');
+      throw result.exception!;
+    }
+
+    final payData = result.data!['setPendingPay'] as Map<String, dynamic>;
+    final updatedPay = Pay.fromJson(payData);
+
+    // Actualizar caché
+    _paysCache[updatedPay.id] = updatedPay;
+
+    return updatedPay;
+  }
+
   // Agrega getPayById, etc.
 }

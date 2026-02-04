@@ -864,7 +864,12 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    if (!_canEdit) {
+    // Verificar si el profesor está intentando editar un admin
+    final isProfessorEditingAdmin =
+        _userRoles.contains('PROFESSOR') &&
+        _user?.tipos.contains(UserType.administrador) == true;
+
+    if (!_canEdit || isProfessorEditingAdmin) {
       return const SizedBox.shrink();
     }
 

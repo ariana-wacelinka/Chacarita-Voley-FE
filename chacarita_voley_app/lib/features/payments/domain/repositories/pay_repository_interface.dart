@@ -32,4 +32,6 @@ abstract class PayRepositoryInterface {
   Future<Pay> validatePay(String id);
 
   Future<Pay> rejectPay(String id);
+
+  Future<Pay> setPendingPay(String id);
 }

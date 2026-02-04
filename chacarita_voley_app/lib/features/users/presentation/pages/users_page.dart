@@ -601,7 +601,13 @@ class _UsersPageState extends State<UsersPage> {
                                                   ],
                                                 ),
                                               ),
-                                              if (_canEdit)
+                                              if (_canEdit &&
+                                                  !(_userRoles.contains(
+                                                        'PROFESSOR',
+                                                      ) &&
+                                                      user.tipos.contains(
+                                                        UserType.administrador,
+                                                      )))
                                                 PopupMenuItem(
                                                   onTap: () {
                                                     Future.microtask(() async {
