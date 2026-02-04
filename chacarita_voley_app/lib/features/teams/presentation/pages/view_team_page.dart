@@ -33,6 +33,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canEditUser = false;
+  bool _canDelete = false;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canEditUser = PermissionsService.canEditUser(_userRoles);
+        _canDelete = PermissionsService.canDeleteTeam(_userRoles);
       });
     }
   }
@@ -1111,27 +1113,31 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // Botón Eliminar equipo
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _handleDeleteTeam,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              if (_canDelete) ...[
+                const SizedBox(height: 12),
+                // Botón Eliminar equipo
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _handleDeleteTeam,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Symbols.delete, size: 18),
+                    label: const Text(
+                      'Eliminar equipo',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Symbols.delete, size: 18),
-                  label: const Text(
-                    'Eliminar equipo',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
                 ),
-              ),
+              ],
             ],
             const SizedBox(height: 20),
           ],
