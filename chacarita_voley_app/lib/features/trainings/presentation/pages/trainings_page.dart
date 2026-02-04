@@ -1114,13 +1114,34 @@ class _TrainingsPageState extends State<TrainingsPage>
                     ),
                   ],
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -12),
-                  child: Text(
-                    'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
-                    style: TextStyle(
-                      color: context.tokens.placeholder,
-                      fontSize: 12,
+                Padding(
+                  padding: const EdgeInsets.only(right: 50),
+                  child: Transform.translate(
+                    offset: const Offset(0, -12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        if (training.teamName != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            training.teamName!,
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
