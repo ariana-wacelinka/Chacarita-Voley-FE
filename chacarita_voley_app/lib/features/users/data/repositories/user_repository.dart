@@ -107,6 +107,7 @@ class UserRepository implements UserRepositoryInterface {
     }
     professor {
       id
+      teams { id isCompetitive name abbreviation }
     }
   ''';
 
@@ -524,6 +525,28 @@ class UserRepository implements UserRepositoryInterface {
 
     final professor = person['professor'] as Map<String, dynamic>?;
 
+    // Si tiene rol PROFESSOR y no es jugador (o no tiene equipos como jugador), usar equipos del profesor
+    final professorTeams = (professor?['teams'] as List<dynamic>?) ?? const [];
+    final isProfessor = tipos.contains(UserType.profesor);
+    final isPlayer = tipos.contains(UserType.jugador);
+
+    final equiposFinales = (isPlayer && equipos.isNotEmpty)
+        ? equipos
+        : (isProfessor && professorTeams.isNotEmpty)
+        ? professorTeams
+              .map((t) {
+                final teamMap = t as Map<String, dynamic>;
+                return TeamInfo(
+                  id: teamMap['id'] as String? ?? '',
+                  name: teamMap['name'] as String? ?? '',
+                  abbreviation: teamMap['abbreviation'] as String? ?? '',
+                  isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
+                );
+              })
+              .where((team) => team.id.isNotEmpty)
+              .toList()
+        : equipos;
+
     // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
     CurrentDue? currentDue;
@@ -553,7 +576,7 @@ class UserRepository implements UserRepositoryInterface {
       numeroCamiseta: jerseyNumber?.toString(),
       numeroAfiliado: leagueId?.toString(),
       equipo: equipo,
-      equipos: equipos,
+      equipos: equiposFinales,
       tipos: tipos,
       estadoCuota: estadoCuota,
       currentDue: currentDue,

@@ -75,8 +75,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
-        // Ocultar estado si el usuario tiene rol PLAYER (aunque tenga PROFESSOR/ADMIN)
-        _isPlayer = _userRoles.contains('PLAYER');
+        // Mostrar estado solo si tiene rol ADMIN
+        _isPlayer = !_userRoles.contains('ADMIN');
       });
 
       // Si es player Y NO viene un initialUserId (no viene desde historial de otra persona),
