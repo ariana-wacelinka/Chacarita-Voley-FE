@@ -21,7 +21,6 @@ class PayRepository implements PayRepositoryInterface {
     int size = 10,
     PayFilterInput? filters,
   }) async {
-    // Construir filtros dinámicamente (sin state si es null)
     final Map<String, dynamic> filtersMap = {};
 
     if (filters?.state != null) {
