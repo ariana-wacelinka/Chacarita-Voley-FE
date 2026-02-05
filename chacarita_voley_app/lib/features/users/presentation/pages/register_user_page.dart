@@ -41,6 +41,8 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
     });
 
     try {
+      await _createUserUseCase.execute(user);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
