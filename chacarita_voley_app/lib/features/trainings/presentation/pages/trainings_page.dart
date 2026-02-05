@@ -846,11 +846,8 @@ class _TrainingsPageState extends State<TrainingsPage>
     final endIndex = (_currentPage * _itemsPerPage) + _trainings.length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.tokens.background,
-        border: Border(top: BorderSide(color: context.tokens.stroke)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

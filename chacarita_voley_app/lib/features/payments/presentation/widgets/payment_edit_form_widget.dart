@@ -12,6 +12,7 @@ class PaymentEditFormWidget extends StatefulWidget {
   final Pay payment;
   final DateFormat dateFormat;
   final Function(Pay updatedPayment) onSave;
+  final VoidCallback? onReceiptUpdated;
   final bool isSaving;
 
   const PaymentEditFormWidget({
@@ -19,6 +20,7 @@ class PaymentEditFormWidget extends StatefulWidget {
     required this.payment,
     required this.dateFormat,
     required this.onSave,
+    this.onReceiptUpdated,
     required this.isSaving,
   });
 
@@ -630,6 +632,8 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
               _comprobanteFileName = uploadResult['fileName'];
               _isUploadingFile = false;
             });
+
+            widget.onReceiptUpdated?.call();
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

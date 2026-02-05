@@ -41,7 +41,11 @@ class FileUploadService {
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-    const initSettings = InitializationSettings(android: androidSettings);
+    const iosSettings = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
     await _notifications.initialize(
       initSettings,
@@ -54,6 +58,29 @@ class FileUploadService {
           }
         }
       },
+    );
+
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await androidPlugin?.requestNotificationsPermission();
+    const channel = AndroidNotificationChannel(
+      'downloads',
+      'Descargas',
+      description: 'Notificaciones de descargas completadas',
+      importance: Importance.high,
+    );
+    await androidPlugin?.createNotificationChannel(channel);
+
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    await iosPlugin?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
     );
 
     _notificationsInitialized = true;

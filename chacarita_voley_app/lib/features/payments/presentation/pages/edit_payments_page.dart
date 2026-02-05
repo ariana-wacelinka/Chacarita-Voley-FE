@@ -23,6 +23,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
   late final PayRepository _repository;
   Pay? _payment; // El pago a editar (null hasta cargar)
   bool _isLoading = true;
+  bool _hasChanges = false;
 
   // Formato de fecha (puedes mover a un util si es global)
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -97,15 +98,9 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
   }
 
   void _navigateBack() {
-    final state = GoRouterState.of(context);
-    final from = state.uri.queryParameters['from'];
-    final userId = state.uri.queryParameters['userId'];
-
-    if (from == 'payment-history' && userId != null) {
-      // Usar pop para volver y disparar el .then() en la página de origen
-      context.pop();
+    if (context.canPop()) {
+      context.pop(_hasChanges);
     } else {
-      // Por defecto o si viene de 'validation', volver a la lista de validación
       context.go('/payments');
     }
   }
@@ -120,6 +115,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
       await _updatePaymentUseCase.execute(PayMapper.toUpdateInput(updatedPay));
 
       if (mounted) {
+        _hasChanges = true;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -264,6 +260,9 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
                 payment: _payment!,
                 dateFormat: _dateFormat,
                 onSave: _handleUpdatePayment,
+                onReceiptUpdated: () {
+                  _hasChanges = true;
+                },
                 isSaving: _isLoading,
               ),
             ),

@@ -128,19 +128,25 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       );
 
       if (mounted) {
+        final topPadding = MediaQuery.of(context).padding.top;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Comprobante descargado exitosamente'),
             backgroundColor: context.tokens.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final topPadding = MediaQuery.of(context).padding.top;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al descargar comprobante: $e'),
             backgroundColor: context.tokens.redToRosita,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
           ),
         );
       }
@@ -937,11 +943,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     final endIndex = (_currentPage * _itemsPerPage) + _pays.length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.tokens.background,
-        border: Border(top: BorderSide(color: context.tokens.stroke)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

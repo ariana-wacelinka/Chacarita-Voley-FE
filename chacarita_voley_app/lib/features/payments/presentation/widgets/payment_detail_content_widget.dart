@@ -259,19 +259,25 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
       );
 
       if (mounted) {
+        final topPadding = MediaQuery.of(context).padding.top;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Comprobante descargado exitosamente'),
             backgroundColor: context.tokens.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final topPadding = MediaQuery.of(context).padding.top;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al descargar comprobante: $e'),
             backgroundColor: context.tokens.redToRosita,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
           ),
         );
       }
