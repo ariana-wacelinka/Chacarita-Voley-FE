@@ -214,15 +214,9 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
-  static const String _deletePlayerMutation = r'''
-    mutation DeletePlayer($id: ID!) {
-      deletePlayer(id: $id)
-    }
-  ''';
-
-  static const String _deleteProfessorMutation = r'''
-    mutation DeleteProfessor($id: ID!) {
-      deleteProfessor(id: $id)
+  static const String _deletePersonMutation = r'''
+    mutation DeletePerson($id: ID!) {
+      deletePerson(id: $id)
     }
   ''';
 
@@ -480,30 +474,12 @@ class UserRepository implements UserRepositoryInterface {
     print('Iniciando eliminación de usuario con ID: $id');
 
     try {
-      // Primero obtener el usuario para determinar su rol
-      print('Obteniendo datos del usuario para determinar rol...');
-      final user = await getUserById(id);
-      if (user == null) {
-        print('ERROR: Usuario con ID $id no encontrado');
-        throw Exception('Usuario no encontrado');
-      }
-      print('Usuario encontrado: ${user.nombreCompleto}');
-      print('Roles del usuario: ${user.tipos}');
-
-      // Determinar qué mutation usar según el rol principal
-      String mutation;
-      if (user.tipos.contains(UserType.profesor)) {
-        mutation = _deleteProfessorMutation;
-        print('Usando mutation: deleteProfessor');
-      } else {
-        // Por defecto usar deletePlayer (jugadores y admins)
-        mutation = _deletePlayerMutation;
-        print('Usando mutation: deletePlayer');
-      }
-
-      print('Ejecutando mutation de eliminación...');
+      print('Ejecutando mutation deletePerson...');
       final result = await _mutate(
-        MutationOptions(document: gql(mutation), variables: {'id': id}),
+        MutationOptions(
+          document: gql(_deletePersonMutation),
+          variables: {'id': id},
+        ),
       );
 
       if (result.hasException) {
