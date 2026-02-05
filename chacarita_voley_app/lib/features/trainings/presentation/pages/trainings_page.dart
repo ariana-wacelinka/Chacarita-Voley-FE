@@ -1198,8 +1198,14 @@ class _TrainingsPageState extends State<TrainingsPage>
                 const SizedBox(height: 16),
                 InkWell(
                   onTap: training.status != TrainingStatus.cancelado
-                      ? () =>
-                            context.push('/trainings/${training.id}/attendance')
+                      ? () async {
+                          final result = await context.push(
+                            '/trainings/${training.id}/attendance',
+                          );
+                          if (result == true && mounted) {
+                            await _loadTrainings();
+                          }
+                        }
                       : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(

@@ -125,6 +125,7 @@ class PlayerAttendance {
   final String playerName;
   final bool isPresent;
   final EstadoCuota? estadoCuota;
+  final String? assistanceId;
 
   PlayerAttendance({
     required this.playerId,
@@ -132,6 +133,7 @@ class PlayerAttendance {
     required this.playerName,
     required this.isPresent,
     this.estadoCuota,
+    this.assistanceId,
   });
 
   PlayerAttendance copyWith({
@@ -140,6 +142,7 @@ class PlayerAttendance {
     String? playerName,
     bool? isPresent,
     EstadoCuota? estadoCuota,
+    String? assistanceId,
   }) {
     return PlayerAttendance(
       playerId: playerId ?? this.playerId,
@@ -147,6 +150,7 @@ class PlayerAttendance {
       playerName: playerName ?? this.playerName,
       isPresent: isPresent ?? this.isPresent,
       estadoCuota: estadoCuota ?? this.estadoCuota,
+      assistanceId: assistanceId ?? this.assistanceId,
     );
   }
 }
