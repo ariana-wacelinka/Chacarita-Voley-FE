@@ -48,13 +48,8 @@ final appRouter = GoRouter(
       final shouldRemember = await authService.shouldRememberSession();
       final token = await authService.getToken();
 
-      print(
-        '🔐 En login page - shouldRemember: $shouldRemember, hasToken: ${token != null}',
-      );
-
       // Si tiene "recordarme" activo y tiene token, redirigir a home
       if (shouldRemember && token != null) {
-        print('✅ Sesión recordada, redirigiendo a /home');
         return '/home';
       }
       return null;
@@ -74,14 +69,8 @@ final appRouter = GoRouter(
     final roles = await authService.getUserRoles() ?? [];
     final userId = await authService.getUserId();
     final path = state.matchedLocation;
-
-    print('🔀 Router redirect - Path: $path');
-    print('👤 User roles: $roles');
-    print('🆔 User ID: $userId');
-
     // Extraer el ID de la URL si existe
     final userIdInPath = RegExp(r'/users/(\d+)').firstMatch(path)?.group(1);
-    print('🔢 User ID en path: $userIdInPath');
 
     // Permitir a los jugadores acceder a su propio historial
     final isOwnPaymentHistory =
@@ -98,11 +87,6 @@ final appRouter = GoRouter(
     final isOwnEdit =
         RegExp(r'^/users/\d+/edit$').hasMatch(path) &&
         userIdInPath == userId.toString();
-
-    print('💳 isOwnPaymentHistory: $isOwnPaymentHistory');
-    print('✅ isOwnAttendanceHistory: $isOwnAttendanceHistory');
-    print('👨 isOwnProfile: $isOwnProfile');
-    print('✏️ isOwnEdit: $isOwnEdit');
 
     // Usuarios - excluir historial propio de pagos y asistencias
     if (path.startsWith('/users') &&

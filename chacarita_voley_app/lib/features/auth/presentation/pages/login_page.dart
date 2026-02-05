@@ -92,8 +92,6 @@ class _LoginPageState extends State<LoginPage> {
       // Obtener información del usuario
       final user = await _authService.getCurrentUser();
       if (user != null) {
-        print('✅ Información del usuario obtenida exitosamente');
-        print('   Usuario: ${user.fullName}');
       } else {
         print('⚠️ No se pudo obtener la información del usuario');
       }

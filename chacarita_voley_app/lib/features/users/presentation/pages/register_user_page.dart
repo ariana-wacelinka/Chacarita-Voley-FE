@@ -36,27 +36,11 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
   }
 
   Future<bool> _handleSaveUser(User user) async {
-    print('========== REGISTER USER PAGE ==========');
-    print('Iniciando registro de usuario: ${user.nombreCompleto}');
-    print('DNI: ${user.dni}');
-    print('Email: ${user.email}');
-    print('Tipos: ${user.tipos}');
-    print('Teléfono: ${user.telefono}');
-    print('Género: ${user.genero}');
-    print('Fecha nacimiento: ${user.fechaNacimiento}');
-    print('Número camiseta: ${user.numeroCamiseta}');
-    print('Número afiliado: ${user.numeroAfiliado}');
-    print('========================================');
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      print('Llamando a CreateUserUseCase.execute()...');
-      final createdUser = await _createUserUseCase.execute(user);
-      print('Usuario creado exitosamente. ID: ${createdUser.id}');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -94,10 +78,8 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
       }
       return true; // Éxito
     } catch (e, stackTrace) {
-      print('========== ERROR EN REGISTER USER ==========');
       print('Error: $e');
       print('Stack trace: $stackTrace');
-      print('===========================================');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

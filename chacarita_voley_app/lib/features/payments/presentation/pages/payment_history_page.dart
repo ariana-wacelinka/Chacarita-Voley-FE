@@ -192,7 +192,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   }
 
   void _handleEdit(Pay payment) {
-    print('✏️ Editando pago ${payment.id}');
     context
         .push(
           '/payments/edit/${payment.id}?userId=${widget.userId}&userName=${Uri.encodeComponent(widget.userName)}&from=payment-history',

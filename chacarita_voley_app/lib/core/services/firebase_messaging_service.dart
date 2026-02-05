@@ -38,9 +38,6 @@ class FirebaseMessagingService {
       sound: true,
     );
 
-    if (kDebugMode) {
-      print('FCM Permission status: ${settings.authorizationStatus}');
-    }
   }
 
   Future<void> _getAndRegisterToken() async {

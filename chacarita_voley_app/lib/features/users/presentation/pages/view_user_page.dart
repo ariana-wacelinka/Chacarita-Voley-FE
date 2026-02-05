@@ -44,26 +44,14 @@ class _ViewUserPageState extends State<ViewUserPage> {
     _deleteUserUseCase = DeleteUserUseCase(_userRepository);
     _loadUserRoles();
     _loadUser();
-
-    // Log para debug
-    print('🔍 ViewUserPage initState');
-    print('  userId: ${widget.userId}');
-    print('  from: ${widget.from}');
-    print('  refresh: ${widget.refresh}');
   }
 
   @override
   void didUpdateWidget(ViewUserPage oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Log para debug
-    print('🔄 ViewUserPage didUpdateWidget');
-    print('  old refresh: ${oldWidget.refresh}');
-    print('  new refresh: ${widget.refresh}');
-
     // Si cambió el parámetro refresh, recargar datos
     if (widget.refresh != oldWidget.refresh && widget.refresh == 'true') {
-      print('✅ Recargando datos por refresh=true');
       _loadUser();
     }
   }
@@ -96,11 +84,9 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Future<void> _loadUser() async {
-    print('📥 _loadUser called for userId: ${widget.userId}');
     try {
       final user = await _userRepository.getUserById(widget.userId);
       if (!mounted) return;
-      print('✅ User loaded: ${user?.nombre} ${user?.apellido}');
       setState(() {
         _user = user;
         _isLoading = false;
@@ -133,10 +119,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-      '🎬 ViewUserPage.build() - userId: ${widget.userId}, isLoading: $_isLoading, user: ${_user?.nombreCompleto}',
-    );
-
     if (_isLoading) {
       return Scaffold(
         backgroundColor: context.tokens.background,
@@ -991,12 +973,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
         _isOwnProfile && PermissionsService.isPlayer(_userRoles);
     final canDelete = PermissionsService.canDeleteUser(_userRoles);
 
-    print(
-      '📋 _buildButtons - isPlayerOnly: $isPlayerOnly, canDelete: $canDelete',
-    );
-    print('   _isOwnProfile: $_isOwnProfile, _userRoles: $_userRoles');
-    print('   Condición botón eliminar: ${!isPlayerOnly && canDelete}');
-
     return Column(
       children: [
         SizedBox(
@@ -1007,10 +983,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
               final route = from != null
                   ? '/users/${widget.userId}/edit?from=$from'
                   : '/users/${widget.userId}/edit';
-              print('✏️ Modificar usuario clicked');
-              print('🔗 Navegando a: $route');
-              print('👤 isOwnProfile: $_isOwnProfile');
-              print('🎭 isPlayer: ${PermissionsService.isPlayer(_userRoles)}');
               final result = await context.push(route);
               // Si se editó exitosamente, recargar datos
               if (result == true && mounted) {
@@ -1040,15 +1012,10 @@ class _ViewUserPageState extends State<ViewUserPage> {
           const SizedBox(height: 12),
           Builder(
             builder: (context) {
-              print('🔴 RENDERIZANDO BOTÓN DE ELIMINAR');
-              print('  - isPlayerOnly: $isPlayerOnly');
-              print('  - canDelete: $canDelete');
-              print('  - userId: ${widget.userId}');
               return SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    print('🔴 BOTÓN ELIMINAR PRESIONADO');
                     _showDeleteDialog(context);
                   },
                   icon: const Icon(
@@ -1081,11 +1048,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Future<void> _showDeleteDialog(BuildContext context) async {
-    print('========== _showDeleteDialog LLAMADO ==========');
-    print('Mostrando diálogo de confirmación para eliminar usuario');
-    print('User ID: ${widget.userId}');
-    print('User: ${_user?.nombreCompleto}');
-
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1118,14 +1080,8 @@ class _ViewUserPageState extends State<ViewUserPage> {
     );
 
     if (shouldDelete == true) {
-      print('========== VIEW USER PAGE - DELETE ==========');
-      print('Usuario confirmó eliminación');
-      print('ID del usuario a eliminar: ${widget.userId}');
       try {
-        print('Llamando a deleteUserUseCase.execute()...');
         await _deleteUserUseCase.execute(widget.userId);
-        print('Eliminación completada exitosamente');
-        print('============================================');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1136,10 +1092,8 @@ class _ViewUserPageState extends State<ViewUserPage> {
           _handleBack();
         }
       } catch (e, stackTrace) {
-        print('========== ERROR AL ELIMINAR USUARIO ==========');
         print('Error: $e');
         print('Stack trace: $stackTrace');
-        print('===============================================');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

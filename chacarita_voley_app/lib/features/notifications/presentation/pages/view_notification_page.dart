@@ -83,18 +83,13 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
       // Cargar jugadores
       if (playerIds.isNotEmpty) {
-        print('🔍 playerIds needed: $playerIds');
         final users = await _userRepository.getUsersForNotifications();
-        print('📋 Total users loaded: ${users.length}');
         for (var user in users) {
           final userId = user.id;
-          print('  User: ${user.nombre} ${user.apellido} - id: $userId');
           if (userId != null && playerIds.contains(userId)) {
             _playerNames[userId] = '${user.nombre} ${user.apellido}';
-            print('  ✅ Matched player: $userId = ${user.nombre} ${user.apellido}');
           }
         }
-        print('🎯 Final _playerNames: $_playerNames');
       }
     } catch (e) {
       print('Error loading team/player names: $e');

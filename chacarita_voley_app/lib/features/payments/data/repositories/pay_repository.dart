@@ -288,17 +288,6 @@ class PayRepository implements PayRepositoryInterface {
 
   @override
   Future<Pay> createPay(CreatePayInput input) async {
-    print('📤 ========== CREAR PAGO - REQUEST ==========');
-    print('🔷 Endpoint: GraphQL mutation createPay');
-    print('🔷 DueId: ${input.toJson()['dueId']}');
-    print('🔷 Input completo:');
-    print('   - state: ${input.toJson()['input']['state']}');
-    print('   - amount: ${input.toJson()['input']['amount']}');
-    print('   - date: ${input.toJson()['input']['date']}');
-    print('   - fileName: ${input.toJson()['input']['fileName']}');
-    print('   - fileUrl: ${input.toJson()['input']['fileUrl']}');
-    print('============================================');
-
     final result = await _mutate(
       MutationOptions(
         document: gql('''
@@ -328,23 +317,16 @@ class PayRepository implements PayRepositoryInterface {
       ),
     );
 
-    print('📥 ========== CREAR PAGO - RESPONSE ==========');
     if (result.hasException) {
-      print('❌ ERROR en createPay:');
-      print('   - Exception: ${result.exception}');
+      print('❌ ERROR en createPay: ${result.exception}');
       if (result.exception?.graphqlErrors != null) {
         print('   - GraphQL Errors: ${result.exception!.graphqlErrors}');
       }
       if (result.exception?.linkException != null) {
         print('   - Link Exception: ${result.exception!.linkException}');
       }
-      print('==============================================');
       throw result.exception!;
     }
-
-    print('✅ Respuesta exitosa:');
-    print('   - Data: ${result.data}');
-    print('==============================================');
 
     final payData = result.data!['createPay'] as Map<String, dynamic>;
     final newPay = Pay.fromJson(payData);

@@ -371,16 +371,8 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<User> createUser(User user) async {
-    print('========== USER REPOSITORY - CREATE USER ==========');
-    print('Iniciando createUser en repositorio');
-
     try {
-      print('Mapeando usuario a input de creación...');
       final input = _mapUserToCreateInput(user);
-      print('Input generado:');
-      print(input);
-
-      print('Ejecutando mutación createPerson...');
       final result = await _mutate(
         MutationOptions(
           document: gql(_createPersonMutation()),
@@ -389,8 +381,7 @@ class UserRepository implements UserRepositoryInterface {
       );
 
       if (result.hasException) {
-        print('GraphQL Exception detectada:');
-        print('Exception: ${result.exception}');
+        print('GraphQL Exception detectada: ${result.exception}');
         if (result.exception?.graphqlErrors != null) {
           print('GraphQL Errors:');
           for (var error in result.exception!.graphqlErrors) {
@@ -405,25 +396,17 @@ class UserRepository implements UserRepositoryInterface {
         throw Exception(result.exception.toString());
       }
 
-      print('Mutación ejecutada exitosamente');
-      print('Respuesta recibida: ${result.data}');
-
       final data = result.data?['createPerson'] as Map<String, dynamic>?;
       if (data == null) {
         print('ERROR: Respuesta no contiene datos de createPerson');
         throw Exception('Respuesta inválida de createPerson');
       }
-
-      print('Mapeando respuesta a entidad User...');
       final mappedUser = _mapPersonToUser(data);
-      print('Usuario creado exitosamente con ID: ${mappedUser.id}');
-      print('==================================================');
       return mappedUser;
     } catch (e, stackTrace) {
       print('ERROR en createUser:');
       print('Exception: $e');
       print('Stack trace: $stackTrace');
-      print('==================================================');
       rethrow;
     }
   }
@@ -470,11 +453,7 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<void> deleteUser(String id) async {
-    print('========== USER REPOSITORY - DELETE USER ==========');
-    print('Iniciando eliminación de usuario con ID: $id');
-
     try {
-      print('Ejecutando mutation deletePerson...');
       final result = await _mutate(
         MutationOptions(
           document: gql(_deletePersonMutation),
@@ -498,15 +477,10 @@ class UserRepository implements UserRepositoryInterface {
         }
         throw Exception(result.exception.toString());
       }
-
-      print('Usuario eliminado exitosamente desde repositorio');
-      print('Respuesta: ${result.data}');
-      print('==================================================');
     } catch (e, stackTrace) {
       print('ERROR en deleteUser:');
       print('Exception: $e');
       print('Stack trace: $stackTrace');
-      print('==================================================');
       rethrow;
     }
   }

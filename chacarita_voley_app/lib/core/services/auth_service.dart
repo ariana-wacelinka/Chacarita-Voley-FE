@@ -29,9 +29,6 @@ class AuthService {
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/login');
 
-      print('🔐 Intentando login en: $url');
-      print('📧 Email: $email');
-
       final response = await http
           .post(
             url,
@@ -46,13 +43,9 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
-
       // Manejar redirecciones
       if (response.statusCode == 301 || response.statusCode == 302) {
         final location = response.headers['location'];
-        print('🔄 Redirigido a: $location');
         if (location != null) {
           // Seguir la redirección manualmente
           final redirectUrl = Uri.parse(location);
@@ -60,12 +53,6 @@ class AuthService {
             redirectUrl,
             headers: {'Content-Type': 'application/json'},
             body: json.encode({'email': email, 'password': password}),
-          );
-          print(
-            '📡 Status code después de redirección: ${redirectResponse.statusCode}',
-          );
-          print(
-            '📦 Response body después de redirección: ${redirectResponse.body}',
           );
 
           if (redirectResponse.statusCode == 200) {
@@ -82,7 +69,6 @@ class AuthService {
               refreshToken: authResponse.refreshToken,
               email: email,
             );
-            print('✅ Login exitoso');
             return authResponse;
           } else {
             print(
@@ -114,9 +100,6 @@ class AuthService {
 
         // Guardar preferencia de recordarme
         await _saveRememberMe(rememberMe);
-
-        print('✅ Login exitoso');
-        print('🔒 Recordarme: $rememberMe');
         return authResponse;
       } else {
         print('❌ Login falló: ${response.statusCode}');
@@ -124,7 +107,6 @@ class AuthService {
         throw Exception('Error de autenticación: $errorBody');
       }
     } catch (e) {
-      print('🔥 Error en login: $e');
       rethrow;
     }
   }
@@ -135,8 +117,6 @@ class AuthService {
       final url = Uri.parse(
         '${Environment.restBaseUrl}/api/auth/forgot-password',
       );
-
-      print('🔐 Solicitando reseteo de contraseña para: $email');
 
       final response = await http
           .post(
@@ -151,10 +131,7 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ Email de recuperación enviado exitosamente');
         return;
       } else {
         print('❌ Error al enviar email: ${response.statusCode}');
@@ -179,10 +156,6 @@ class AuthService {
 
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/me');
-
-      final half = (token.length / 2).ceil();
-      print('PARTE_1: ${token.substring(0, half)}');
-      print('PARTE_2: ${token.substring(half)}');
 
       final response = await http
           .get(
@@ -216,24 +189,8 @@ class AuthService {
           if (redirectResponse.statusCode == 200) {
             final data =
                 json.decode(redirectResponse.body) as Map<String, dynamic>;
-            print('📋 Datos del usuario parseados:');
-            print('   - ID: ${data['id']}');
-            print('   - Name: ${data['name']}');
-            print('   - Surname: ${data['surname']}');
-            print('   - DNI: ${data['dni']}');
-            print('   - Email: ${data['email']}');
-            print('   - Phone: ${data['phone']}');
-            print('   - BirthDate: ${data['birthDate']}');
-            print('   - Gender: ${data['gender']}');
-            print('   - Roles: ${data['roles']}');
-
             final user = AuthUser.fromJson(data);
             await _saveUserInfo(user);
-            print('✅ Usuario obtenido: ${user.name} ${user.surname}');
-            print('   - Roles procesados: ${user.roles}');
-            print('   - Es admin: ${user.isAdmin}');
-            print('   - Es profesor: ${user.isProfesor}');
-            print('   - Es jugador: ${user.isJugador}');
             return user;
           } else {
             print(
@@ -246,30 +203,11 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        print('📋 Datos del usuario parseados:');
-        print('   - ID: ${data['id']}');
-        print('   - Name: ${data['name']}');
-        print('   - Surname: ${data['surname']}');
-        print('   - DNI: ${data['dni']}');
-        print('   - Email: ${data['email']}');
-        print('   - Phone: ${data['phone']}');
-        print('   - BirthDate: ${data['birthDate']}');
-        print('   - Gender: ${data['gender']}');
-        print('   - Roles: ${data['roles']}');
-
         final user = AuthUser.fromJson(data);
 
-        // Guardar información del usuario
         await _saveUserInfo(user);
-
-        print('✅ Usuario obtenido: ${user.name} ${user.surname}');
-        print('   - Roles procesados: ${user.roles}');
-        print('   - Es admin: ${user.isAdmin}');
-        print('   - Es profesor: ${user.isProfesor}');
-        print('   - Es jugador: ${user.isJugador}');
         return user;
       } else {
-        print('❌ Error al obtener usuario: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -299,8 +237,6 @@ class AuthService {
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/change-password');
 
-      print('🔐 Cambiando contraseña en: $url');
-
       final response = await http
           .post(
             url,
@@ -318,12 +254,8 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
-
       // 200 OK o 204 No Content son exitosos
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ Contraseña cambiada exitosamente');
         return;
       } else if (response.statusCode == 401) {
         print('❌ Contraseña actual incorrecta');
@@ -379,7 +311,6 @@ class AuthService {
     // Si no tenemos timestamp de expiración, asumir que es válido
     // (para retrocompatibilidad con tokens guardados sin expiresAt)
     if (expiresAtMs == null) {
-      print('⚠️ Token sin timestamp de expiración, asumiendo válido');
       return token;
     }
 
@@ -389,14 +320,9 @@ class AuthService {
 
     // Margen de seguridad: renovar si quedan menos de 60 segundos
     if (timeUntilExpiry.inSeconds < 60) {
-      print(
-        '🔄 Token por expirar (${timeUntilExpiry.inSeconds}s), renovando proactivamente...',
-      );
-
       try {
         final refreshed = await refreshToken();
         if (refreshed != null) {
-          print('✅ Token renovado proactivamente');
           return refreshed.accessToken;
         } else {
           print('❌ No se pudo renovar el token');
@@ -461,8 +387,6 @@ class AuthService {
         final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
         final url = Uri.parse('$restBaseUrl/api/auth/logout');
 
-        print('🚪 Llamando a logout endpoint: $url');
-
         try {
           final response = await http
               .post(
@@ -481,7 +405,6 @@ class AuthService {
           print('📡 Logout status code: ${response.statusCode}');
 
           if (response.statusCode == 200 || response.statusCode == 204) {
-            print('✅ Logout exitoso en backend');
           } else {
             print('⚠️ Logout en backend fallo: ${response.statusCode}');
           }
@@ -507,14 +430,12 @@ class AuthService {
 
     // Limpiar el token en GraphQLClient
     GraphQLClientFactory.updateToken(null);
-    print('🧹 Datos locales limpiados');
   }
 
   /// Renovar el access token usando el refresh token
   Future<AuthResponse?> refreshToken() async {
     // Si ya hay un refresh en progreso, esperar a que termine
     if (_refreshInFlight != null) {
-      print('⏳ Refresh ya en progreso, esperando...');
       return _refreshInFlight!;
     }
 
@@ -539,8 +460,6 @@ class AuthService {
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/refresh');
 
-      print('🔄 Renovando token en: $url');
-
       final response = await http
           .post(
             url,
@@ -554,9 +473,6 @@ class AuthService {
               throw Exception('Timeout al renovar token');
             },
           );
-
-      print('📡 Refresh status code: ${response.statusCode}');
-      print('📦 Refresh response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -577,8 +493,6 @@ class AuthService {
             expiresIn: authResponse.expiresIn,
           );
         }
-
-        print('✅ Token renovado exitosamente');
         return authResponse;
       } else {
         print('❌ Error al renovar token: ${response.statusCode}');

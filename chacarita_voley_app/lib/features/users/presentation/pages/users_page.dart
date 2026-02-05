@@ -65,7 +65,6 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   void _loadUsers() {
-    print('🔄 Recargando lista de usuarios...');
     setState(() {
       _usersFuture = _repository
           .getUsers(
@@ -76,10 +75,6 @@ class _UsersPageState extends State<UsersPage> {
             size: _usersPerPage,
           )
           .then((users) {
-            print('📋 Usuarios recibidos: ${users.length}');
-            for (var user in users) {
-              print('  - ${user.id}: ${user.nombreCompleto}');
-            }
             return users;
           });
       _totalElementsFuture = _repository.getTotalUsers(

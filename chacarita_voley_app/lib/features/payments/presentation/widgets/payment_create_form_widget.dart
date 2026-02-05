@@ -509,22 +509,11 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              print('🔵 ========== BOTÓN REGISTRAR PAGO PRESIONADO ==========');
-
               if (_selectedUser == null ||
                   _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
-                print('❌ Validación fallida: campos incompletos');
-                print(
-                  '   - Usuario seleccionado: ${_selectedUser?.nombreCompleto ?? "null"}',
-                );
-                print('   - Cuota seleccionada: ${_selectedDue?.id ?? "null"}');
-                print('   - Monto: ${_montoController.text}');
-                print('   - Fecha: ${_fechaController.text}');
-                print(
-                  '=======================================================',
-                );
+                print('❌ Validación fallida: ${_selectedUser?.nombreCompleto ?? "null"}');
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -544,13 +533,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               );
 
               if (selectedDate.isAfter(todayDateOnly)) {
-                print('❌ Validación fallida: fecha futura');
-                print('   - Fecha seleccionada: $selectedDate');
-                print('   - Hoy: $todayDateOnly');
-                print(
-                  '=======================================================',
-                );
-
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text(
@@ -561,17 +543,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 );
                 return;
               }
-
-              print('✅ Validaciones pasadas, creando objeto Pay...');
-              print('👤 Usuario: ${_selectedUser!.nombreCompleto}');
-              print('🆔 Due ID: ${_selectedDue!.id}');
-              print('💰 Monto: ${_montoController.text}');
-              print('📅 Fecha: ${_fechaController.text}');
-              print(
-                '📊 Estado seleccionado: ${_isPlayer ? "PENDING (forzado por jugador)" : _selectedStatus.name}',
-              );
-              print('📄 Comprobante: ${_comprobanteFileName ?? "sin archivo"}');
-              print('=======================================================');
 
               final newPayment = payment_entities.Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),

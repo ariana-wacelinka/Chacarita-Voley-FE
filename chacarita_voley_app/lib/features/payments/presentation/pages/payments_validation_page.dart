@@ -128,27 +128,47 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       );
 
       if (mounted) {
-        final topPadding = MediaQuery.of(context).padding.top;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
             content: const Text('Comprobante descargado exitosamente'),
-            backgroundColor: context.tokens.green,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
+            backgroundColor: context.tokens.green.withOpacity(0.12),
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
         );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        final topPadding = MediaQuery.of(context).padding.top;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
             content: Text('Error al descargar comprobante: $e'),
-            backgroundColor: context.tokens.redToRosita,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
+            backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
         );
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
       }
     } finally {
       if (mounted) {

@@ -108,21 +108,6 @@ class _PlayerProfileFormWidgetState extends State<PlayerProfileFormWidget> {
         estadoCuota: widget.initialUser.estadoCuota,
       );
 
-      print('\ud83d\udce6 Datos a enviar:');
-      print('  ID: ${user.id}');
-      print('  PlayerId: ${user.playerId}');
-      print('  ProfessorId: ${user.professorId}');
-      print('  DNI: ${user.dni}');
-      print('  Nombre: ${user.nombre}');
-      print('  Apellido: ${user.apellido}');
-      print('  Fecha Nacimiento: ${user.fechaNacimiento}');
-      print('  Género: ${user.genero}');
-      print('  Email: ${user.email}');
-      print('  Teléfono: ${user.telefono}');
-      print('  Equipo: ${user.equipo}');
-      print('  Tipos: ${user.tipos}');
-      print('  Estado Cuota: ${user.estadoCuota}');
-
       await widget.onSave(user);
       // No es necesario limpiar el formulario en edición
     }
