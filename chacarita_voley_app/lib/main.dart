@@ -17,6 +17,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void main() async {
+  assert(
+    Environment.baseUrl.isNotEmpty,
+    'BACKEND_URL no definido. Ejecutar con --dart-define=BACKEND_URL=...',
+  );
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
