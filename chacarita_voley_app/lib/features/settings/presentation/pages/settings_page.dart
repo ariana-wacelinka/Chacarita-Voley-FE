@@ -161,7 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   icon: Icons.lock,
                   title: 'Cambiar contraseña',
                   showArrow: true,
-                  onTap: () => context.go('/change-password'),
+                  onTap: () => context.push('/change-password'),
                 ),
                 _SettingItem(
                   icon: Icons.brightness_6,
