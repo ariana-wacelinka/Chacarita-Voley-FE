@@ -82,11 +82,16 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   void _handleBack() {
-    // Usar el parámetro 'from' si está disponible
-    if (widget.from == 'settings') {
-      context.go('/settings');
+    // Verificar si podemos hacer pop, sino navegar según from
+    if (context.canPop()) {
+      context.pop();
     } else {
-      context.go('/users');
+      // Si no hay stack, usar from o ir a users por defecto
+      if (widget.from == 'settings') {
+        context.go('/settings');
+      } else {
+        context.go('/users');
+      }
     }
   }
 

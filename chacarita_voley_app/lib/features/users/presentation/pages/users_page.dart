@@ -601,7 +601,7 @@ class _UsersPageState extends State<UsersPage> {
                                               PopupMenuItem(
                                                 onTap: () {
                                                   Future.microtask(() {
-                                                    context.go(
+                                                    context.push(
                                                       '/users/${user.id}/view?from=users',
                                                     );
                                                   });
