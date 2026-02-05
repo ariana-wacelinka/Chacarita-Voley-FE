@@ -7,6 +7,7 @@ import '../features/payments/presentation/pages/payment_history_page.dart';
 import 'layout/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/auth/presentation/pages/forgot_password_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/users/presentation/pages/users_page.dart';
 import '../features/users/presentation/pages/register_user_page.dart';
@@ -38,9 +39,10 @@ final appRouter = GoRouter(
   initialLocation: '/login',
   redirect: (context, state) async {
     final isLoginPage = state.matchedLocation == '/login';
+    final isForgotPasswordPage = state.matchedLocation == '/forgot-password';
     final authService = AuthService();
 
-    // Si estamos en login, verificar si debemos mantener la sesión
+    // Si estamos en login o forgot password, permitir acceso
     if (isLoginPage) {
       final shouldRemember = await authService.shouldRememberSession();
       final token = await authService.getToken();
@@ -54,6 +56,11 @@ final appRouter = GoRouter(
         print('✅ Sesión recordada, redirigiendo a /home');
         return '/home';
       }
+      return null;
+    }
+
+    // Permitir acceso a forgot password sin autenticación
+    if (isForgotPasswordPage) {
       return null;
     }
 
@@ -158,6 +165,11 @@ final appRouter = GoRouter(
       path: '/login',
       name: 'login',
       builder: (_, __) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      name: 'forgot-password',
+      builder: (_, __) => const ForgotPasswordPage(),
     ),
     ShellRoute(
       builder: (context, state, child) {

@@ -88,15 +88,12 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
         rememberMe: _rememberMe,
       );
-
-      print('✅ Login response recibido, obteniendo información del usuario...');
-
+      
       // Obtener información del usuario
       final user = await _authService.getCurrentUser();
       if (user != null) {
         print('✅ Información del usuario obtenida exitosamente');
         print('   Usuario: ${user.fullName}');
-        print('   Roles: ${user.roles}');
       } else {
         print('⚠️ No se pudo obtener la información del usuario');
       }
@@ -352,7 +349,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               Flexible(
                                 child: TextButton(
-                                  onPressed: () {},
+                                  onPressed: () =>
+                                      context.push('/forgot-password'),
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.zero,
                                     minimumSize: Size.zero,
