@@ -184,8 +184,21 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.white,
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
+            datePickerTheme: const DatePickerThemeData(
+              headerForegroundColor: Colors.white,
+              headerHelpStyle: TextStyle(color: Colors.white),
+              headerHeadlineStyle: TextStyle(color: Colors.white),
+              weekdayStyle: TextStyle(color: Colors.white70),
+              dayForegroundColor: MaterialStatePropertyAll(Colors.white),
+              yearForegroundColor: MaterialStatePropertyAll(Colors.white),
+              todayForegroundColor: MaterialStatePropertyAll(Colors.white),
+              todayBorder: BorderSide(color: Colors.white70),
             ),
           ),
           child: child!,
