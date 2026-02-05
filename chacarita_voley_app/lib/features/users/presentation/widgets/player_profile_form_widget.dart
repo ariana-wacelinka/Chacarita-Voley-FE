@@ -6,7 +6,7 @@ import '../../domain/entities/gender.dart';
 
 class PlayerProfileFormWidget extends StatefulWidget {
   final User initialUser;
-  final Function(User) onSave;
+  final Future<bool> Function(User) onSave;
 
   const PlayerProfileFormWidget({
     super.key,
@@ -89,7 +89,7 @@ class _PlayerProfileFormWidgetState extends State<PlayerProfileFormWidget> {
     }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() && _fechaNacimiento != null) {
       // Preservar todos los datos originales del usuario, solo actualizar campos editables
       final user = User(
@@ -123,7 +123,8 @@ class _PlayerProfileFormWidgetState extends State<PlayerProfileFormWidget> {
       print('  Tipos: ${user.tipos}');
       print('  Estado Cuota: ${user.estadoCuota}');
 
-      widget.onSave(user);
+      await widget.onSave(user);
+      // No es necesario limpiar el formulario en edición
     }
   }
 

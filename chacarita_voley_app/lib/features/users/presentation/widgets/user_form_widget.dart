@@ -6,7 +6,7 @@ import '../../domain/entities/gender.dart';
 
 class UserFormWidget extends StatefulWidget {
   final User? initialUser;
-  final Function(User) onSave;
+  final Future<bool> Function(User) onSave;
   final String submitButtonText;
   final List<String> currentUserRoles;
 
@@ -98,7 +98,7 @@ class _UserFormWidgetState extends State<UserFormWidget> {
     }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() && _fechaNacimiento != null) {
       // Si no es admin, preservar roles originales
       final isAdmin = widget.currentUserRoles.contains('ADMIN');
@@ -122,7 +122,23 @@ class _UserFormWidgetState extends State<UserFormWidget> {
         estadoCuota: EstadoCuota.alDia,
       );
 
-      widget.onSave(user);
+      final success = await widget.onSave(user);
+
+      // Solo limpiar el formulario si fue exitoso Y no estamos editando
+      if (success && widget.initialUser == null && mounted) {
+        _formKey.currentState?.reset();
+        _nombreController.clear();
+        _apellidoController.clear();
+        _dniController.clear();
+        _emailController.clear();
+        _celularController.clear();
+        _fechaNacimientoController.clear();
+        setState(() {
+          _fechaNacimiento = null;
+          _generoSeleccionado = Gender.masculino;
+          _tiposSeleccionados = {UserType.jugador};
+        });
+      }
     }
   }
 

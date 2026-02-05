@@ -377,23 +377,61 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<User> createUser(User user) async {
-    final input = _mapUserToCreateInput(user);
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_createPersonMutation()),
-        variables: {'input': input},
-      ),
-    );
+    print('========== USER REPOSITORY - CREATE USER ==========');
+    print('Iniciando createUser en repositorio');
 
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
-    }
+    try {
+      print('Mapeando usuario a input de creación...');
+      final input = _mapUserToCreateInput(user);
+      print('Input generado:');
+      print(input);
 
-    final data = result.data?['createPerson'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('Respuesta inválida de createPerson');
+      print('Ejecutando mutación createPerson...');
+      final result = await _mutate(
+        MutationOptions(
+          document: gql(_createPersonMutation()),
+          variables: {'input': input},
+        ),
+      );
+
+      if (result.hasException) {
+        print('GraphQL Exception detectada:');
+        print('Exception: ${result.exception}');
+        if (result.exception?.graphqlErrors != null) {
+          print('GraphQL Errors:');
+          for (var error in result.exception!.graphqlErrors) {
+            print('  - Message: ${error.message}');
+            print('  - Extensions: ${error.extensions}');
+            print('  - Path: ${error.path}');
+          }
+        }
+        if (result.exception?.linkException != null) {
+          print('Link Exception: ${result.exception?.linkException}');
+        }
+        throw Exception(result.exception.toString());
+      }
+
+      print('Mutación ejecutada exitosamente');
+      print('Respuesta recibida: ${result.data}');
+
+      final data = result.data?['createPerson'] as Map<String, dynamic>?;
+      if (data == null) {
+        print('ERROR: Respuesta no contiene datos de createPerson');
+        throw Exception('Respuesta inválida de createPerson');
+      }
+
+      print('Mapeando respuesta a entidad User...');
+      final mappedUser = _mapPersonToUser(data);
+      print('Usuario creado exitosamente con ID: ${mappedUser.id}');
+      print('==================================================');
+      return mappedUser;
+    } catch (e, stackTrace) {
+      print('ERROR en createUser:');
+      print('Exception: $e');
+      print('Stack trace: $stackTrace');
+      print('==================================================');
+      rethrow;
     }
-    return _mapPersonToUser(data);
   }
 
   @override
@@ -584,48 +622,53 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   Map<String, dynamic> _mapUserToCreateInput(User user) {
+    print('--- Validando datos de usuario ---');
     if (user.nombre.isEmpty) {
+      print('ERROR: El nombre está vacío');
       throw Exception('El nombre es obligatorio');
     }
     if (user.apellido.isEmpty) {
+      print('ERROR: El apellido está vacío');
       throw Exception('El apellido es obligatorio');
     }
     if (user.dni.isEmpty) {
+      print('ERROR: El DNI está vacío');
       throw Exception('El DNI es obligatorio');
     }
     if (user.email.isEmpty) {
+      print('ERROR: El email está vacío');
       throw Exception('El email es obligatorio');
     }
+    print('Validación básica completada');
+
+    final roles = _mapRolesToApi(user.tipos);
+    print('Roles mapeados: $roles');
 
     final input = <String, dynamic>{
       'name': user.nombre,
       'surname': user.apellido,
       'dni': user.dni,
       'email': user.email,
-      'roles': _mapRolesToApi(user.tipos),
+      'roles': roles,
     };
 
     if (user.telefono.isNotEmpty) {
       input['phone'] = user.telefono;
+      print('Teléfono incluido: ${user.telefono}');
     }
 
     // Siempre incluir gender (requerido por el backend)
-    input['gender'] = _mapGenderToApi(user.genero);
+    final gender = _mapGenderToApi(user.genero);
+    input['gender'] = gender;
+    print('Género mapeado: $gender');
 
     final birthDate = _formatBirthDate(user.fechaNacimiento);
     if (birthDate.isNotEmpty) {
       input['birthDate'] = birthDate;
+      print('Fecha nacimiento incluida: $birthDate');
     }
 
-    // Si el usuario es jugador, incluir jerseyNumber y leagueId
-    if (user.tipos.contains(UserType.jugador)) {
-      final jersey = int.tryParse(user.numeroCamiseta ?? '');
-      input['jerseyNumber'] = jersey ?? 0;
-
-      final league = int.tryParse(user.numeroAfiliado ?? '');
-      input['leagueId'] = league ?? 0;
-    }
-
+    print('Input de creación completado');
     return input;
   }
 

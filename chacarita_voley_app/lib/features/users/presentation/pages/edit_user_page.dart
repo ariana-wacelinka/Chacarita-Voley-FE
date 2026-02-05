@@ -78,7 +78,7 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
-  Future<void> _handleUpdateUser(User user) async {
+  Future<bool> _handleUpdateUser(User user) async {
     setState(() {
       _isLoading = true;
     });
@@ -123,6 +123,7 @@ class _EditUserPageState extends State<EditUserPage> {
 
         _handleBack();
       }
+      return true;
     } catch (e) {
       print('\u274c Error al actualizar usuario:');
       print('  Tipo de error: ${e.runtimeType}');
@@ -159,6 +160,7 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         );
       }
+      return false; // Error
     } finally {
       if (mounted) {
         setState(() {

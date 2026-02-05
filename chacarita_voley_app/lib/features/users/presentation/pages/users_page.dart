@@ -244,12 +244,7 @@ class _UsersPageState extends State<UsersPage> {
             if (_showFilters)
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                decoration: BoxDecoration(
-                  color: context.tokens.card1,
-                  border: Border(
-                    bottom: BorderSide(color: context.tokens.stroke),
-                  ),
-                ),
+                decoration: BoxDecoration(color: context.tokens.background),
                 child: Column(
                   children: [
                     Column(
