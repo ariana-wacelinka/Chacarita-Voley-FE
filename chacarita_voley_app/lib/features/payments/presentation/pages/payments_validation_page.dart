@@ -186,8 +186,15 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () {
-            context.push('/payments/create');
+          onPressed: () async {
+            final created = await context.push<bool>('/payments/create');
+            if (created == true && mounted) {
+              setState(() {
+                _currentPage = 0;
+              });
+              _loadStats();
+              _loadPays();
+            }
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -1191,11 +1198,10 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       builder: (dialogContext) {
         // Capturar el ScaffoldMessenger antes de cerrar el diálogo
         final scaffoldMessenger = ScaffoldMessenger.of(context);
-        final theme = Theme.of(context);
         final tokens = context.tokens;
 
         return AlertDialog(
-          backgroundColor: tokens.card1,
+          backgroundColor: tokens.card1.withValues(alpha: 1),
           title: Text(
             approve ? '¿Aprobar pago?' : '¿Rechazar pago?',
             style: TextStyle(color: tokens.text),

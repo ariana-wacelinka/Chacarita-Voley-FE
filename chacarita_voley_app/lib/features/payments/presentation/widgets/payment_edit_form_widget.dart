@@ -31,7 +31,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
   late final TextEditingController _montoController;
   late final TextEditingController _fechaController;
   String? _comprobanteFileName;
-  String? _comprobanteFileUrl;
   bool _isUploadingFile = false;
 
   @override
@@ -44,7 +43,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       text: widget.dateFormat.format(DateTime.parse(widget.payment.date)),
     );
     _comprobanteFileName = widget.payment.fileName;
-    _comprobanteFileUrl = widget.payment.fileUrl;
   }
 
   @override
@@ -285,7 +283,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         break;
 
       case PayState.pending:
-        bannerColor = tokens.pending ?? Colors.orange;
+        bannerColor = tokens.pending;
         title = 'Pago Pendiente';
         subtitle =
             'Enviado: ${widget.dateFormat.format(widget.payment.sentDate)}';
@@ -574,6 +572,20 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
           source: ImageSource.gallery,
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -581,9 +593,23 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
-          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -602,7 +628,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
           if (mounted) {
             setState(() {
               _comprobanteFileName = uploadResult['fileName'];
-              _comprobanteFileUrl = uploadResult['fileUrl'];
               _isUploadingFile = false;
             });
 
@@ -650,6 +675,16 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         );
       }
     }
+  }
+
+  bool _isAllowedReceiptExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return false;
+    final extension = parts.last;
+    return extension == 'png' ||
+        extension == 'jpeg' ||
+        extension == 'jpg' ||
+        extension == 'pdf';
   }
 
   @override

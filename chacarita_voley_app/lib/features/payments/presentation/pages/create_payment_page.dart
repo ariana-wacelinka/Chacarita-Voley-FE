@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/create_pay_input.dart';
 import '../../domain/usecases/create_pay_usecase.dart';
@@ -61,7 +63,15 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       );
 
       // Llamada real al backend
-      await _createPaymentUseCase.execute(input);
+      final createdPay = await _createPaymentUseCase.execute(input);
+
+      if (newPay.fileUrl != null && newPay.fileUrl!.isNotEmpty) {
+        final file = File(newPay.fileUrl!);
+        await FileUploadService.uploadPaymentReceipt(
+          paymentId: createdPay.id,
+          file: file,
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,7 +106,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
           ),
         );
 
-        context.pop();
+        context.pop(true);
       }
     } catch (e) {
       // Determinar el mensaje de error apropiado

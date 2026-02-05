@@ -12,7 +12,8 @@ import 'auth_service.dart';
 
 class FileUploadService {
   static const bool _mockUpload = false;
-  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
+  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'png'];
+  static const List<String> _pickerExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
 
   /// Obtiene el MediaType correcto según la extensión del archivo
   static MediaType _getMediaType(String fileName) {
@@ -91,6 +92,25 @@ class FileUploadService {
     return null;
   }
 
+  static Future<File> _normalizeReceiptFile(File file) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    final parts = fileName.toLowerCase().split('.');
+    if (parts.length < 2) {
+      throw Exception('Formato no permitido');
+    }
+    final extension = parts.last;
+    if (extension == 'jpg') {
+      final tempDir = await getTemporaryDirectory();
+      final newPath =
+          '${tempDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+      return file.copy(newPath);
+    }
+    if (!_allowedExtensions.contains(extension)) {
+      throw Exception('Formato no permitido');
+    }
+    return file;
+  }
+
   /// Sube un comprobante de pago al backend
   /// Endpoint: POST /api/pays/{paymentId}/receipt
   /// Retorna: {fileName: "receipts/1/uuid.pdf", fileUrl: "https://..."}
@@ -99,7 +119,8 @@ class FileUploadService {
     required File file,
   }) async {
     try {
-      final fileName = file.path.split(Platform.pathSeparator).last;
+      final normalizedFile = await _normalizeReceiptFile(file);
+      final fileName = normalizedFile.path.split(Platform.pathSeparator).last;
 
       if (_mockUpload) {
         await Future.delayed(const Duration(seconds: 1));
@@ -121,7 +142,7 @@ class FileUploadService {
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
-          file.path,
+          normalizedFile.path,
           contentType: mediaType,
         ),
       );
@@ -241,7 +262,8 @@ class FileUploadService {
     required File file,
   }) async {
     try {
-      final fileName = file.path.split(Platform.pathSeparator).last;
+      final normalizedFile = await _normalizeReceiptFile(file);
+      final fileName = normalizedFile.path.split(Platform.pathSeparator).last;
 
       if (_mockUpload) {
         await Future.delayed(const Duration(seconds: 1));
@@ -262,7 +284,7 @@ class FileUploadService {
       final mediaType = _getMediaType(fileName);
       final multipartFile = await http.MultipartFile.fromPath(
         'file',
-        file.path,
+        normalizedFile.path,
         contentType: mediaType,
       );
 
@@ -291,7 +313,7 @@ class FileUploadService {
   static Future<Map<String, String>?> pickAndUploadPaymentReceipt({
     required String paymentId,
   }) async {
-    final file = await pickFile(allowedExtensions: _allowedExtensions);
+    final file = await pickFile(allowedExtensions: _pickerExtensions);
     if (file != null) {
       return await uploadPaymentReceipt(paymentId: paymentId, file: file);
     }

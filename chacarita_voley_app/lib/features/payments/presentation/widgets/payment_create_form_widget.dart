@@ -4,9 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../../../core/services/auth_service.dart';
-import '../../../../core/services/permissions_service.dart';
 
-import '../../../users/domain/entities/gender.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/entities/due.dart';
 import '../../../users/data/repositories/user_repository.dart';
@@ -1004,6 +1002,20 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           source: ImageSource.gallery,
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -1011,9 +1023,23 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
-          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -1042,6 +1068,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         );
       }
     }
+  }
+
+  bool _isAllowedReceiptExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return false;
+    final extension = parts.last;
+    return extension == 'png' ||
+      extension == 'jpeg' ||
+      extension == 'jpg' ||
+      extension == 'pdf';
   }
 
   // Grupo de radios para estado
