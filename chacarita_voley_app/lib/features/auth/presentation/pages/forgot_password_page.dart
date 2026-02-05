@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -10,6 +11,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
+  final _authService = AuthService();
   bool _isLoading = false;
 
   @override
@@ -67,12 +69,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implementar llamada al backend para enviar email de recuperación
-      await Future.delayed(const Duration(seconds: 2)); // Simular llamada
+      await _authService.forgotPassword(email: email);
 
       if (mounted) {
         _showSnackBar('Se ha enviado un enlace de recuperación a tu email');
-        // Esperar un momento para que vea el mensaje y volver al login
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) {
           context.go('/login');

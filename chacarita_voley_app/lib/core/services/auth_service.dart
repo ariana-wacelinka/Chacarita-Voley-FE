@@ -129,6 +129,44 @@ class AuthService {
     }
   }
 
+  /// Solicita reseteo de contraseña enviando email
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      final url = Uri.parse(
+        '${Environment.restBaseUrl}/api/auth/forgot-password',
+      );
+
+      print('🔐 Solicitando reseteo de contraseña para: $email');
+
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'email': email}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('Tiempo de espera agotado');
+            },
+          );
+
+      print('📡 Status code: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Email de recuperación enviado exitosamente');
+        return;
+      } else {
+        print('❌ Error al enviar email: ${response.statusCode}');
+        final errorBody = response.body;
+        throw Exception('Error al enviar email de recuperación: $errorBody');
+      }
+    } catch (e) {
+      print('🔥 Error en forgotPassword: $e');
+      rethrow;
+    }
+  }
+
   /// Obtener información del usuario autenticado
   Future<AuthUser?> getCurrentUser() async {
     try {
@@ -351,8 +389,10 @@ class AuthService {
 
     // Margen de seguridad: renovar si quedan menos de 60 segundos
     if (timeUntilExpiry.inSeconds < 60) {
-      print('🔄 Token por expirar (${timeUntilExpiry.inSeconds}s), renovando proactivamente...');
-      
+      print(
+        '🔄 Token por expirar (${timeUntilExpiry.inSeconds}s), renovando proactivamente...',
+      );
+
       try {
         final refreshed = await refreshToken();
         if (refreshed != null) {
