@@ -133,7 +133,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         messenger.showMaterialBanner(
           MaterialBanner(
             content: const Text('Comprobante descargado exitosamente'),
-            backgroundColor: context.tokens.green.withOpacity(0.12),
+            backgroundColor: context.tokens.green,
             actions: [
               TextButton(
                 onPressed: messenger.hideCurrentMaterialBanner,
