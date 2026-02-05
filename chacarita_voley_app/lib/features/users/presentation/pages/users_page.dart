@@ -805,7 +805,7 @@ class _UsersPageState extends State<UsersPage> {
       ),
       floatingActionButton: _canCreate
           ? FloatingActionButton(
-              onPressed: () => context.go('/users/register'),
+              onPressed: () => context.push('/users/register'),
               backgroundColor: Theme.of(context).colorScheme.primary,
               child: const Icon(Symbols.add, color: Colors.white),
             )

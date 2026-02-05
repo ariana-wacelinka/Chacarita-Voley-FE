@@ -187,7 +187,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         height: 56,
         child: FloatingActionButton(
           onPressed: () {
-            context.go('/payments/create');
+            context.push('/payments/create');
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -718,7 +718,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               children: [
                 InkWell(
                   onTap: () {
-                    context.go('/payments/detail/${payment.id}');
+                    context.push('/payments/detail/${payment.id}');
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(

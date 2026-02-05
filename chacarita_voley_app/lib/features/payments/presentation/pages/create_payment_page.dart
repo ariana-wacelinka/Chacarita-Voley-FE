@@ -61,7 +61,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       );
 
       // Llamada real al backend
-      final createdPay = await _createPaymentUseCase.execute(input);
+      await _createPaymentUseCase.execute(input);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,13 +96,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
           ),
         );
 
-        if (widget.userId != null && widget.userName != null) {
-          context.go(
-            '/users/${widget.userId}/payments?userName=${Uri.encodeComponent(widget.userName!)}',
-          );
-        } else {
-          context.go('/payments');
-        }
+        context.pop();
       }
     } catch (e) {
       // Determinar el mensaje de error apropiado

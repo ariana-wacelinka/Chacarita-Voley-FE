@@ -90,7 +90,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           ),
         );
 
-        context.go('/users');
+        context.pop();
       }
       return true; // Éxito
     } catch (e, stackTrace) {

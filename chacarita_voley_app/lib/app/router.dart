@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/payments/presentation/pages/payments_validation_page.dart';
 import '../features/payments/presentation/pages/payment_history_page.dart';
 import 'layout/app_scaffold.dart';
+import 'layout/page_wrapper.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/forgot_password_page.dart';
@@ -179,12 +180,14 @@ final appRouter = GoRouter(
             state.uri.path == '/trainings' &&
             state.uri.queryParameters['teamId'] != null;
         final teamId = state.uri.queryParameters['teamId'];
+        final isHomePage = state.uri.path == '/home';
 
         return AppScaffold(
           title: title,
           subtitle: subtitle,
           child: child,
           showDrawer: !isTeamTrainings,
+          isHomePage: isHomePage,
           onBack: isTeamTrainings && teamId != null
               ? () => context.go('/teams/view/$teamId')
               : null,
@@ -239,152 +242,180 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/payments/create',
       name: 'payments-create',
-      builder: (_, state) => CreatePaymentPage(
-        userId: state.uri.queryParameters['userId'],
-        userName: state.uri.queryParameters['userName'],
+      builder: (_, state) => PageWrapper(
+        child: CreatePaymentPage(
+          userId: state.uri.queryParameters['userId'],
+          userName: state.uri.queryParameters['userName'],
+        ),
       ),
     ),
     GoRoute(
       path: '/payments/detail/:id',
       name: 'payments-detail',
-      builder: (_, state) => PaymentDetailPage(
-        paymentId: state.pathParameters['id']!,
-        userName: state.uri.queryParameters['userName'],
+      builder: (_, state) => PageWrapper(
+        child: PaymentDetailPage(
+          paymentId: state.pathParameters['id']!,
+          userName: state.uri.queryParameters['userName'],
+        ),
       ),
     ),
     GoRoute(
       path: '/payments/edit/:id',
       name: 'payments-edit',
-      builder: (_, state) =>
-          EditPaymentsPage(paymentId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: EditPaymentsPage(paymentId: state.pathParameters['id']!),
+      ),
     ),
 
     GoRoute(
       path: '/users/register',
       name: 'users-register',
-      builder: (_, __) => const RegisterUserPage(),
+      builder: (_, __) => const PageWrapper(child: RegisterUserPage()),
     ),
     GoRoute(
       path: '/users/:id/edit',
       name: 'users-edit',
-      builder: (_, state) => EditUserPage(
-        userId: state.pathParameters['id']!,
-        from: state.uri.queryParameters['from'],
+      builder: (_, state) => PageWrapper(
+        child: EditUserPage(
+          userId: state.pathParameters['id']!,
+          from: state.uri.queryParameters['from'],
+        ),
       ),
     ),
     GoRoute(
       path: '/users/:id/view',
       name: 'users-view',
-      builder: (_, state) => ViewUserPage(
-        userId: state.pathParameters['id']!,
-        from: state.uri.queryParameters['from'],
-        refresh: state.uri.queryParameters['refresh'],
+      builder: (_, state) => PageWrapper(
+        child: ViewUserPage(
+          userId: state.pathParameters['id']!,
+          from: state.uri.queryParameters['from'],
+          refresh: state.uri.queryParameters['refresh'],
+        ),
       ),
     ),
     GoRoute(
       path: '/users/:id/attendance',
       name: 'users-attendance',
-      builder: (_, state) =>
-          AttendanceHistoryPage(userId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: AttendanceHistoryPage(userId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/users/:id/payments',
       name: 'users-payments',
-      builder: (_, state) => PaymentHistoryPage(
-        userId: state.pathParameters['id']!,
-        userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+      builder: (_, state) => PageWrapper(
+        child: PaymentHistoryPage(
+          userId: state.pathParameters['id']!,
+          userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+        ),
       ),
     ),
     GoRoute(
       path: '/users/:id/notification',
       name: 'users-notification',
-      builder: (_, state) => NewNotificationForUserPage(
-        userId: state.pathParameters['id']!,
-        userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+      builder: (_, state) => PageWrapper(
+        child: NewNotificationForUserPage(
+          userId: state.pathParameters['id']!,
+          userName: state.uri.queryParameters['userName'] ?? 'Usuario',
+        ),
       ),
     ),
     GoRoute(
       path: '/teams/register',
       name: 'teams-register',
-      builder: (_, __) => const RegisterTeamPage(),
+      builder: (_, __) => const PageWrapper(child: RegisterTeamPage()),
     ),
     GoRoute(
       path: '/teams/view/:id',
       name: 'teams-view',
-      builder: (_, state) => ViewTeamPage(
-        key: ValueKey('team-view-${state.pathParameters['id']}'),
-        teamId: state.pathParameters['id']!,
+      builder: (_, state) => PageWrapper(
+        child: ViewTeamPage(
+          key: ValueKey('team-view-${state.pathParameters['id']}'),
+          teamId: state.pathParameters['id']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/teams/:id/notification',
       name: 'teams-notification',
-      builder: (_, state) => NewNotificationForTeamPage(
-        teamId: state.pathParameters['id']!,
-        teamName: state.uri.queryParameters['teamName'] ?? 'Equipo',
+      builder: (_, state) => PageWrapper(
+        child: NewNotificationForTeamPage(
+          teamId: state.pathParameters['id']!,
+          teamName: state.uri.queryParameters['teamName'] ?? 'Equipo',
+        ),
       ),
     ),
     GoRoute(
       path: '/teams/edit/:id',
       name: 'teams-edit',
-      builder: (_, state) => EditTeamPage(
-        key: ValueKey('team-edit-${state.pathParameters['id']}'),
-        teamId: state.pathParameters['id']!,
+      builder: (_, state) => PageWrapper(
+        child: EditTeamPage(
+          key: ValueKey('team-edit-${state.pathParameters['id']}'),
+          teamId: state.pathParameters['id']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/trainings/create',
       name: 'trainings-create',
-      builder: (_, state) => NewTrainingPage(
-        teamId: state.uri.queryParameters['teamId'],
-        teamName: state.uri.queryParameters['teamName'],
+      builder: (_, state) => PageWrapper(
+        child: NewTrainingPage(
+          teamId: state.uri.queryParameters['teamId'],
+          teamName: state.uri.queryParameters['teamName'],
+        ),
       ),
     ),
     GoRoute(
       path: '/trainings/:id',
       name: 'trainings-view',
-      builder: (_, state) =>
-          ViewTrainingPage(trainingId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: ViewTrainingPage(trainingId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/trainings/:id/edit',
       name: 'trainings-edit',
-      builder: (_, state) =>
-          EditTrainingPage(trainingId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: EditTrainingPage(trainingId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/sessions/:id/edit',
       name: 'sessions-edit',
-      builder: (_, state) =>
-          EditSessionPage(sessionId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: EditSessionPage(sessionId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/trainings/:id/attendance',
       name: 'trainings-attendance',
-      builder: (_, state) =>
-          AttendanceTrainingPage(trainingId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: AttendanceTrainingPage(trainingId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/notifications/new',
       name: 'new-notification',
-      builder: (_, __) => const NewNotificationPage(),
+      builder: (_, __) => const PageWrapper(child: NewNotificationPage()),
     ),
     GoRoute(
       path: '/notifications/:id',
       name: 'notifications-view',
-      builder: (_, state) =>
-          ViewNotificationPage(notificationId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: ViewNotificationPage(notificationId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/notifications/:id/edit',
       name: 'notifications-edit',
-      builder: (_, state) =>
-          EditNotificationPage(notificationId: state.pathParameters['id']!),
+      builder: (_, state) => PageWrapper(
+        child: EditNotificationPage(notificationId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/change-password',
       name: 'change-password',
-      builder: (_, __) => const ChangePasswordPage(),
+      builder: (_, __) => const PageWrapper(child: ChangePasswordPage()),
     ),
   ],
 );

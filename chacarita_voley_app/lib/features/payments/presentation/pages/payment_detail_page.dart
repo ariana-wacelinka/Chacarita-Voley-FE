@@ -78,7 +78,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
   void _navigateToEdit() {
     if (_payment != null) {
-      context.go('/payments/edit/${_payment!.id}');
+      context.push('/payments/edit/${_payment!.id}');
     }
   }
 
@@ -151,7 +151,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

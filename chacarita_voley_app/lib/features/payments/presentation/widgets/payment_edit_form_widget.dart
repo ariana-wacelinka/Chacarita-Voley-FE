@@ -191,7 +191,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.tokens.gray,
+                      backgroundColor: context.tokens.secondaryButton,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -228,7 +228,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                     widget.onSave(updatedPayment);
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 0),

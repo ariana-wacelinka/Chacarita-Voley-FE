@@ -202,7 +202,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
     return Scaffold(
       backgroundColor: tokens.background,
       appBar: AppBar(
-        backgroundColor: tokens.card1,
+        backgroundColor: context.tokens.card1,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
