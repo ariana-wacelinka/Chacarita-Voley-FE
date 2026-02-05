@@ -577,7 +577,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -609,7 +609,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: context.tokens.strokeToNoStroke),
                       ),
                       child: Row(
                         children: [
@@ -649,7 +649,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -797,7 +797,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -962,7 +962,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -992,7 +992,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: context.tokens.strokeToNoStroke),
                       ),
                       child: Column(
                         children: [
@@ -1041,7 +1041,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                           Divider(
                             height: 1,
                             thickness: 1,
-                            color: Colors.grey.shade300,
+                            color: context.tokens.strokeToNoStroke,
                           ),
                           InkWell(
                             onTap: () {

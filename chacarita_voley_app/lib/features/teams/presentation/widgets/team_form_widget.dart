@@ -271,7 +271,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -329,7 +329,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -517,7 +517,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
