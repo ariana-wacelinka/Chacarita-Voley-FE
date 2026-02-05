@@ -73,7 +73,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   }
 
   void _handleBack() {
-    if (_isOwnPaymentHistory) {
+    // Intentar hacer pop si hay stack, sino navegar según contexto
+    if (context.canPop()) {
+      context.pop();
+    } else if (_isOwnPaymentHistory) {
       final isPlayer = PermissionsService.isPlayer(_userRoles);
       if (isPlayer) {
         context.go('/home');
