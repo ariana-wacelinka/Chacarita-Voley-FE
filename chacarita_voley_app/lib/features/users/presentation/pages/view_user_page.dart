@@ -13,8 +13,15 @@ import '../../../../core/services/permissions_service.dart';
 
 class ViewUserPage extends StatefulWidget {
   final String userId;
+  final String? from;
+  final String? refresh;
 
-  const ViewUserPage({super.key, required this.userId});
+  const ViewUserPage({
+    super.key,
+    required this.userId,
+    this.from,
+    this.refresh,
+  });
 
   @override
   State<ViewUserPage> createState() => _ViewUserPageState();
@@ -39,6 +46,16 @@ class _ViewUserPageState extends State<ViewUserPage> {
     _loadUser();
   }
 
+  @override
+  void didUpdateWidget(ViewUserPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Si cambió el parámetro refresh, recargar datos
+    if (widget.refresh != oldWidget.refresh && widget.refresh == 'true') {
+      _loadUser();
+    }
+  }
+
   Future<void> _loadUserRoles() async {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
@@ -53,10 +70,16 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   void _handleBack() {
-    if (_isOwnProfile) {
-      context.go('/settings');
+    // Verificar si podemos hacer pop, sino navegar según from
+    if (context.canPop()) {
+      context.pop();
     } else {
-      context.go('/users');
+      // Si no hay stack, usar from o ir a users por defecto
+      if (widget.from == 'settings') {
+        context.go('/settings');
+      } else {
+        context.go('/users');
+      }
     }
   }
 
@@ -70,6 +93,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
         _errorMessage = null;
       });
     } catch (e) {
+      print('❌ Error loading user: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -431,7 +455,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Período:',
+                    'Cuota:',
                     style: TextStyle(
                       color: context.tokens.placeholder,
                       fontSize: 14,
@@ -864,7 +888,84 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    if (!_canEdit) {
+    // Si es mi propio perfil, siempre puedo editarlo
+    if (_isOwnProfile) {
+      // Mostrar botón grande (ocultar delete si es jugador único)
+      final isPlayerOnly =
+          _userRoles.contains('PLAYER') &&
+          !_userRoles.contains('ADMIN') &&
+          !_userRoles.contains('PROFESSOR');
+
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final from = widget.from;
+                final route = from != null
+                    ? '/users/${widget.userId}/edit?from=$from'
+                    : '/users/${widget.userId}/edit';
+                final result = await context.push(route);
+                if (result == true && mounted) {
+                  _loadUser();
+                }
+              },
+              icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
+              label: const Text(
+                'Modificar usuario',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.tokens.secondaryButton,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          if (!isPlayerOnly) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showDeleteDialog(context),
+                icon: const Icon(Symbols.delete, color: Colors.white, size: 18),
+                label: const Text(
+                  'Eliminar usuario',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // Si no es mi perfil, aplicar restricciones normales
+    // Verificar si el profesor está intentando editar un admin
+    final isProfessorEditingAdmin =
+        _userRoles.contains('PROFESSOR') &&
+        !_userRoles.contains('ADMIN') &&
+        _user?.tipos.contains(UserType.administrador) == true;
+
+    if (!_canEdit || isProfessorEditingAdmin) {
       return const SizedBox.shrink();
     }
 
@@ -878,11 +979,10 @@ class _ViewUserPageState extends State<ViewUserPage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
-              final route = '/users/${widget.userId}/edit';
-              print('✏️ Modificar usuario clicked');
-              print('🔗 Navegando a: $route');
-              print('👤 isOwnProfile: $_isOwnProfile');
-              print('🎭 isPlayer: ${PermissionsService.isPlayer(_userRoles)}');
+              final from = widget.from;
+              final route = from != null
+                  ? '/users/${widget.userId}/edit?from=$from'
+                  : '/users/${widget.userId}/edit';
               final result = await context.push(route);
               // Si se editó exitosamente, recargar datos
               if (result == true && mounted) {
@@ -910,27 +1010,37 @@ class _ViewUserPageState extends State<ViewUserPage> {
         // Ocultar botón de eliminar si es jugador solo player viendo su propio perfil o si es profesor
         if (!isPlayerOnly && canDelete) ...[
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _showDeleteDialog(context),
-              icon: const Icon(Symbols.delete, color: Colors.white, size: 18),
-              label: const Text(
-                'Eliminar usuario',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          Builder(
+            builder: (context) {
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showDeleteDialog(context);
+                  },
+                  icon: const Icon(
+                    Symbols.delete,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Eliminar usuario',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ],
@@ -981,16 +1091,20 @@ class _ViewUserPageState extends State<ViewUserPage> {
           );
           _handleBack();
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        print('Error: $e');
+        print('Stack trace: $stackTrace');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Error al eliminar usuario'),
+              content: Text('Error al eliminar usuario: $e'),
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
       }
+    } else {
+      print('Usuario canceló la eliminación');
     }
   }
 }

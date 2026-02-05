@@ -4,15 +4,21 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/pay.dart';
+import '../../domain/entities/pay_state.dart';
+import '../../../users/domain/entities/due.dart' show CurrentDue, DueState;
 
 class PaymentHistoryContent extends StatefulWidget {
   final List<Pay> payments;
   final List<Pay> allPayments;
   final String userName;
   final String userId;
+  final CurrentDue? currentDue;
   final Function(DateTime?, DateTime?) onFiltersChanged;
   final Function(Pay)? onDownload;
+  final Function(Pay)? onEdit;
   final Map<String, bool>? downloadingFiles;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const PaymentHistoryContent({
     super.key,
@@ -20,9 +26,13 @@ class PaymentHistoryContent extends StatefulWidget {
     required this.allPayments,
     required this.userName,
     required this.userId,
+    this.currentDue,
     required this.onFiltersChanged,
     this.onDownload,
+    this.onEdit,
     this.downloadingFiles,
+    this.startDate,
+    this.endDate,
   });
 
   @override
@@ -30,8 +40,6 @@ class PaymentHistoryContent extends StatefulWidget {
 }
 
 class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
-  DateTime? _startDate;
-  DateTime? _endDate;
   bool _localeInitialized = false;
 
   late DateFormat _dateFormat;
@@ -52,8 +60,8 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
     });
   }
 
-  void _applyFilters() {
-    widget.onFiltersChanged(_startDate, _endDate);
+  void _applyFilters(DateTime? startDate, DateTime? endDate) {
+    widget.onFiltersChanged(startDate, endDate);
   }
 
   @override
@@ -86,21 +94,98 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
   }
 
   Widget _buildStatusBanner(AppTokens tokens) {
-    final lastPayment = widget.allPayments.isNotEmpty
-        ? widget.allPayments.reduce(
-            (a, b) => a.paymentDate.isAfter(b.paymentDate) ? a : b,
-          )
-        : null;
+    final currentDue = widget.currentDue;
 
-    final lastPaymentDate = lastPayment != null
-        ? DateFormat('dd/MM').format(lastPayment.paymentDate)
-        : 'N/A';
+    if (currentDue == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: tokens.card1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: tokens.stroke),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Symbols.credit_card, color: tokens.text, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Estado de la Cuota',
+                  style: TextStyle(
+                    color: tokens.text,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: tokens.card2,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: tokens.stroke),
+              ),
+              child: Text(
+                'No hay información de cuota disponible',
+                style: TextStyle(color: tokens.placeholder, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-    final bannerColor = tokens.redToRosita;
-    final title = 'Cuota vencida';
-    final subtitle = 'Último pago: $lastPaymentDate';
-    final description = 'La cuota mensual está vencida';
-    const icon = Symbols.error;
+    final dueState = currentDue.state;
+    final pay = currentDue.pay;
+
+    Color bgColor;
+    Color borderColor;
+    Color textColor;
+    IconData iconData;
+    String statusTitle;
+    String statusMessage;
+
+    switch (dueState) {
+      case DueState.PAID:
+        bgColor = tokens.green.withOpacity(0.1);
+        borderColor = tokens.green;
+        textColor = tokens.green;
+        iconData = Symbols.check_circle;
+        statusTitle = 'Cuota pagada';
+        statusMessage = 'La cuota está al día';
+        break;
+      case DueState.OVERDUE:
+        bgColor = tokens.redToRosita.withOpacity(0.1);
+        borderColor = tokens.redToRosita;
+        textColor = tokens.redToRosita;
+        iconData = Symbols.error;
+        statusTitle = 'Cuota vencida';
+        statusMessage = 'La cuota mensual está vencida';
+        break;
+      case DueState.PENDING:
+        if (pay?.state == PayState.rejected) {
+          bgColor = tokens.redToRosita.withOpacity(0.1);
+          borderColor = tokens.redToRosita;
+          textColor = tokens.redToRosita;
+          iconData = Symbols.cancel;
+          statusTitle = 'Pago rechazado';
+          statusMessage = 'El comprobante fue rechazado';
+        } else {
+          bgColor = Colors.amber.withOpacity(0.1);
+          borderColor = Colors.amber;
+          textColor = Colors.amber.shade700;
+          iconData = Symbols.schedule;
+          statusTitle = 'Pendiente de pago';
+          statusMessage = pay != null
+              ? 'Sin pago registrado'
+              : 'Sin pago registrado';
+        }
+        break;
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -128,41 +213,94 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
           ),
           const SizedBox(height: 12),
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: bannerColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: bannerColor),
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor, width: 2),
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
+                Row(
+                  children: [
+                    Icon(iconData, color: textColor, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        statusTitle,
                         style: TextStyle(
-                          color: bannerColor,
-                          fontSize: 14,
+                          color: textColor,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(color: bannerColor, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Cuota:',
+                      style: TextStyle(
+                        color: tokens.placeholder,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 2),
+                    ),
+                    Text(
+                      currentDue.formattedPeriod,
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                if (pay != null) ...[
+                  const SizedBox(height: 12),
+                  Divider(color: borderColor.withOpacity(0.3), height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        pay.state == PayState.rejected
+                            ? Symbols.cancel
+                            : pay.state == PayState.validated
+                            ? Symbols.check_circle
+                            : Symbols.receipt_long,
+                        color: pay.state == PayState.rejected
+                            ? tokens.redToRosita
+                            : pay.state == PayState.validated
+                            ? Colors.green
+                            : textColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
-                        description,
-                        style: TextStyle(color: bannerColor, fontSize: 12),
+                        pay.state == PayState.rejected
+                            ? 'Rechazado'
+                            : pay.state == PayState.validated
+                            ? 'Pago aprobado'
+                            : 'Pago en revisión',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Icon(icon, color: bannerColor, size: 24),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fecha: ${pay.date?.split('-').reversed.join('/') ?? 'N/A'}',
+                    style: TextStyle(color: tokens.text, fontSize: 13),
+                  ),
+                ],
               ],
             ),
           ),
@@ -183,17 +321,47 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Symbols.filter_alt, color: tokens.text, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Filtros',
-                style: TextStyle(
-                  color: tokens.text,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+              Row(
+                children: [
+                  Icon(Symbols.filter_alt, color: tokens.text, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Filtros',
+                    style: TextStyle(
+                      color: tokens.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
+              if (widget.startDate != null || widget.endDate != null)
+                TextButton.icon(
+                  onPressed: () {
+                    _applyFilters(null, null);
+                  },
+                  icon: Icon(
+                    Symbols.close,
+                    color: tokens.redToRosita,
+                    size: 18,
+                  ),
+                  label: Text(
+                    'Limpiar filtros',
+                    style: TextStyle(
+                      color: tokens.redToRosita,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -202,10 +370,9 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
               Expanded(
                 child: _buildDatePickerField(
                   label: 'Desde',
-                  date: _startDate,
+                  date: widget.startDate,
                   onSelected: (date) {
-                    setState(() => _startDate = date);
-                    _applyFilters();
+                    _applyFilters(date, widget.endDate);
                   },
                   tokens: tokens,
                 ),
@@ -214,10 +381,9 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
               Expanded(
                 child: _buildDatePickerField(
                   label: 'Hasta',
-                  date: _endDate,
+                  date: widget.endDate,
                   onSelected: (date) {
-                    setState(() => _endDate = date);
-                    _applyFilters();
+                    _applyFilters(widget.startDate, date);
                   },
                   tokens: tokens,
                 ),
@@ -320,6 +486,17 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
             ),
           ),
           const SizedBox(width: 12),
+          // Botón de editar (solo si está PENDING o REJECTED)
+          if (payment.status == PayState.pending ||
+              payment.status == PayState.rejected)
+            IconButton(
+              icon: Icon(Symbols.edit, color: tokens.placeholder, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => widget.onEdit?.call(payment),
+            ),
+          const SizedBox(width: 4),
+          // Botón de descargar
           IconButton(
             icon: widget.downloadingFiles?[payment.id] == true
                 ? SizedBox(

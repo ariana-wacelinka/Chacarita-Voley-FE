@@ -130,13 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: 'Ver mi perfil',
                     showArrow: true,
                     onTap: () {
-                      print('🔍 Settings - Ver mi perfil clicked');
-                      print('👤 userId: $_userId');
-                      print('🎭 isPlayer: $isPlayer');
-                      print('🎭 hasPlayerRole: $hasPlayerRole');
-                      final route = '/users/$_userId/view';
-                      print('🚀 Navegando a: $route');
-                      context.go(route);
+                      context.push('/users/$_userId/view?from=settings');
                     },
                   ),
                   // Mostrar pagos y asistencias solo para admin/profesor con rol player
@@ -145,13 +139,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.credit_card,
                       title: 'Mis pagos',
                       showArrow: true,
-                      onTap: () => context.go('/users/$_userId/payments'),
+                      onTap: () => context.push('/users/$_userId/payments'),
                     ),
                     _SettingItem(
                       icon: Icons.check_circle,
                       title: 'Mis asistencias',
                       showArrow: true,
-                      onTap: () => context.go('/users/$_userId/attendance'),
+                      onTap: () => context.push('/users/$_userId/attendance'),
                     ),
                   ],
                 ],
@@ -167,7 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   icon: Icons.lock,
                   title: 'Cambiar contraseña',
                   showArrow: true,
-                  onTap: () => context.go('/change-password'),
+                  onTap: () => context.push('/change-password'),
                 ),
                 _SettingItem(
                   icon: Icons.brightness_6,

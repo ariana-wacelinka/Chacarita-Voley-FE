@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../environment.dart';
+import '../network/graphql_client_factory.dart';
 
 class AuthService {
   static const String _tokenKey = 'auth_token';
@@ -10,20 +11,23 @@ class AuthService {
   static const String _userIdKey = 'user_id';
   static const String _userNameKey = 'user_name';
   static const String _userRolesKey = 'user_roles';
+  static const String _rememberMeKey = 'remember_me';
+  static const String _tokenExpiresAtKey = 'token_expires_at';
+
+  // Lock para evitar múltiples refresh simultáneos
+  Future<AuthResponse?>? _refreshInFlight;
 
   /// Login con email y password
   /// Por ahora en modo desarrollo: permite entrar aunque falle
   Future<AuthResponse> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     try {
       // Construir URL REST (sin /graphql)
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/login');
-
-      print('🔐 Intentando login en: $url');
-      print('📧 Email: $email');
 
       final response = await http
           .post(
@@ -39,13 +43,9 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
-
       // Manejar redirecciones
       if (response.statusCode == 301 || response.statusCode == 302) {
         final location = response.headers['location'];
-        print('🔄 Redirigido a: $location');
         if (location != null) {
           // Seguir la redirección manualmente
           final redirectUrl = Uri.parse(location);
@@ -53,12 +53,6 @@ class AuthService {
             redirectUrl,
             headers: {'Content-Type': 'application/json'},
             body: json.encode({'email': email, 'password': password}),
-          );
-          print(
-            '📡 Status code después de redirección: ${redirectResponse.statusCode}',
-          );
-          print(
-            '📦 Response body después de redirección: ${redirectResponse.body}',
           );
 
           if (redirectResponse.statusCode == 200) {
@@ -75,7 +69,6 @@ class AuthService {
               refreshToken: authResponse.refreshToken,
               email: email,
             );
-            print('✅ Login exitoso');
             return authResponse;
           } else {
             print(
@@ -102,9 +95,11 @@ class AuthService {
           accessToken: authResponse.accessToken,
           refreshToken: authResponse.refreshToken,
           email: email,
+          expiresIn: authResponse.expiresIn,
         );
 
-        print('✅ Login exitoso');
+        // Guardar preferencia de recordarme
+        await _saveRememberMe(rememberMe);
         return authResponse;
       } else {
         print('❌ Login falló: ${response.statusCode}');
@@ -112,7 +107,39 @@ class AuthService {
         throw Exception('Error de autenticación: $errorBody');
       }
     } catch (e) {
-      print('🔥 Error en login: $e');
+      rethrow;
+    }
+  }
+
+  /// Solicita reseteo de contraseña enviando email
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      final url = Uri.parse(
+        '${Environment.restBaseUrl}/api/auth/forgot-password',
+      );
+
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'email': email}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('Tiempo de espera agotado');
+            },
+          );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return;
+      } else {
+        print('❌ Error al enviar email: ${response.statusCode}');
+        final errorBody = response.body;
+        throw Exception('Error al enviar email de recuperación: $errorBody');
+      }
+    } catch (e) {
+      print('🔥 Error en forgotPassword: $e');
       rethrow;
     }
   }
@@ -120,16 +147,15 @@ class AuthService {
   /// Obtener información del usuario autenticado
   Future<AuthUser?> getCurrentUser() async {
     try {
-      final token = await getToken();
-      if (token == null || token.isEmpty) {
-        print('❌ No hay token disponible');
+      // Usar getValidAccessToken() que maneja renovación proactiva
+      final token = await getValidAccessToken();
+      if (token == null) {
+        print('❌ No hay token válido disponible');
         return null;
       }
 
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/me');
-
-      print('👤 Obteniendo información del usuario: $url');
 
       final response = await http
           .get(
@@ -147,13 +173,9 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body completo: ${response.body}');
-
       // Manejar redirecciones
       if (response.statusCode == 301 || response.statusCode == 302) {
         final location = response.headers['location'];
-        print('🔄 Redirigido a: $location');
         if (location != null) {
           final redirectUrl = Uri.parse(location);
           final redirectResponse = await http.get(
@@ -163,31 +185,12 @@ class AuthService {
               'Authorization': 'Bearer $token',
             },
           );
-          print(
-            '📡 Status code después de redirección: ${redirectResponse.statusCode}',
-          );
 
           if (redirectResponse.statusCode == 200) {
             final data =
                 json.decode(redirectResponse.body) as Map<String, dynamic>;
-            print('📋 Datos del usuario parseados:');
-            print('   - ID: ${data['id']}');
-            print('   - Name: ${data['name']}');
-            print('   - Surname: ${data['surname']}');
-            print('   - DNI: ${data['dni']}');
-            print('   - Email: ${data['email']}');
-            print('   - Phone: ${data['phone']}');
-            print('   - BirthDate: ${data['birthDate']}');
-            print('   - Gender: ${data['gender']}');
-            print('   - Roles: ${data['roles']}');
-
             final user = AuthUser.fromJson(data);
             await _saveUserInfo(user);
-            print('✅ Usuario obtenido: ${user.name} ${user.surname}');
-            print('   - Roles procesados: ${user.roles}');
-            print('   - Es admin: ${user.isAdmin}');
-            print('   - Es profesor: ${user.isProfesor}');
-            print('   - Es jugador: ${user.isJugador}');
             return user;
           } else {
             print(
@@ -200,30 +203,11 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        print('📋 Datos del usuario parseados:');
-        print('   - ID: ${data['id']}');
-        print('   - Name: ${data['name']}');
-        print('   - Surname: ${data['surname']}');
-        print('   - DNI: ${data['dni']}');
-        print('   - Email: ${data['email']}');
-        print('   - Phone: ${data['phone']}');
-        print('   - BirthDate: ${data['birthDate']}');
-        print('   - Gender: ${data['gender']}');
-        print('   - Roles: ${data['roles']}');
-
         final user = AuthUser.fromJson(data);
 
-        // Guardar información del usuario
         await _saveUserInfo(user);
-
-        print('✅ Usuario obtenido: ${user.name} ${user.surname}');
-        print('   - Roles procesados: ${user.roles}');
-        print('   - Es admin: ${user.isAdmin}');
-        print('   - Es profesor: ${user.isProfesor}');
-        print('   - Es jugador: ${user.isJugador}');
         return user;
       } else {
-        print('❌ Error al obtener usuario: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -253,8 +237,6 @@ class AuthService {
       final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/change-password');
 
-      print('🔐 Cambiando contraseña en: $url');
-
       final response = await http
           .post(
             url,
@@ -272,12 +254,8 @@ class AuthService {
             },
           );
 
-      print('📡 Status code: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
-
       // 200 OK o 204 No Content son exitosos
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ Contraseña cambiada exitosamente');
         return;
       } else if (response.statusCode == 401) {
         print('❌ Contraseña actual incorrecta');
@@ -297,16 +275,71 @@ class AuthService {
     required String accessToken,
     required String refreshToken,
     required String email,
+    int? expiresIn,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setString(_emailKey, email);
+
+    // Guardar timestamp de expiración
+    if (expiresIn != null) {
+      final expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+      await prefs.setInt(_tokenExpiresAtKey, expiresAt.millisecondsSinceEpoch);
+    }
+
+    // Actualizar el token en GraphQLClient
+    GraphQLClientFactory.updateToken(accessToken);
   }
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
+  }
+
+  /// Obtiene un access token válido, renovándolo proactivamente si está por expirar
+  Future<String?> getValidAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final expiresAtMs = prefs.getInt(_tokenExpiresAtKey);
+
+    if (token == null) {
+      print('❌ No hay token disponible');
+      return null;
+    }
+
+    // Si no tenemos timestamp de expiración, asumir que es válido
+    // (para retrocompatibilidad con tokens guardados sin expiresAt)
+    if (expiresAtMs == null) {
+      return token;
+    }
+
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(expiresAtMs);
+    final now = DateTime.now();
+    final timeUntilExpiry = expiresAt.difference(now);
+
+    // Margen de seguridad: renovar si quedan menos de 60 segundos
+    if (timeUntilExpiry.inSeconds < 60) {
+      try {
+        final refreshed = await refreshToken();
+        if (refreshed != null) {
+          return refreshed.accessToken;
+        } else {
+          print('❌ No se pudo renovar el token');
+          return null;
+        }
+      } catch (e) {
+        print('🔥 Error al renovar token proactivamente: $e');
+        return null;
+      }
+    }
+
+    return token;
+  }
+
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
   }
 
   Future<String?> getEmail() async {
@@ -336,7 +369,55 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
+  Future<void> _saveRememberMe(bool rememberMe) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_rememberMeKey, rememberMe);
+  }
+
+  Future<bool> shouldRememberSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_rememberMeKey) ?? false;
+  }
+
   Future<void> logout() async {
+    try {
+      final refreshToken = await getRefreshToken();
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+        final url = Uri.parse('$restBaseUrl/api/auth/logout');
+
+        try {
+          final response = await http
+              .post(
+                url,
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({'refreshToken': refreshToken}),
+              )
+              .timeout(
+                const Duration(seconds: 10),
+                onTimeout: () {
+                  print('⏱️ Timeout en logout');
+                  throw Exception('Timeout al hacer logout');
+                },
+              );
+
+          print('📡 Logout status code: ${response.statusCode}');
+
+          if (response.statusCode == 200 || response.statusCode == 204) {
+          } else {
+            print('⚠️ Logout en backend fallo: ${response.statusCode}');
+          }
+        } catch (e) {
+          print('❌ Error al llamar logout endpoint: $e');
+          // Continuar con limpieza local aunque falle el backend
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error obteniendo refresh token: $e');
+    }
+
+    // Limpiar datos locales siempre
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_refreshTokenKey);
@@ -344,6 +425,89 @@ class AuthService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userRolesKey);
+    await prefs.remove(_rememberMeKey);
+    await prefs.remove(_tokenExpiresAtKey);
+
+    // Limpiar el token en GraphQLClient
+    GraphQLClientFactory.updateToken(null);
+  }
+
+  /// Renovar el access token usando el refresh token
+  Future<AuthResponse?> refreshToken() async {
+    // Si ya hay un refresh en progreso, esperar a que termine
+    if (_refreshInFlight != null) {
+      return _refreshInFlight!;
+    }
+
+    // Iniciar nuevo refresh y guardarlo para que otros esperen
+    _refreshInFlight = _doRefreshToken().whenComplete(() {
+      _refreshInFlight = null;
+    });
+
+    return _refreshInFlight!;
+  }
+
+  /// Lógica interna de refresh (llamada solo por refreshToken)
+  Future<AuthResponse?> _doRefreshToken() async {
+    try {
+      final currentRefreshToken = await getRefreshToken();
+
+      if (currentRefreshToken == null || currentRefreshToken.isEmpty) {
+        print('❌ No hay refresh token disponible');
+        return null;
+      }
+
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final url = Uri.parse('$restBaseUrl/api/auth/refresh');
+
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'refreshToken': currentRefreshToken}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏱️ Timeout en refresh token');
+              throw Exception('Timeout al renovar token');
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+
+        final authResponse = AuthResponse(
+          accessToken: data['accessToken'] as String,
+          refreshToken: data['refreshToken'] as String,
+          expiresIn: data['expiresIn'] as int,
+          tokenType: data['tokenType'] as String? ?? 'Bearer',
+        );
+
+        final email = await getEmail();
+        if (email != null) {
+          await _saveTokens(
+            accessToken: authResponse.accessToken,
+            refreshToken: authResponse.refreshToken,
+            email: email,
+            expiresIn: authResponse.expiresIn,
+          );
+        }
+        return authResponse;
+      } else {
+        print('❌ Error al renovar token: ${response.statusCode}');
+        print('❌ Body: ${response.body}');
+        // Si el refresh token es inválido, limpiar sesión
+        if (response.statusCode == 401) {
+          print('🚨 Refresh token inválido, cerrando sesión');
+          await logout();
+        }
+        return null;
+      }
+    } catch (e) {
+      print('🔥 Error en refresh token: $e');
+      return null;
+    }
   }
 }
 

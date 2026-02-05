@@ -1,15 +1,21 @@
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
+import '../../data/repositories/pay_repository.dart';
 
 class PaymentDetailContent extends StatefulWidget {
   final Pay payment;
+  final VoidCallback? onPaymentUpdated;
 
-  const PaymentDetailContent({super.key, required this.payment});
+  const PaymentDetailContent({
+    super.key,
+    required this.payment,
+    this.onPaymentUpdated,
+  });
 
   @override
   State<PaymentDetailContent> createState() => _PaymentDetailContentState();
@@ -17,6 +23,7 @@ class PaymentDetailContent extends StatefulWidget {
 
 class _PaymentDetailContentState extends State<PaymentDetailContent> {
   bool _isDownloading = false;
+  final _payRepository = PayRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +53,53 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                       size: 24,
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      'Detalles del Pago',
-                      style: TextStyle(
-                        color: tokens.text,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        'Detalles del Pago',
+                        style: TextStyle(
+                          color: tokens.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Symbols.more_vert,
+                        color: tokens.text,
+                        size: 24,
+                      ),
+                      onSelected: (value) {
+                        if (value == 'pending') {
+                          _setPendingPay();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'pending',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Symbols.schedule,
+                                color: tokens.text,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Pasar a pendiente nuevamente',
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: tokens.text,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -212,25 +259,78 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
       );
 
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
+            content: const Text('Comprobante descargado exitosamente'),
+            backgroundColor: context.tokens.green,
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
+            content: Text('Error al descargar comprobante: $e'),
+            backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        );
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
+
+  Future<void> _setPendingPay() async {
+    try {
+      await _payRepository.setPendingPay(widget.payment.id);
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Comprobante descargado exitosamente'),
+            content: const Text('Pago actualizado a pendiente'),
             backgroundColor: context.tokens.green,
           ),
         );
+
+        // Notificar a la página padre que el pago se actualizó
+        widget.onPaymentUpdated?.call();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al descargar comprobante: $e'),
+            content: Text('Error al actualizar pago: $e'),
             backgroundColor: context.tokens.redToRosita,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isDownloading = false);
       }
     }
   }

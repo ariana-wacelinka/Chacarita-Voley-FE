@@ -24,33 +24,31 @@ class StatsCard extends StatelessWidget {
           border: Border.all(color: context.tokens.strokeToNoStroke, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: context.tokens.placeholder,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      color: context.tokens.text,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 28,
-                    ),
-                  ),
-                ],
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: context.tokens.placeholder,
+                fontSize: 12,
               ),
             ),
-            Icon(icon, color: color, size: 32, weight: 1000),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    color: context.tokens.text,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 28,
+                  ),
+                ),
+                Icon(icon, color: color, size: 32, weight: 1000),
+              ],
+            ),
           ],
         ),
       ),

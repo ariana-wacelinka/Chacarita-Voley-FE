@@ -4,9 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../../../core/services/auth_service.dart';
-import '../../../../core/services/permissions_service.dart';
 
-import '../../../users/domain/entities/gender.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/entities/due.dart';
 import '../../../users/data/repositories/user_repository.dart';
@@ -75,11 +73,13 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
-        _isPlayer = PermissionsService.isPlayer(_userRoles);
+        // Mostrar estado solo si tiene rol ADMIN
+        _isPlayer = !_userRoles.contains('ADMIN');
       });
 
-      // Si es player, cargar automáticamente su usuario
-      if (_isPlayer && userId != null) {
+      // Si es player Y NO viene un initialUserId (no viene desde historial de otra persona),
+      // cargar automáticamente su usuario
+      if (_isPlayer && userId != null && widget.initialUserId == null) {
         _loadPlayerUser(userId.toString());
       }
     }
@@ -109,6 +109,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       setState(() {
         _searchController.text = _selectedUser!.nombreCompleto;
       });
+      // Cargar cuotas del usuario pre-seleccionado
+      _loadDuesForPlayer(_selectedUser!);
     }
   }
 
@@ -117,7 +119,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     _allUsers = await repo
         .getUsersForPayments(); // Solo jugadores con player.id
     if (_allUsers.isEmpty) {
-      _allUsers = _getDummyUsers(); // Fallback dummy
+      _allUsers = []; // Fallback empty list
     }
     _filteredUsers = [];
   }
@@ -133,9 +135,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   void _selectUser(User user) {
-    print(
-      '🔍 Usuario seleccionado: ${user.nombreCompleto} (ID: ${user.id}, PlayerID: ${user.playerId})',
-    );
     setState(() {
       _selectedUser = user;
       _searchController.text = user.nombreCompleto;
@@ -153,7 +152,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   Future<void> _loadDuesForPlayer(User user) async {
     // Validar que el usuario tenga playerId
     if (user.playerId == null) {
-      print('⚠️ Usuario ${user.nombreCompleto} no tiene playerId');
       setState(() {
         _availableDues = [];
         _selectedDue = null;
@@ -162,7 +160,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
       return;
     }
 
-    print('🔄 Cargando cuotas para playerId: ${user.playerId}');
     setState(() => _isLoadingDues = true);
 
     try {
@@ -171,13 +168,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         user.playerId!,
         states: [DueState.PENDING, DueState.OVERDUE],
       );
-
-      print('✅ Cuotas obtenidas: ${dues.length}');
-      if (dues.isNotEmpty) {
-        print(
-          '📋 Cuotas: ${dues.map((d) => '${d.period} (${d.state}, pay: ${d.pay?.state})').join(', ')}',
-        );
-      }
 
       // Aplicar lógica de filtrado según estado de pago
       List<CurrentDue> filteredDues = dues;
@@ -188,9 +178,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         if (due.pay != null &&
             (due.pay!.state == PayState.PENDING ||
                 due.pay!.state == PayState.REJECTED)) {
-          print(
-            '⚠️ Cuota única con pago ${due.pay!.state} - mostrando mensaje',
-          );
           filteredDues = [];
         }
       }
@@ -203,9 +190,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         if (currentMonthDue.pay != null &&
             currentMonthDue.pay!.state == PayState.PENDING) {
-          print(
-            '⚠️ Cuota del mes actual con pago PENDING - filtrando solo OVERDUE',
-          );
           filteredDues = dues
               .where((due) => due.state == DueState.OVERDUE)
               .toList();
@@ -222,9 +206,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
               (due) => due.state == DueState.PENDING,
               orElse: () => filteredDues.first,
             );
-            print(
-              '✅ Cuota seleccionada automáticamente: ${_selectedDue?.period}',
-            );
           }
         });
       }
@@ -237,38 +218,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         });
       }
     }
-  }
-
-  List<User> _getDummyUsers() {
-    return [
-      User(
-        id: '1',
-        dni: '12345678',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        fechaNacimiento: DateTime(1990, 1, 1),
-        genero: Gender.masculino,
-        email: 'juan@example.com',
-        telefono: '123456789',
-        equipo: 'Equipo A',
-        tipos: {UserType.jugador},
-        estadoCuota: EstadoCuota.vencida,
-      ),
-      User(
-        id: '2',
-        dni: '87654321',
-        nombre: 'Maria',
-        apellido: 'Gonzalez',
-        fechaNacimiento: DateTime(1995, 5, 5),
-        genero: Gender.femenino,
-        email: 'maria@example.com',
-        telefono: '987654321',
-        equipo: 'Equipo B',
-        tipos: {UserType.jugador},
-        estadoCuota: EstadoCuota.alDia,
-      ),
-      // Agrega más dummies si necesitas
-    ];
   }
 
   @override
@@ -521,36 +470,37 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         const SizedBox(height: 16),
 
-        // Sección Estado del pago con card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: tokens.card1,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.stroke),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.info_outline, color: tokens.text, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Estado del pago',
-                    style: TextStyle(
-                      color: tokens.text,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+        // Sección Estado del pago con card - Solo visible para ADMIN/PROFESOR
+        if (!_isPlayer)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: tokens.card1,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.stroke),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: tokens.text, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Estado del pago',
+                      style: TextStyle(
+                        color: tokens.text,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildStatusRadioGroup(tokens),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildStatusRadioGroup(tokens),
+              ],
+            ),
           ),
-        ),
 
         const SizedBox(height: 24),
 
@@ -563,6 +513,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                   _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
+                print('❌ Validación fallida: ${_selectedUser?.nombreCompleto ?? "null"}');
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Completa todos los campos requeridos'),
@@ -594,7 +546,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
               final newPayment = payment_entities.Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-                status: _selectedStatus,
+                status: _isPlayer
+                    ? payment_state.PayState.pending
+                    : _selectedStatus,
                 amount: double.parse(_montoController.text),
                 date: _dateFormat.format(
                   _dateFormat.parse(_fechaController.text),
@@ -1019,6 +973,20 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           source: ImageSource.gallery,
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -1026,9 +994,23 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
-          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -1057,6 +1039,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         );
       }
     }
+  }
+
+  bool _isAllowedReceiptExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return false;
+    final extension = parts.last;
+    return extension == 'png' ||
+      extension == 'jpeg' ||
+      extension == 'jpg' ||
+      extension == 'pdf';
   }
 
   // Grupo de radios para estado

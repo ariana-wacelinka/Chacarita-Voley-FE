@@ -50,9 +50,10 @@ class TrainingItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final timeRow = Row(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -61,41 +62,22 @@ class TrainingItem extends StatelessWidget {
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        time,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.tokens.text,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    Text(
+                      time,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.tokens.text,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
-                );
-
-                final attendanceText = Text(
+                ),
+                Text(
                   'Asistencia $attendance',
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: context.tokens.placeholder,
                   ),
-                );
-
-                return Row(
-                  children: [
-                    Flexible(flex: 2, child: timeRow),
-                    Expanded(
-                      flex: 9,
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: attendanceText,
-                      ),
-                    ),
-                  ],
-                );
-              },
+                ),
+              ],
             ),
           ],
         ),

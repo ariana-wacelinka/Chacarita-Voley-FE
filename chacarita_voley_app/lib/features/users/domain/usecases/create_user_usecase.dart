@@ -7,6 +7,12 @@ class CreateUserUseCase {
   CreateUserUseCase(this.repository);
 
   Future<User> execute(User user) async {
-    return await repository.createUser(user);
+    try {
+      final result = await repository.createUser(user);
+      return result;
+    } catch (e) {
+      print('Error en use case: $e');
+      rethrow;
+    }
   }
 }

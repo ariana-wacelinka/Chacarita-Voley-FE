@@ -107,6 +107,7 @@ class UserRepository implements UserRepositoryInterface {
     }
     professor {
       id
+      teams { id isCompetitive name abbreviation }
     }
   ''';
 
@@ -213,15 +214,9 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
-  static const String _deletePlayerMutation = r'''
-    mutation DeletePlayer($id: ID!) {
-      deletePlayer(id: $id)
-    }
-  ''';
-
-  static const String _deleteProfessorMutation = r'''
-    mutation DeleteProfessor($id: ID!) {
-      deleteProfessor(id: $id)
+  static const String _deletePersonMutation = r'''
+    mutation DeletePerson($id: ID!) {
+      deletePerson(id: $id)
     }
   ''';
 
@@ -376,23 +371,44 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<User> createUser(User user) async {
-    final input = _mapUserToCreateInput(user);
-    final result = await _mutate(
-      MutationOptions(
-        document: gql(_createPersonMutation()),
-        variables: {'input': input},
-      ),
-    );
+    try {
+      final input = _mapUserToCreateInput(user);
+      final result = await _mutate(
+        MutationOptions(
+          document: gql(_createPersonMutation()),
+          variables: {'input': input},
+        ),
+      );
 
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
-    }
+      if (result.hasException) {
+        print('GraphQL Exception detectada: ${result.exception}');
+        if (result.exception?.graphqlErrors != null) {
+          print('GraphQL Errors:');
+          for (var error in result.exception!.graphqlErrors) {
+            print('  - Message: ${error.message}');
+            print('  - Extensions: ${error.extensions}');
+            print('  - Path: ${error.path}');
+          }
+        }
+        if (result.exception?.linkException != null) {
+          print('Link Exception: ${result.exception?.linkException}');
+        }
+        throw Exception(result.exception.toString());
+      }
 
-    final data = result.data?['createPerson'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('Respuesta inválida de createPerson');
+      final data = result.data?['createPerson'] as Map<String, dynamic>?;
+      if (data == null) {
+        print('ERROR: Respuesta no contiene datos de createPerson');
+        throw Exception('Respuesta inválida de createPerson');
+      }
+      final mappedUser = _mapPersonToUser(data);
+      return mappedUser;
+    } catch (e, stackTrace) {
+      print('ERROR en createUser:');
+      print('Exception: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
-    return _mapPersonToUser(data);
   }
 
   @override
@@ -437,27 +453,35 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<void> deleteUser(String id) async {
-    // Primero obtener el usuario para determinar su rol
-    final user = await getUserById(id);
-    if (user == null) {
-      throw Exception('Usuario no encontrado');
-    }
+    try {
+      final result = await _mutate(
+        MutationOptions(
+          document: gql(_deletePersonMutation),
+          variables: {'id': id},
+        ),
+      );
 
-    // Determinar qué mutation usar según el rol principal
-    String mutation;
-    if (user.tipos.contains(UserType.profesor)) {
-      mutation = _deleteProfessorMutation;
-    } else {
-      // Por defecto usar deletePlayer (jugadores y admins)
-      mutation = _deletePlayerMutation;
-    }
-
-    final result = await _mutate(
-      MutationOptions(document: gql(mutation), variables: {'id': id}),
-    );
-
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
+      if (result.hasException) {
+        print('GraphQL Exception detectada en delete:');
+        print('Exception: ${result.exception}');
+        if (result.exception?.graphqlErrors != null) {
+          print('GraphQL Errors:');
+          for (var error in result.exception!.graphqlErrors) {
+            print('  - Message: ${error.message}');
+            print('  - Extensions: ${error.extensions}');
+            print('  - Path: ${error.path}');
+          }
+        }
+        if (result.exception?.linkException != null) {
+          print('Link Exception: ${result.exception?.linkException}');
+        }
+        throw Exception(result.exception.toString());
+      }
+    } catch (e, stackTrace) {
+      print('ERROR en deleteUser:');
+      print('Exception: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
@@ -524,6 +548,28 @@ class UserRepository implements UserRepositoryInterface {
 
     final professor = person['professor'] as Map<String, dynamic>?;
 
+    // Si tiene rol PROFESSOR y no es jugador (o no tiene equipos como jugador), usar equipos del profesor
+    final professorTeams = (professor?['teams'] as List<dynamic>?) ?? const [];
+    final isProfessor = tipos.contains(UserType.profesor);
+    final isPlayer = tipos.contains(UserType.jugador);
+
+    final equiposFinales = (isPlayer && equipos.isNotEmpty)
+        ? equipos
+        : (isProfessor && professorTeams.isNotEmpty)
+        ? professorTeams
+              .map((t) {
+                final teamMap = t as Map<String, dynamic>;
+                return TeamInfo(
+                  id: teamMap['id'] as String? ?? '',
+                  name: teamMap['name'] as String? ?? '',
+                  abbreviation: teamMap['abbreviation'] as String? ?? '',
+                  isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
+                );
+              })
+              .where((team) => team.id.isNotEmpty)
+              .toList()
+        : equipos;
+
     // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
     CurrentDue? currentDue;
@@ -553,7 +599,7 @@ class UserRepository implements UserRepositoryInterface {
       numeroCamiseta: jerseyNumber?.toString(),
       numeroAfiliado: leagueId?.toString(),
       equipo: equipo,
-      equipos: equipos,
+      equipos: equiposFinales,
       tipos: tipos,
       estadoCuota: estadoCuota,
       currentDue: currentDue,
@@ -561,48 +607,53 @@ class UserRepository implements UserRepositoryInterface {
   }
 
   Map<String, dynamic> _mapUserToCreateInput(User user) {
+    print('--- Validando datos de usuario ---');
     if (user.nombre.isEmpty) {
+      print('ERROR: El nombre está vacío');
       throw Exception('El nombre es obligatorio');
     }
     if (user.apellido.isEmpty) {
+      print('ERROR: El apellido está vacío');
       throw Exception('El apellido es obligatorio');
     }
     if (user.dni.isEmpty) {
+      print('ERROR: El DNI está vacío');
       throw Exception('El DNI es obligatorio');
     }
     if (user.email.isEmpty) {
+      print('ERROR: El email está vacío');
       throw Exception('El email es obligatorio');
     }
+    print('Validación básica completada');
+
+    final roles = _mapRolesToApi(user.tipos);
+    print('Roles mapeados: $roles');
 
     final input = <String, dynamic>{
       'name': user.nombre,
       'surname': user.apellido,
       'dni': user.dni,
       'email': user.email,
-      'roles': _mapRolesToApi(user.tipos),
+      'roles': roles,
     };
 
     if (user.telefono.isNotEmpty) {
       input['phone'] = user.telefono;
+      print('Teléfono incluido: ${user.telefono}');
     }
 
     // Siempre incluir gender (requerido por el backend)
-    input['gender'] = _mapGenderToApi(user.genero);
+    final gender = _mapGenderToApi(user.genero);
+    input['gender'] = gender;
+    print('Género mapeado: $gender');
 
     final birthDate = _formatBirthDate(user.fechaNacimiento);
     if (birthDate.isNotEmpty) {
       input['birthDate'] = birthDate;
+      print('Fecha nacimiento incluida: $birthDate');
     }
 
-    // Si el usuario es jugador, incluir jerseyNumber y leagueId
-    if (user.tipos.contains(UserType.jugador)) {
-      final jersey = int.tryParse(user.numeroCamiseta ?? '');
-      input['jerseyNumber'] = jersey ?? 0;
-
-      final league = int.tryParse(user.numeroAfiliado ?? '');
-      input['leagueId'] = league ?? 0;
-    }
-
+    print('Input de creación completado');
     return input;
   }
 

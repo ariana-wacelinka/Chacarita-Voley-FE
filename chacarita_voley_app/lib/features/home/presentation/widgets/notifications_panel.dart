@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../app/di.dart';
-import '../../domain/models/deliveries_page.dart';
 import '../../domain/models/delivery_preview.dart';
 
 class NotificationsPanel extends ConsumerStatefulWidget {

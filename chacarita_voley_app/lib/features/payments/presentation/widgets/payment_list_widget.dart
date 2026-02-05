@@ -80,9 +80,6 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   }
 
   Future<void> _downloadReceipt(Pay payment) async {
-    print('🔵 Descargando comprobante para pago ${payment.id}');
-    print('fileName: ${payment.fileName}');
-
     setState(() => _downloadingFiles[payment.id] = true);
 
     try {
@@ -384,7 +381,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
     final tokens = context.tokens;
     if (status == PayState.validated) {
       return OutlinedButton.icon(
-        onPressed: () => context.go('/payments/edit/${payment.id}'),
+        onPressed: () => context.push('/payments/edit/${payment.id}'),
         icon: const Icon(Icons.edit, size: 18),
         label: const Text('Modificar', style: TextStyle(fontSize: 13)),
         style: OutlinedButton.styleFrom(

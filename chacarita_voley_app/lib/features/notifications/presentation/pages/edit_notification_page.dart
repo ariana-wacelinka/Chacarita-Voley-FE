@@ -1357,8 +1357,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   }
 
   Widget _buildBottomButton() {
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
       decoration: BoxDecoration(
         color: context.tokens.card1,
         boxShadow: [
@@ -1373,7 +1374,8 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (_currentStep > 0)
-            Expanded(
+            SizedBox(
+              width: 110,
               child: OutlinedButton(
                 onPressed: _previousStep,
                 style: OutlinedButton.styleFrom(
@@ -1403,10 +1405,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                   : (_currentStep == 2 ? _updateNotification : _nextStep),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 24,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1422,6 +1421,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                     )
                   : Text(
                       _currentStep == 2 ? 'Guardar cambios' : 'Siguiente',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

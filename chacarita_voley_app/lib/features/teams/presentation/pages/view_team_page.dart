@@ -33,6 +33,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canEditUser = false;
+  bool _canDelete = false;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canEditUser = PermissionsService.canEditUser(_userRoles);
+        _canDelete = PermissionsService.canDeleteTeam(_userRoles);
       });
     }
   }
@@ -404,23 +406,17 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   }
 
   Future<void> _loadTeam() async {
-    // ignore: avoid_print
-    print('🔍 ViewTeamPage: Cargando equipo con ID: ${widget.teamId}');
     try {
       final team = await _repository.getTeamById(widget.teamId);
-      // ignore: avoid_print
-      print('✅ ViewTeamPage: Equipo obtenido: ${team?.nombre ?? "null"}');
       if (mounted) {
         setState(() {
           _team = team;
           _isLoading = false;
         });
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       // ignore: avoid_print
       print('❌ ViewTeamPage: Error cargando equipo: $e');
-      // ignore: avoid_print
-      print('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -581,7 +577,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -613,7 +609,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: context.tokens.strokeToNoStroke),
                       ),
                       child: Row(
                         children: [
@@ -653,7 +649,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -801,7 +797,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -966,7 +962,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: context.tokens.strokeToNoStroke),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -996,7 +992,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: context.tokens.strokeToNoStroke),
                       ),
                       child: Column(
                         children: [
@@ -1045,7 +1041,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                           Divider(
                             height: 1,
                             thickness: 1,
-                            color: Colors.grey.shade300,
+                            color: context.tokens.strokeToNoStroke,
                           ),
                           InkWell(
                             onTap: () {
@@ -1117,27 +1113,31 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // Botón Eliminar equipo
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _handleDeleteTeam,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              if (_canDelete) ...[
+                const SizedBox(height: 12),
+                // Botón Eliminar equipo
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _handleDeleteTeam,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Symbols.delete, size: 18),
+                    label: const Text(
+                      'Eliminar equipo',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Symbols.delete, size: 18),
-                  label: const Text(
-                    'Eliminar equipo',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
                 ),
-              ),
+              ],
             ],
             const SizedBox(height: 20),
           ],

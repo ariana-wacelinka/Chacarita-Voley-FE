@@ -96,19 +96,6 @@ class _EditTeamPageState extends State<EditTeamPage> {
           team.tipo != _teamDetail!.tipo ||
           hasProfessorChanges;
 
-      debugPrint(
-        '🔍 EditTeam: nombre: ${team.nombre} vs ${_teamDetail!.nombre}',
-      );
-      debugPrint(
-        '🔍 EditTeam: abreviacion: "${team.abreviacion}" vs "${_teamDetail!.abreviacion}"',
-      );
-      debugPrint('🔍 EditTeam: tipo: ${team.tipo} vs ${_teamDetail!.tipo}');
-      debugPrint(
-        '🔍 EditTeam: professorIds: ${team.professorIds} vs ${_teamDetail!.professorIds}',
-      );
-      debugPrint('🔍 EditTeam: hasProfessorChanges = $hasProfessorChanges');
-      debugPrint('🔍 EditTeam: hasBasicChanges = $hasBasicChanges');
-
       // Detectar si hubo cambios en integrantes (comparar IDs)
       final originalPlayerIds = _teamDetail!.integrantes
           .where((m) => m.playerId != null)
@@ -144,10 +131,6 @@ class _EditTeamPageState extends State<EditTeamPage> {
             newMember.numeroCamiseta!.isNotEmpty &&
             originalMember.numeroCamiseta != newMember.numeroCamiseta) {
           try {
-            print(
-              '🔢 Updating jersey number for player ${newMember.playerId} (person ${newMember.personId}): '
-              '${originalMember.numeroCamiseta ?? "none"} → ${newMember.numeroCamiseta}',
-            );
             // Usar personId para updatePerson, no playerId
             if (newMember.personId != null) {
               await _userRepository.updatePerson(newMember.personId!, {
@@ -155,7 +138,9 @@ class _EditTeamPageState extends State<EditTeamPage> {
               });
               updatedCount++;
             } else {
-              print('⚠️ Cannot update jersey - personId is null for player ${newMember.playerId}');
+              print(
+                '⚠️ Cannot update jersey - personId is null for player ${newMember.playerId}',
+              );
               errorCount++;
             }
           } catch (e) {

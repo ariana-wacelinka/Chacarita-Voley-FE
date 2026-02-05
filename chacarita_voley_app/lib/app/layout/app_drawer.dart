@@ -231,8 +231,19 @@ class _AppDrawerState extends State<AppDrawer> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
-                await _logout(context);
+                // Capturar el context del Navigator antes de cerrar el diálogo
+                final navigator = Navigator.of(context);
+                final router = GoRouter.of(context);
+
+                // Cerrar el diálogo primero
+                navigator.pop();
+
+                // Ejecutar logout
+                final authService = AuthService();
+                await authService.logout();
+
+                // Redirigir a login inmediatamente
+                router.go('/login');
               },
               child: Text(
                 'Cerrar Sesión',
@@ -243,20 +254,6 @@ class _AppDrawerState extends State<AppDrawer> {
         );
       },
     );
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    try {
-      final authService = AuthService();
-      await authService.logout();
-      if (context.mounted) {
-        context.go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        _showErrorSnackBar(context, e.toString());
-      }
-    }
   }
 
   void _showErrorSnackBar(BuildContext context, String message) {

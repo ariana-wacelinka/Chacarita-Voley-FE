@@ -12,6 +12,7 @@ class PaymentEditFormWidget extends StatefulWidget {
   final Pay payment;
   final DateFormat dateFormat;
   final Function(Pay updatedPayment) onSave;
+  final VoidCallback? onReceiptUpdated;
   final bool isSaving;
 
   const PaymentEditFormWidget({
@@ -19,6 +20,7 @@ class PaymentEditFormWidget extends StatefulWidget {
     required this.payment,
     required this.dateFormat,
     required this.onSave,
+    this.onReceiptUpdated,
     required this.isSaving,
   });
 
@@ -31,7 +33,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
   late final TextEditingController _montoController;
   late final TextEditingController _fechaController;
   String? _comprobanteFileName;
-  String? _comprobanteFileUrl;
   bool _isUploadingFile = false;
 
   @override
@@ -44,7 +45,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       text: widget.dateFormat.format(DateTime.parse(widget.payment.date)),
     );
     _comprobanteFileName = widget.payment.fileName;
-    _comprobanteFileUrl = widget.payment.fileUrl;
   }
 
   @override
@@ -191,7 +191,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.tokens.gray,
+                      backgroundColor: context.tokens.secondaryButton,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -228,7 +228,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
                     widget.onSave(updatedPayment);
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: tokens.redToRosita,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 0),
@@ -285,7 +285,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         break;
 
       case PayState.pending:
-        bannerColor = tokens.pending ?? Colors.orange;
+        bannerColor = tokens.pending;
         title = 'Pago Pendiente';
         subtitle =
             'Enviado: ${widget.dateFormat.format(widget.payment.sentDate)}';
@@ -574,6 +574,20 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
           source: ImageSource.gallery,
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -581,9 +595,23 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
-          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
+          if (!_isAllowedReceiptExtension(file.path)) {
+            if (mounted) {
+              setState(() => _isUploadingFile = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Formato no permitido. Usá PNG, JPEG o PDF. JPG se convierte a JPEG.',
+                  ),
+                  backgroundColor: context.tokens.redToRosita,
+                ),
+              );
+            }
+            return;
+          }
           result = {
             'fileName': file.path.split('/').last,
             'fileUrl': file.path,
@@ -594,25 +622,18 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       if (result != null && mounted) {
         // Subir el archivo al servidor usando updatePaymentReceipt
         try {
-          print('📤 Subiendo archivo al servidor...');
-          print('Payment ID: ${widget.payment.id}');
-          print('Archivo: ${result['fileName']}');
-
           final uploadResult = await FileUploadService.updatePaymentReceipt(
             paymentId: widget.payment.id,
             file: File(result['fileUrl']!),
           );
 
-          print('✅ Archivo subido exitosamente');
-          print('fileName: ${uploadResult['fileName']}');
-          print('fileUrl: ${uploadResult['fileUrl']}');
-
           if (mounted) {
             setState(() {
               _comprobanteFileName = uploadResult['fileName'];
-              _comprobanteFileUrl = uploadResult['fileUrl'];
               _isUploadingFile = false;
             });
+
+            widget.onReceiptUpdated?.call();
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -658,6 +679,16 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         );
       }
     }
+  }
+
+  bool _isAllowedReceiptExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return false;
+    final extension = parts.last;
+    return extension == 'png' ||
+        extension == 'jpeg' ||
+        extension == 'jpg' ||
+        extension == 'pdf';
   }
 
   @override

@@ -6,18 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 import '../environment.dart';
-import '../network/graphql_client_factory.dart';
+import 'auth_service.dart';
 
 class FileUploadService {
   static const bool _mockUpload = false;
-  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
-
-  static final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
-  static bool _notificationsInitialized = false;
+  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'png'];
+  static const List<String> _pickerExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
 
   /// Obtiene el MediaType correcto según la extensión del archivo
   static MediaType _getMediaType(String fileName) {
@@ -35,13 +31,21 @@ class FileUploadService {
     }
   }
 
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  static bool _notificationsInitialized = false;
+
   static Future<void> _initNotifications() async {
     if (_notificationsInitialized) return;
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-    const initSettings = InitializationSettings(android: androidSettings);
+    const iosSettings = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
     await _notifications.initialize(
       initSettings,
@@ -54,6 +58,29 @@ class FileUploadService {
           }
         }
       },
+    );
+
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await androidPlugin?.requestNotificationsPermission();
+    const channel = AndroidNotificationChannel(
+      'downloads',
+      'Descargas',
+      description: 'Notificaciones de descargas completadas',
+      importance: Importance.high,
+    );
+    await androidPlugin?.createNotificationChannel(channel);
+
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    await iosPlugin?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
     );
 
     _notificationsInitialized = true;
@@ -92,6 +119,25 @@ class FileUploadService {
     return null;
   }
 
+  static Future<File> _normalizeReceiptFile(File file) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    final parts = fileName.toLowerCase().split('.');
+    if (parts.length < 2) {
+      throw Exception('Formato no permitido');
+    }
+    final extension = parts.last;
+    if (extension == 'jpg') {
+      final tempDir = await getTemporaryDirectory();
+      final newPath =
+          '${tempDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+      return file.copy(newPath);
+    }
+    if (!_allowedExtensions.contains(extension)) {
+      throw Exception('Formato no permitido');
+    }
+    return file;
+  }
+
   /// Sube un comprobante de pago al backend
   /// Endpoint: POST /api/pays/{paymentId}/receipt
   /// Retorna: {fileName: "receipts/1/uuid.pdf", fileUrl: "https://..."}
@@ -100,7 +146,8 @@ class FileUploadService {
     required File file,
   }) async {
     try {
-      final fileName = file.path.split(Platform.pathSeparator).last;
+      final normalizedFile = await _normalizeReceiptFile(file);
+      final fileName = normalizedFile.path.split(Platform.pathSeparator).last;
 
       if (_mockUpload) {
         await Future.delayed(const Duration(seconds: 1));
@@ -112,19 +159,17 @@ class FileUploadService {
       );
       final request = http.MultipartRequest('POST', url);
 
-      final token = GraphQLClientFactory.token;
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      // Leer archivo como bytes y especificar Content-Type explícitamente
-      final fileBytes = await file.readAsBytes();
       final mediaType = _getMediaType(fileName);
       request.files.add(
-        http.MultipartFile.fromBytes(
+        await http.MultipartFile.fromPath(
           'file',
-          fileBytes,
-          filename: fileName,
+          normalizedFile.path,
           contentType: mediaType,
         ),
       );
@@ -165,8 +210,8 @@ class FileUploadService {
 
     try {
       final url = Uri.parse(getPaymentReceiptUrl(paymentId: paymentId));
-      final token = GraphQLClientFactory.token;
-      // Solo agregar token si existe y no es el token mock de desarrollo
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       final headers = token != null
           ? {'Authorization': 'Bearer $token'}
           : <String, String>{};
@@ -244,7 +289,8 @@ class FileUploadService {
     required File file,
   }) async {
     try {
-      final fileName = file.path.split(Platform.pathSeparator).last;
+      final normalizedFile = await _normalizeReceiptFile(file);
+      final fileName = normalizedFile.path.split(Platform.pathSeparator).last;
 
       if (_mockUpload) {
         await Future.delayed(const Duration(seconds: 1));
@@ -254,46 +300,25 @@ class FileUploadService {
       final url = Uri.parse(
         '${Environment.restBaseUrl}/api/pays/$paymentId/receipt',
       );
-
-      print('🔷 PUT Request Details:');
-      print('URL: $url');
-      print('File path: ${file.path}');
-      print('File exists: ${await file.exists()}');
-      print('File size: ${await file.length()} bytes');
-
       final request = http.MultipartRequest('PUT', url);
 
-      final token = GraphQLClientFactory.token;
+      final authService = AuthService();
+      final token = await authService.getValidAccessToken();
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
-        print('Token presente: ${token.length} caracteres');
-      } else {
-        print('⚠️ Token ausente!');
       }
 
-      // Leer archivo como bytes y especificar Content-Type explícitamente
-      final fileBytes = await file.readAsBytes();
       final mediaType = _getMediaType(fileName);
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          fileBytes,
-          filename: fileName,
-          contentType: mediaType,
-        ),
+      final multipartFile = await http.MultipartFile.fromPath(
+        'file',
+        normalizedFile.path,
+        contentType: mediaType,
       );
 
-      print('Headers: ${request.headers}');
-      print('Files count: ${request.files.length}');
-      print('Field name: ${request.files.first.field}');
-      print('Filename: ${request.files.first.filename}');
-      print('Content-Type: ${mediaType.mimeType}');
+      request.files.add(multipartFile);
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonData = json.decode(response.body);
@@ -315,7 +340,7 @@ class FileUploadService {
   static Future<Map<String, String>?> pickAndUploadPaymentReceipt({
     required String paymentId,
   }) async {
-    final file = await pickFile(allowedExtensions: _allowedExtensions);
+    final file = await pickFile(allowedExtensions: _pickerExtensions);
     if (file != null) {
       return await uploadPaymentReceipt(paymentId: paymentId, file: file);
     }
