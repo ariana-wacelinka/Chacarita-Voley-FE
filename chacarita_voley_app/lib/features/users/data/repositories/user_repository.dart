@@ -476,27 +476,62 @@ class UserRepository implements UserRepositoryInterface {
 
   @override
   Future<void> deleteUser(String id) async {
-    // Primero obtener el usuario para determinar su rol
-    final user = await getUserById(id);
-    if (user == null) {
-      throw Exception('Usuario no encontrado');
-    }
+    print('========== USER REPOSITORY - DELETE USER ==========');
+    print('Iniciando eliminación de usuario con ID: $id');
 
-    // Determinar qué mutation usar según el rol principal
-    String mutation;
-    if (user.tipos.contains(UserType.profesor)) {
-      mutation = _deleteProfessorMutation;
-    } else {
-      // Por defecto usar deletePlayer (jugadores y admins)
-      mutation = _deletePlayerMutation;
-    }
+    try {
+      // Primero obtener el usuario para determinar su rol
+      print('Obteniendo datos del usuario para determinar rol...');
+      final user = await getUserById(id);
+      if (user == null) {
+        print('ERROR: Usuario con ID $id no encontrado');
+        throw Exception('Usuario no encontrado');
+      }
+      print('Usuario encontrado: ${user.nombreCompleto}');
+      print('Roles del usuario: ${user.tipos}');
 
-    final result = await _mutate(
-      MutationOptions(document: gql(mutation), variables: {'id': id}),
-    );
+      // Determinar qué mutation usar según el rol principal
+      String mutation;
+      if (user.tipos.contains(UserType.profesor)) {
+        mutation = _deleteProfessorMutation;
+        print('Usando mutation: deleteProfessor');
+      } else {
+        // Por defecto usar deletePlayer (jugadores y admins)
+        mutation = _deletePlayerMutation;
+        print('Usando mutation: deletePlayer');
+      }
 
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
+      print('Ejecutando mutation de eliminación...');
+      final result = await _mutate(
+        MutationOptions(document: gql(mutation), variables: {'id': id}),
+      );
+
+      if (result.hasException) {
+        print('GraphQL Exception detectada en delete:');
+        print('Exception: ${result.exception}');
+        if (result.exception?.graphqlErrors != null) {
+          print('GraphQL Errors:');
+          for (var error in result.exception!.graphqlErrors) {
+            print('  - Message: ${error.message}');
+            print('  - Extensions: ${error.extensions}');
+            print('  - Path: ${error.path}');
+          }
+        }
+        if (result.exception?.linkException != null) {
+          print('Link Exception: ${result.exception?.linkException}');
+        }
+        throw Exception(result.exception.toString());
+      }
+
+      print('Usuario eliminado exitosamente desde repositorio');
+      print('Respuesta: ${result.data}');
+      print('==================================================');
+    } catch (e, stackTrace) {
+      print('ERROR en deleteUser:');
+      print('Exception: $e');
+      print('Stack trace: $stackTrace');
+      print('==================================================');
+      rethrow;
     }
   }
 

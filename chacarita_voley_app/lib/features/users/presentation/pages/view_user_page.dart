@@ -128,6 +128,10 @@ class _ViewUserPageState extends State<ViewUserPage> {
 
   @override
   Widget build(BuildContext context) {
+    print(
+      '🎬 ViewUserPage.build() - userId: ${widget.userId}, isLoading: $_isLoading, user: ${_user?.nombreCompleto}',
+    );
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: context.tokens.background,
@@ -982,6 +986,12 @@ class _ViewUserPageState extends State<ViewUserPage> {
         _isOwnProfile && PermissionsService.isPlayer(_userRoles);
     final canDelete = PermissionsService.canDeleteUser(_userRoles);
 
+    print(
+      '📋 _buildButtons - isPlayerOnly: $isPlayerOnly, canDelete: $canDelete',
+    );
+    print('   _isOwnProfile: $_isOwnProfile, _userRoles: $_userRoles');
+    print('   Condición botón eliminar: ${!isPlayerOnly && canDelete}');
+
     return Column(
       children: [
         SizedBox(
@@ -1023,27 +1033,42 @@ class _ViewUserPageState extends State<ViewUserPage> {
         // Ocultar botón de eliminar si es jugador solo player viendo su propio perfil o si es profesor
         if (!isPlayerOnly && canDelete) ...[
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _showDeleteDialog(context),
-              icon: const Icon(Symbols.delete, color: Colors.white, size: 18),
-              label: const Text(
-                'Eliminar usuario',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          Builder(
+            builder: (context) {
+              print('🔴 RENDERIZANDO BOTÓN DE ELIMINAR');
+              print('  - isPlayerOnly: $isPlayerOnly');
+              print('  - canDelete: $canDelete');
+              print('  - userId: ${widget.userId}');
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    print('🔴 BOTÓN ELIMINAR PRESIONADO');
+                    _showDeleteDialog(context);
+                  },
+                  icon: const Icon(
+                    Symbols.delete,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Eliminar usuario',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ],
@@ -1051,6 +1076,11 @@ class _ViewUserPageState extends State<ViewUserPage> {
   }
 
   Future<void> _showDeleteDialog(BuildContext context) async {
+    print('========== _showDeleteDialog LLAMADO ==========');
+    print('Mostrando diálogo de confirmación para eliminar usuario');
+    print('User ID: ${widget.userId}');
+    print('User: ${_user?.nombreCompleto}');
+
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1083,8 +1113,14 @@ class _ViewUserPageState extends State<ViewUserPage> {
     );
 
     if (shouldDelete == true) {
+      print('========== VIEW USER PAGE - DELETE ==========');
+      print('Usuario confirmó eliminación');
+      print('ID del usuario a eliminar: ${widget.userId}');
       try {
+        print('Llamando a deleteUserUseCase.execute()...');
         await _deleteUserUseCase.execute(widget.userId);
+        print('Eliminación completada exitosamente');
+        print('============================================');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1094,16 +1130,22 @@ class _ViewUserPageState extends State<ViewUserPage> {
           );
           _handleBack();
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        print('========== ERROR AL ELIMINAR USUARIO ==========');
+        print('Error: $e');
+        print('Stack trace: $stackTrace');
+        print('===============================================');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Error al eliminar usuario'),
+              content: Text('Error al eliminar usuario: $e'),
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
       }
+    } else {
+      print('Usuario canceló la eliminación');
     }
   }
 }

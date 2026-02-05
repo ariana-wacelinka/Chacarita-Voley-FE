@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'app_drawer.dart';
@@ -16,6 +17,7 @@ class AppScaffold extends StatefulWidget {
     this.subtitle,
     this.showDrawer = true,
     this.onBack,
+    this.isHomePage = false,
   });
 
   final String title;
@@ -24,6 +26,7 @@ class AppScaffold extends StatefulWidget {
   final String? subtitle;
   final bool showDrawer;
   final VoidCallback? onBack;
+  final bool isHomePage;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -109,13 +112,16 @@ class _AppScaffoldState extends State<AppScaffold> {
           return;
         }
 
-        final currentRoute = GoRouterState.of(context).uri.path;
-        if (currentRoute == '/home') {
-          // Si estamos en home, permitir cerrar la app
-          // No hacemos nada y Flutter cerrará la app
+        // Si estamos en home, salir de la app
+        if (widget.isHomePage) {
+          SystemNavigator.pop();
         } else {
-          // Si no estamos en home, navegar a home
-          context.go('/home');
+          // Si no estamos en home, volver atrás
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
         }
       },
       child: Scaffold(
