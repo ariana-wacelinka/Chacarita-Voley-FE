@@ -230,6 +230,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
         location
         trainingType
         status
+        countOfPlayers
+        countOfAssisted
         team {
           id
           name
@@ -782,6 +784,20 @@ class TrainingRepository implements TrainingRepositoryInterface {
       );
     }).toList();
 
+    final calculatedCountOfPlayers = attendances.length;
+    final calculatedCountOfAssisted =
+        attendances.where((a) => a.isPresent).length;
+    final countOfPlayers = data['countOfPlayers'] as int?;
+    final countOfAssisted = data['countOfAssisted'] as int?;
+    final effectiveCountOfPlayers =
+        (countOfPlayers == null || countOfPlayers == 0)
+        ? calculatedCountOfPlayers
+        : countOfPlayers;
+    final effectiveCountOfAssisted =
+        (countOfAssisted == null || countOfAssisted == 0)
+        ? calculatedCountOfAssisted
+        : countOfAssisted;
+
     // Parse startDate and endDate from training
     DateTime? trainingStartDate;
     DateTime? trainingEndDate;
@@ -810,17 +826,24 @@ class TrainingRepository implements TrainingRepositoryInterface {
       dayOfWeek: trainingData?['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
           : null,
-      startTime: trainingData?['startTime'] as String? ?? '',
-      endTime: trainingData?['endTime'] as String? ?? '',
-      location: trainingData?['location'] as String? ?? '',
+      startTime:
+          data['startTime'] as String? ?? trainingData?['startTime'] as String? ?? '',
+      endTime:
+          data['endTime'] as String? ?? trainingData?['endTime'] as String? ?? '',
+      location:
+          data['location'] as String? ?? trainingData?['location'] as String? ?? '',
       type: TrainingType.fromBackend(
-        trainingData?['trainingType'] as String? ?? 'PHYSICAL',
+        data['trainingType'] as String? ??
+            trainingData?['trainingType'] as String? ??
+            'PHYSICAL',
       ),
       status: TrainingStatus.fromBackend(
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
       hasTraining: trainingData != null,
+      countOfPlayers: effectiveCountOfPlayers,
+      countOfAssisted: effectiveCountOfAssisted,
     );
   }
 

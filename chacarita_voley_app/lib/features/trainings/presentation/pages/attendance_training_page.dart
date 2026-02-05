@@ -90,14 +90,13 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         ),
       );
 
-      // Navegar de vuelta al detalle del entrenamiento
       await Future.delayed(const Duration(milliseconds: 400));
 
       if (!mounted) {
         return;
       }
 
-      context.pushReplacement('/trainings/${widget.trainingId}');
+      context.pop(true);
     } catch (e) {
       print('[_saveAttendance] Error al guardar: $e');
       if (mounted) {

@@ -326,13 +326,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: TrainingItem(
                           category: training.teamName,
                           subtitle:
-                              'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                            'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
                           time: training.formattedTime,
                           attendance:
-                              '${training.attendance}/${training.totalPlayers}',
+                            '${training.attendance}/${training.totalPlayers}',
                           onTap: isPlayer
-                              ? null
-                              : () => context.go('/trainings/${training.id}'),
+                            ? null
+                            : () => context.push(
+                              '/trainings/${training.id}?from=home',
+                              ),
                         ),
                       );
                     }),

@@ -44,59 +44,71 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
     }
   }
 
+  void _handleBack() {
+    final fromHome =
+        GoRouterState.of(context).uri.queryParameters['from'] == 'home';
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(fromHome ? '/home' : '/trainings');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final teamName = _training?.teamName ?? '';
 
-    return Scaffold(
-      backgroundColor: context.tokens.background,
-      appBar: AppBar(
-        backgroundColor: context.tokens.card1,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/trainings');
-            }
-          },
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Detalle del Entrenamiento',
-              style: TextStyle(
-                color: context.tokens.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (teamName.isNotEmpty)
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handleBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: context.tokens.background,
+        appBar: AppBar(
+          backgroundColor: context.tokens.card1,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Symbols.arrow_back, color: context.tokens.text),
+            onPressed: _handleBack,
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
               Text(
-                teamName,
+                'Detalle del Entrenamiento',
                 style: TextStyle(
-                  color: context.tokens.placeholder,
-                  fontSize: 11,
+                  color: context.tokens.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-          ],
+              if (teamName.isNotEmpty)
+                Text(
+                  teamName,
+                  style: TextStyle(
+                    color: context.tokens.placeholder,
+                    fontSize: 11,
+                  ),
+                ),
+            ],
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.tokens.redToRosita,
+        body: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.tokens.redToRosita,
+                  ),
                 ),
-              ),
-            )
-          : _training == null
-          ? _buildErrorState(context)
-          : _buildContent(context, _training!),
+              )
+            : _training == null
+            ? _buildErrorState(context)
+            : _buildContent(context, _training!),
+      ),
     );
   }
 
@@ -407,6 +419,8 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
   }
 
   Widget _buildBottomButtons(BuildContext context, Training training) {
+    final fromHome =
+        GoRouterState.of(context).uri.queryParameters['from'] == 'home';
     final bottomPadding = 24.0 + MediaQuery.of(context).viewPadding.bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding),
@@ -420,9 +434,16 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => context.push('/trainings/${training.id}/edit'),
+              onPressed: () async {
+                final result = await context.push(
+                  '/trainings/${training.id}/attendance',
+                );
+                if (result == true && mounted) {
+                  _loadTraining();
+                }
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.tokens.secondaryButton,
+                backgroundColor: context.tokens.green,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -433,10 +454,10 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Symbols.edit, size: 18, color: Colors.white),
+                  const Icon(Symbols.fact_check, size: 18, color: Colors.white),
                   const SizedBox(width: 8),
                   const Text(
-                    'Modificar entrenamiento',
+                    'Pasar asistencia',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -445,68 +466,6 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _showDeleteDialog(context, training),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Symbols.delete, size: 18, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    'Eliminar entrenamiento',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, Training training) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.tokens.card1,
-        content: Text(
-          '¿Estás seguro de que querés eliminar este entrenamiento?',
-          style: TextStyle(color: context.tokens.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: context.tokens.placeholder),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _repository.deleteTraining(training.id);
-              if (context.mounted) {
-                Navigator.pop(context);
-                context.go('/trainings');
-              }
-            },
-            child: Text(
-              'Eliminar',
-              style: TextStyle(color: context.tokens.redToRosita),
             ),
           ),
         ],
