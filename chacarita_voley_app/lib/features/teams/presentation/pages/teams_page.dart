@@ -34,6 +34,7 @@ class _TeamsPageState extends State<TeamsPage> {
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canDelete = false;
+  bool _canCreate = false;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _TeamsPageState extends State<TeamsPage> {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canDelete = PermissionsService.canDeleteTeam(_userRoles);
+        _canCreate = PermissionsService.canCreateTeam(_userRoles);
       });
     }
   }
@@ -87,13 +89,9 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   void _onSearchChanged(String value) {
-    debugPrint('🔍 Search changed: "$value"');
-
     _debounceTimer?.cancel();
 
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      debugPrint('⏱️ Debounce fired for "$value"');
-
       setState(() {
         _searchQuery = value;
         _currentPage = 0;
@@ -257,13 +255,6 @@ class _TeamsPageState extends State<TeamsPage> {
               child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,
                 builder: (context, snapshot) {
-                  debugPrint(
-                    '🧱 FutureBuilder state: '
-                    'connection=${snapshot.connectionState} '
-                    'hasData=${snapshot.hasData} '
-                    'hasError=${snapshot.hasError}',
-                  );
-
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
                       child: CircularProgressIndicator(
@@ -298,8 +289,6 @@ class _TeamsPageState extends State<TeamsPage> {
                   }
 
                   final teams = snapshot.data ?? [];
-                  debugPrint('🧱 Teams in UI: ${teams.length}');
-
                   if (teams.isEmpty) {
                     return Center(
                       child: Column(
@@ -606,23 +595,25 @@ class _TeamsPageState extends State<TeamsPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await context.push<bool>('/teams/register');
+      floatingActionButton: _canCreate
+          ? FloatingActionButton(
+              onPressed: () async {
+                final created = await context.push<bool>('/teams/register');
 
-          if (created == true && mounted) {
-            setState(() {
-              _teamsFuture = _repository.getTeamsListItems(
-                searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                page: _currentPage,
-                size: _teamsPerPage,
-              );
-            });
-          }
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Symbols.group_add, color: Colors.white),
-      ),
+                if (created == true && mounted) {
+                  setState(() {
+                    _teamsFuture = _repository.getTeamsListItems(
+                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+                      page: _currentPage,
+                      size: _teamsPerPage,
+                    );
+                  });
+                }
+              },
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Symbols.group_add, color: Colors.white),
+            )
+          : null,
     );
   }
 }

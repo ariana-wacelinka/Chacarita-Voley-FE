@@ -23,6 +23,7 @@ class NotificationRepository {
         frequency
         createdAt
         countOfPlayers
+        status
         sender {
           id
           name
@@ -46,8 +47,8 @@ class NotificationRepository {
   ''';
 
   String _getAllNotificationsQuery() => '''
-    query GetAllNotifications(\$page: Int!, \$size: Int!) {
-      getAllNotifications(page: \$page, size: \$size) {
+    query GetAllNotifications(\$page: Int!, \$size: Int!, \$search: String) {
+      getAllNotifications(page: \$page, size: \$size, filters: {search: \$search}) {
         totalPages
         totalElements
         pageSize
@@ -91,25 +92,26 @@ class NotificationRepository {
   Future<NotificationPageResult> getNotifications({
     int page = 0,
     int size = 10,
+    String? search,
   }) async {
-    print('📤 getNotifications called with page=$page, size=$size');
+    final variables = {
+      'page': page,
+      'size': size,
+      'search': search ?? '',
+    };
 
     final result = await _query(
       QueryOptions(
         document: gql(_getAllNotificationsQuery()),
-        variables: {'page': page, 'size': size},
+        variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
-
-    print('📥 Query result: hasException=${result.hasException}');
 
     if (result.hasException) {
       print('❌ Exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
-
-    print('📥 Raw data: ${result.data}');
 
     final notificationsData = result.data?['getAllNotifications'];
     if (notificationsData == null) {
@@ -126,14 +128,11 @@ class NotificationRepository {
 
     final content =
         (notificationsData['content'] as List<dynamic>?) ?? const [];
-    print('📋 Content length: ${content.length}');
 
     final notifications = content
         .whereType<Map<String, dynamic>>()
         .map((data) => _mapNotificationFromBackend(data))
         .toList();
-
-    print('✅ Mapped ${notifications.length} notifications');
 
     return NotificationPageResult(
       notifications: notifications,
@@ -146,8 +145,6 @@ class NotificationRepository {
   }
 
   Future<NotificationModel> getNotificationById(String id) async {
-    print('📤 getNotificationById called with id=$id');
-
     final result = await _query(
       QueryOptions(
         document: gql(_getNotificationByIdQuery()),
@@ -155,8 +152,6 @@ class NotificationRepository {
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
-
-    print('📥 Query result: hasException=${result.hasException}');
 
     if (result.hasException) {
       print('❌ Exception: ${result.exception}');
@@ -167,8 +162,6 @@ class NotificationRepository {
     if (notificationData == null) {
       throw Exception('Notification not found');
     }
-
-    print('📥 Raw notification data: $notificationData');
 
     return _mapNotificationFromBackend(notificationData);
   }
@@ -330,8 +323,6 @@ class NotificationRepository {
       }
     ''';
 
-    print('📤 Creating notification with input: $input');
-
     final result = await GraphQLClientFactory.withFreshClient(
       run: (client) => client.mutate(
         MutationOptions(
@@ -342,24 +333,16 @@ class NotificationRepository {
       ),
     );
 
-    print('📥 Create result: hasException=${result.hasException}');
-
     if (result.hasException) {
       print('❌ Create exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
-
-    print('📥 Create raw data: ${result.data}');
 
     final notificationData = result.data?['createNotification'];
     if (notificationData == null) {
       print('⚠️ notificationData is null');
       throw Exception('No se pudo crear la notificación');
     }
-
-    print(
-      '✅ Notification created successfully with id: ${notificationData['id']}',
-    );
 
     return _mapNotificationFromBackend(
       notificationData as Map<String, dynamic>,
@@ -437,8 +420,6 @@ class NotificationRepository {
       }
     ''';
 
-    print('📤 Updating notification id: $id with input: $input');
-
     final result = await GraphQLClientFactory.withFreshClient(
       run: (client) => client.mutate(
         MutationOptions(
@@ -447,8 +428,6 @@ class NotificationRepository {
         ),
       ),
     );
-
-    print('📥 Update result: hasException=${result.hasException}');
 
     if (result.hasException) {
       print('❌ Update exception: ${result.exception}');
@@ -464,8 +443,6 @@ class NotificationRepository {
 
       throw Exception(result.exception.toString());
     }
-
-    print('📥 Update raw data: ${result.data}');
 
     final notificationData = result.data?['updateNotification'];
     if (notificationData == null) {

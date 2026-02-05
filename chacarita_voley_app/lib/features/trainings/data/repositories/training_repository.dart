@@ -63,6 +63,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -107,6 +108,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -196,6 +198,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
             abbreviation
             players {
               id
+              person {
+                dni
+                name
+                surname
+              }
             }
             professors {
               person {
@@ -223,6 +230,8 @@ class TrainingRepository implements TrainingRepositoryInterface {
         location
         trainingType
         status
+        countOfPlayers
+        countOfAssisted
         team {
           id
           name
@@ -242,6 +251,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -660,11 +670,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final attendances = playersData
         .whereType<Map<String, dynamic>>()
         .map(
-          (player) => PlayerAttendance(
-            playerId: player['id'] as String? ?? '',
-            playerName: '',
-            isPresent: false,
-          ),
+          (player) {
+            final personData = player['person'] as Map<String, dynamic>?;
+            final dni = personData?['dni'] as String? ?? '';
+            return PlayerAttendance(
+              playerId: player['id'] as String? ?? '',
+              playerDni: dni,
+              playerName: '',
+              isPresent: false,
+            );
+          },
         )
         .toList();
 
@@ -759,13 +774,29 @@ class TrainingRepository implements TrainingRepositoryInterface {
         }
       }
 
+      final dni = personData?['dni'] as String? ?? '';
       return PlayerAttendance(
         playerId: player['id'] as String? ?? '',
+        playerDni: dni,
         playerName: '$surname $name'.trim(),
         isPresent: isPresent,
         estadoCuota: estadoCuota,
       );
     }).toList();
+
+    final calculatedCountOfPlayers = attendances.length;
+    final calculatedCountOfAssisted =
+        attendances.where((a) => a.isPresent).length;
+    final countOfPlayers = data['countOfPlayers'] as int?;
+    final countOfAssisted = data['countOfAssisted'] as int?;
+    final effectiveCountOfPlayers =
+        (countOfPlayers == null || countOfPlayers == 0)
+        ? calculatedCountOfPlayers
+        : countOfPlayers;
+    final effectiveCountOfAssisted =
+        (countOfAssisted == null || countOfAssisted == 0)
+        ? calculatedCountOfAssisted
+        : countOfAssisted;
 
     // Parse startDate and endDate from training
     DateTime? trainingStartDate;
@@ -795,17 +826,24 @@ class TrainingRepository implements TrainingRepositoryInterface {
       dayOfWeek: trainingData?['dayOfWeek'] != null
           ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
           : null,
-      startTime: trainingData?['startTime'] as String? ?? '',
-      endTime: trainingData?['endTime'] as String? ?? '',
-      location: trainingData?['location'] as String? ?? '',
+      startTime:
+          data['startTime'] as String? ?? trainingData?['startTime'] as String? ?? '',
+      endTime:
+          data['endTime'] as String? ?? trainingData?['endTime'] as String? ?? '',
+      location:
+          data['location'] as String? ?? trainingData?['location'] as String? ?? '',
       type: TrainingType.fromBackend(
-        trainingData?['trainingType'] as String? ?? 'PHYSICAL',
+        data['trainingType'] as String? ??
+            trainingData?['trainingType'] as String? ??
+            'PHYSICAL',
       ),
       status: TrainingStatus.fromBackend(
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
       hasTraining: trainingData != null,
+      countOfPlayers: effectiveCountOfPlayers,
+      countOfAssisted: effectiveCountOfAssisted,
     );
   }
 
@@ -829,11 +867,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final attendances = playersData
         .whereType<Map<String, dynamic>>()
         .map(
-          (player) => PlayerAttendance(
-            playerId: player['id'] as String? ?? '',
-            playerName: '',
-            isPresent: false,
-          ),
+          (player) {
+            final personData = player['person'] as Map<String, dynamic>?;
+            final dni = personData?['dni'] as String? ?? '';
+            return PlayerAttendance(
+              playerId: player['id'] as String? ?? '',
+              playerDni: dni,
+              playerName: '',
+              isPresent: false,
+            );
+          },
         )
         .toList();
 

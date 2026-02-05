@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -17,15 +18,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
   final _repository = NotificationRepository();
   final _searchController = TextEditingController();
   List<NotificationModel> _notifications = [];
-  List<NotificationModel> _filteredNotifications = [];
-  bool _isLoading = true;
+  Future<void>? _notificationsFuture;
   int _currentPage = 1;
   final int _itemsPerPage = 10;
-  // ignore: unused_field
   int _totalPages = 1;
   int _totalElements = 0;
   bool _hasNext = false;
   bool _hasPrevious = false;
+  String _searchQuery = '';
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -36,47 +37,49 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _loadNotifications() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _notificationsFuture = _fetchNotifications();
+    });
+  }
+
+  Future<void> _fetchNotifications() async {
     try {
       final result = await _repository.getNotifications(
         page: _currentPage - 1, // Backend usa 0-based indexing
         size: _itemsPerPage,
+        search: _searchQuery,
       );
       if (!mounted) return;
       setState(() {
         _notifications = result.notifications;
-        _filteredNotifications = result.notifications;
         _totalPages = result.totalPages;
         _totalElements = result.totalElements;
         _hasNext = result.hasNext;
         _hasPrevious = result.hasPrevious;
-        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
     }
   }
 
-  void _filterNotifications(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredNotifications = _notifications;
-      } else {
-        _filteredNotifications = _notifications
-            .where((n) => n.title.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-      _currentPage = 1;
+  void _onSearchChanged(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+        _currentPage = 1;
+      });
+      _loadNotifications();
     });
   }
 
   Future<void> _showDeleteConfirmation(String id) async {
-    final notification = _filteredNotifications.firstWhere((n) => n.id == id);
+    final notification = _notifications.firstWhere((n) => n.id == id);
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -147,7 +150,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       setState(() {
         _notifications.removeWhere((n) => n.id == id);
-        _filteredNotifications.removeWhere((n) => n.id == id);
+        _notifications.removeWhere((n) => n.id == id);
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -194,7 +197,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   List<NotificationModel> get _paginatedNotifications {
     // Ahora los datos ya vienen paginados del backend
-    return _filteredNotifications;
+    return _notifications;
   }
 
   @override
@@ -211,59 +214,68 @@ class _NotificationsPageState extends State<NotificationsPage> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Symbols.add, color: Colors.white),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            )
-          : Column(
-              children: [
-                _buildSearchBar(),
-                Expanded(
-                  child: _filteredNotifications.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Symbols.notifications_off,
-                                size: 64,
-                                color: context.tokens.text.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No hay notificaciones',
-                                style: TextStyle(
-                                  color: context.tokens.text.withOpacity(0.5),
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            _loadNotifications();
-                            await Future.delayed(
-                              const Duration(milliseconds: 500),
-                            );
-                          },
-                          child: ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _paginatedNotifications.length,
-                            itemBuilder: (context, index) {
-                              final notification =
-                                  _paginatedNotifications[index];
-                              return _buildNotificationCard(notification);
-                            },
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: FutureBuilder<void>(
+              future: _notificationsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    _notifications.isEmpty) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                }
+
+                if (_notifications.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Symbols.notifications_off,
+                          size: 64,
+                          color: context.tokens.text.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No hay notificaciones',
+                          style: TextStyle(
+                            color: context.tokens.text.withOpacity(0.5),
+                            fontSize: 16,
                           ),
                         ),
-                ),
-                if (_filteredNotifications.isNotEmpty) _buildPagination(),
-              ],
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    _loadNotifications();
+                    await Future.delayed(
+                      const Duration(milliseconds: 500),
+                    );
+                  },
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _paginatedNotifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = _paginatedNotifications[index];
+                      return _buildNotificationCard(notification);
+                    },
+                  ),
+                );
+              },
             ),
+          ),
+          if (_notifications.isNotEmpty) _buildPagination(),
+        ],
+      ),
     );
   }
 
@@ -290,7 +302,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ),
         child: TextField(
           controller: _searchController,
-          onChanged: _filterNotifications,
+          onChanged: _onSearchChanged,
           decoration: InputDecoration(
             hintText: 'Buscar por título...',
             hintStyle: TextStyle(color: context.tokens.placeholder),

@@ -12,19 +12,16 @@ class ChangePasswordPage extends StatefulWidget {
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
 
-  bool _isCurrentPasswordVisible = false;
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -91,67 +88,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         ],
                       ),
                       const SizedBox(height: 24),
-
-                      Text(
-                        'Contraseña actual',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: context.tokens.text,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _currentPasswordController,
-                        obscureText: !_isCurrentPasswordVisible,
-                        decoration: InputDecoration(
-                          hintText: 'Ingresa tu contraseña actual',
-                          hintStyle: TextStyle(
-                            color: context.tokens.placeholder,
-                          ),
-                          filled: true,
-                          fillColor: context.tokens.background,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: context.tokens.stroke,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: context.tokens.stroke,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isCurrentPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: context.tokens.gray,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isCurrentPasswordVisible =
-                                    !_isCurrentPasswordVisible;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingresa tu contraseña actual';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
 
                       Text(
                         'Contraseña nueva',
@@ -396,7 +332,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     try {
       await _authService.changePassword(
-        currentPassword: _currentPasswordController.text,
+        currentPassword: '',
         newPassword: _newPasswordController.text,
       );
 

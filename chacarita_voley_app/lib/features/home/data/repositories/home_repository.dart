@@ -156,12 +156,13 @@ class HomeRepository {
         return [];
       }
 
-      final trainings = content.map((json) {
-        return TrainingPreview.fromJson(
-          json as Map<String, dynamic>,
-          todayDate,
-        );
-      }).toList();
+      final trainings = content
+          .whereType<Map<String, dynamic>>()
+          .where((json) => json['status'] != 'CANCELLED')
+          .map((json) {
+            return TrainingPreview.fromJson(json, todayDate);
+          })
+          .toList();
       return trainings;
     } catch (e) {
       return [];
@@ -236,10 +237,6 @@ class HomeRepository {
         return [];
       }
 
-      print(
-        '🔍 DEBUG: getPlayerTrainings recibió ${content.length} entrenamientos',
-      );
-
       final trainings = content.map((json) {
         final dateString = json['date'] as String?;
         return TrainingPreview.fromJson(
@@ -247,10 +244,6 @@ class HomeRepository {
           dateString ?? '',
         );
       }).toList();
-
-      print(
-        '🔍 DEBUG: getPlayerTrainings parseó ${trainings.length} entrenamientos',
-      );
 
       return trainings;
     } catch (e) {

@@ -4,7 +4,7 @@ class PayFilterInput {
   final String? fileName;
   final String? fileUrl;
   final String? date;
-  final String? time;
+  final String? createdAt;
   final double? amount;
   final String? dateFrom;
   final String? dateTo;
@@ -18,7 +18,7 @@ class PayFilterInput {
     this.fileName,
     this.fileUrl,
     this.date,
-    this.time,
+    this.createdAt,
     this.amount,
     this.dateFrom,
     this.dateTo,
@@ -34,7 +34,7 @@ class PayFilterInput {
       if (fileName != null) 'fileName': fileName,
       if (fileUrl != null) 'fileUrl': fileUrl,
       if (date != null) 'date': date,
-      if (time != null) 'time': time,
+      if (createdAt != null) 'createdAt': createdAt,
       if (amount != null) 'amount': amount,
       if (dateFrom != null) 'dateFrom': dateFrom,
       if (dateTo != null) 'dateTo': dateTo,

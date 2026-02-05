@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -46,6 +47,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final authService = AuthService();
     final roles = await authService.getUserRoles();
     final userId = await authService.getUserId();
+
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
@@ -69,7 +71,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         final trainings = await repository.getPlayerTrainings(
           _userId.toString(),
         );
-        print('🔍 DEBUG: HomePage recibió ${trainings.length} entrenamientos');
         if (mounted) {
           setState(() {
             _stats = stats;
@@ -325,13 +326,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: TrainingItem(
                           category: training.teamName,
                           subtitle:
-                              'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                            'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
                           time: training.formattedTime,
                           attendance:
-                              '${training.attendance}/${training.totalPlayers}',
+                            '${training.attendance}/${training.totalPlayers}',
                           onTap: isPlayer
-                              ? null
-                              : () => context.go('/trainings/${training.id}'),
+                            ? null
+                            : () => context.push(
+                              '/trainings/${training.id}?from=home',
+                              ),
                         ),
                       );
                     }),

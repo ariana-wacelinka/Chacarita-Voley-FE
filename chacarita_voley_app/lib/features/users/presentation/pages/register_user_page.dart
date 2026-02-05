@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/create_user_usecase.dart';
 import '../../data/repositories/user_repository.dart';
@@ -16,22 +17,30 @@ class RegisterUserPage extends StatefulWidget {
 
 class _RegisterUserPageState extends State<RegisterUserPage> {
   late final CreateUserUseCase _createUserUseCase;
+  final _authService = AuthService();
+  List<String> _userRoles = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _createUserUseCase = CreateUserUseCase(UserRepository());
+    _loadUserRoles();
   }
 
-  Future<void> _handleSaveUser(User user) async {
+  Future<void> _loadUserRoles() async {
+    final roles = await _authService.getUserRoles();
+    setState(() {
+      _userRoles = roles ?? [];
+    });
+  }
+
+  Future<bool> _handleSaveUser(User user) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _createUserUseCase.execute(user);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -65,9 +74,13 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           ),
         );
 
-        context.go('/users');
+        context.pop();
       }
-    } catch (e) {
+      return true; // Éxito
+    } catch (e, stackTrace) {
+      print('Error: $e');
+      print('Stack trace: $stackTrace');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -75,10 +88,10 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Error al registrar usuario',
-                    style: TextStyle(
+                    'Error al registrar usuario: $e',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -97,6 +110,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           ),
         );
       }
+      return false; // Error
     } finally {
       if (mounted) {
         setState(() {
@@ -141,6 +155,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                 child: UserFormWidget(
                   onSave: _handleSaveUser,
                   submitButtonText: 'Registrar usuario',
+                  currentUserRoles: _userRoles,
                 ),
               ),
       ),

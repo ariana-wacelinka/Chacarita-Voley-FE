@@ -64,7 +64,10 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   }
 
   void _handleBack() {
-    if (_isOwnAttendance) {
+    // Intentar hacer pop si hay stack, sino navegar según contexto
+    if (context.canPop()) {
+      context.pop();
+    } else if (_isOwnAttendance) {
       final isPlayer = PermissionsService.isPlayer(_userRoles);
       if (isPlayer) {
         context.go('/home');

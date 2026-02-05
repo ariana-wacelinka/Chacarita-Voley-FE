@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/user.dart';
 import '../../data/repositories/user_repository.dart';
+import '../../domain/usecases/delete_user_usecase.dart';
 import '../widgets/delete_user_dialog.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
@@ -19,6 +20,7 @@ class UsersPage extends StatefulWidget {
 class _UsersPageState extends State<UsersPage> {
   final TextEditingController _searchController = TextEditingController();
   final _repository = UserRepository();
+  late final DeleteUserUseCase _deleteUserUseCase;
 
   Future<List<User>>? _usersFuture;
   Future<int>? _totalElementsFuture;
@@ -39,6 +41,7 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
+    _deleteUserUseCase = DeleteUserUseCase(_repository);
     _loadUserRoles();
     _loadUsers();
   }
@@ -63,13 +66,17 @@ class _UsersPageState extends State<UsersPage> {
 
   void _loadUsers() {
     setState(() {
-      _usersFuture = _repository.getUsers(
-        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        role: _selectedRole,
-        statusCurrentDue: _selectedDueState,
-        page: _currentPage,
-        size: _usersPerPage,
-      );
+      _usersFuture = _repository
+          .getUsers(
+            searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+            role: _selectedRole,
+            statusCurrentDue: _selectedDueState,
+            page: _currentPage,
+            size: _usersPerPage,
+          )
+          .then((users) {
+            return users;
+          });
       _totalElementsFuture = _repository.getTotalUsers(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         role: _selectedRole,
@@ -118,46 +125,63 @@ class _UsersPageState extends State<UsersPage> {
   void _showDeleteDialog(User user) {
     showDialog(
       context: context,
-      builder: (context) => DeleteUserDialog(
+      builder: (dialogContext) => DeleteUserDialog(
         user: user,
-        onConfirm: () {
-          _loadUsers();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '${user.nombreCompleto} fue eliminado exitosamente',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+        onConfirm: () async {
+          // Guardar el messenger antes de cerrar el diálogo
+          final messenger = ScaffoldMessenger.of(context);
+
+          try {
+            await _deleteUserUseCase.execute(user.id!);
+
+            // Workaround: esperar un momento para que el backend procese el delete
+            await Future.delayed(const Duration(milliseconds: 500));
+            _loadUsers();
+
+            messenger.showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${user.nombreCompleto} fue eliminado exitosamente',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                duration: const Duration(seconds: 3),
+                action: SnackBarAction(
+                  label: 'Deshacer',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
               ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            );
+          } catch (e) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text('Error al eliminar usuario: $e'),
+                backgroundColor: Theme.of(context).colorScheme.error,
               ),
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-              duration: const Duration(seconds: 3),
-              action: SnackBarAction(
-                label: 'Deshacer',
-                textColor: Colors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
+            );
+          }
         },
       ),
     );
@@ -244,12 +268,7 @@ class _UsersPageState extends State<UsersPage> {
             if (_showFilters)
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                decoration: BoxDecoration(
-                  color: context.tokens.card1,
-                  border: Border(
-                    bottom: BorderSide(color: context.tokens.stroke),
-                  ),
-                ),
+                decoration: BoxDecoration(color: context.tokens.background),
                 child: Column(
                   children: [
                     Column(
@@ -276,7 +295,7 @@ class _UsersPageState extends State<UsersPage> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),
-                              dropdownColor: context.tokens.card1,
+                              dropdownColor: context.tokens.background,
                               items: [
                                 DropdownMenuItem(
                                   value: null,
@@ -351,7 +370,7 @@ class _UsersPageState extends State<UsersPage> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),
-                              dropdownColor: context.tokens.card1,
+                              dropdownColor: context.tokens.background,
                               items: [
                                 DropdownMenuItem(
                                   value: null,
@@ -577,8 +596,8 @@ class _UsersPageState extends State<UsersPage> {
                                               PopupMenuItem(
                                                 onTap: () {
                                                   Future.microtask(() {
-                                                    context.go(
-                                                      '/users/${user.id}/view',
+                                                    context.push(
+                                                      '/users/${user.id}/view?from=users',
                                                     );
                                                   });
                                                 },
@@ -601,7 +620,13 @@ class _UsersPageState extends State<UsersPage> {
                                                   ],
                                                 ),
                                               ),
-                                              if (_canEdit)
+                                              if (_canEdit &&
+                                                  !(_userRoles.contains(
+                                                        'PROFESSOR',
+                                                      ) &&
+                                                      user.tipos.contains(
+                                                        UserType.administrador,
+                                                      )))
                                                 PopupMenuItem(
                                                   onTap: () {
                                                     Future.microtask(() async {
@@ -775,7 +800,7 @@ class _UsersPageState extends State<UsersPage> {
       ),
       floatingActionButton: _canCreate
           ? FloatingActionButton(
-              onPressed: () => context.go('/users/register'),
+              onPressed: () => context.push('/users/register'),
               backgroundColor: Theme.of(context).colorScheme.primary,
               child: const Icon(Symbols.add, color: Colors.white),
             )

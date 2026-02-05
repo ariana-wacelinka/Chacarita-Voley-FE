@@ -23,6 +23,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
   late final PayRepository _repository;
   Pay? _payment; // El pago a editar (null hasta cargar)
   bool _isLoading = true;
+  bool _hasChanges = false;
 
   // Formato de fecha (puedes mover a un util si es global)
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -96,6 +97,14 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
     }
   }
 
+  void _navigateBack() {
+    if (context.canPop()) {
+      context.pop(_hasChanges);
+    } else {
+      context.go('/payments');
+    }
+  }
+
   Future<void> _handleUpdatePayment(Pay updatedPay) async {
     // setState(() {
     //   _isLoading = true;
@@ -106,6 +115,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
       await _updatePaymentUseCase.execute(PayMapper.toUpdateInput(updatedPay));
 
       if (mounted) {
+        _hasChanges = true;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -138,10 +148,8 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
           ),
         );
 
-        // Navegar de vuelta y forzar refresh con timestamp único
-        context.go(
-          '/payments?refresh=${DateTime.now().millisecondsSinceEpoch}',
-        );
+        // Navegar de vuelta según origen
+        _navigateBack();
       }
     } catch (e) {
       if (mounted) {
@@ -190,11 +198,11 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
     return Scaffold(
       backgroundColor: tokens.background,
       appBar: AppBar(
-        backgroundColor: tokens.card1,
+        backgroundColor: context.tokens.card1,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: tokens.text),
-          onPressed: () => context.go('/payments'), // O ruta anterior
+          onPressed: _navigateBack,
         ),
         title: Text(
           'Modificar Pago',
@@ -234,7 +242,7 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => context.go('/payments'),
+                    onPressed: _navigateBack,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: tokens.redToRosita,
                     ),
@@ -247,11 +255,14 @@ class _EditPaymentsPageState extends State<EditPaymentsPage> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewPadding.bottom),
               child: PaymentEditFormWidget(
                 payment: _payment!,
                 dateFormat: _dateFormat,
                 onSave: _handleUpdatePayment,
+                onReceiptUpdated: () {
+                  _hasChanges = true;
+                },
                 isSaving: _isLoading,
               ),
             ),

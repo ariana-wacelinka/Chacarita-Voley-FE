@@ -50,12 +50,6 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
     setState(() => _isLoading = true);
     try {
       final training = await _repository.getTrainingById(widget.trainingId);
-      print('[EditTraining] Training cargado: ${training?.id}');
-      print('[EditTraining] startDate: ${training?.startDate}');
-      print('[EditTraining] endDate: ${training?.endDate}');
-      print('[EditTraining] startTime: ${training?.startTime}');
-      print('[EditTraining] endTime: ${training?.endTime}');
-
       if (!mounted) return;
 
       if (training != null) {
@@ -67,11 +61,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
           final formattedStartDate =
               '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}/${startDate.year}';
           _startDateController.text = formattedStartDate;
-          print(
-            '[EditTraining] startDateController.text = $formattedStartDate',
-          );
         } else {
-          print('[EditTraining] startDate es null');
         }
 
         if (training.endDate != null) {
@@ -79,9 +69,7 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
           final formattedEndDate =
               '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}';
           _endDateController.text = formattedEndDate;
-          print('[EditTraining] endDateController.text = $formattedEndDate');
         } else {
-          print('[EditTraining] endDate es null');
         }
 
         _startTimeController.text = training.startTime;
@@ -90,7 +78,6 @@ class _EditTrainingPageState extends State<EditTrainingPage> {
         _selectedType = training.type;
         _selectedDayOfWeek = training.dayOfWeek;
       } else {
-        print('[EditTraining] training es null');
       }
 
       setState(() {

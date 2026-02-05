@@ -196,11 +196,6 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _addMember(User user, String? numeroCamiseta) {
     if (!_integrantes.any((m) => m.playerId == user.playerId)) {
-      // Para jugadores, playerId es el ID del player
-      // Para profesores, no se agrega a integrantes (se maneja aparte en selectedEntrenadores)
-      print(
-        '➕ Adding member: ${user.nombre} ${user.apellido}, playerId: ${user.playerId}, personId: ${user.id}',
-      );
       setState(() {
         _integrantes.add(
           TeamMember(
@@ -276,7 +271,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -334,7 +329,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -522,7 +517,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             ),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.tokens.strokeToNoStroke),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -918,14 +913,6 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       },
     );
 
-    // CRÍTICO: Recibir el resultado y actualizar estado del FORMULARIO
-    print(
-      '📌 selectedProfesor: ${selectedProfesor?.id} - ${selectedProfesor?.nombreCompleto}',
-    );
-    print(
-      '📌 entrenadores antes: ${_selectedEntrenadores.map((e) => e.id).toList()}',
-    );
-
     if (selectedProfesor == null) return;
 
     if (_selectedEntrenadores.any(
@@ -938,9 +925,5 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       // Crear NUEVA lista para que Flutter detecte el cambio
       _selectedEntrenadores = [..._selectedEntrenadores, selectedProfesor];
     });
-
-    print(
-      '📌 entrenadores después: ${_selectedEntrenadores.map((e) => e.professorId).toList()}',
-    );
   }
 }

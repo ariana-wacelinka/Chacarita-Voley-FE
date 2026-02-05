@@ -86,16 +86,12 @@ class _LoginPageState extends State<LoginPage> {
       final response = await _authService.login(
         email: _usernameController.text.trim(),
         password: _passwordController.text,
+        rememberMe: _rememberMe,
       );
-
-      print('✅ Login response recibido, obteniendo información del usuario...');
 
       // Obtener información del usuario
       final user = await _authService.getCurrentUser();
       if (user != null) {
-        print('✅ Información del usuario obtenida exitosamente');
-        print('   Usuario: ${user.fullName}');
-        print('   Roles: ${user.roles}');
       } else {
         print('⚠️ No se pudo obtener la información del usuario');
       }
@@ -336,41 +332,36 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        'Recordarme',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: textColor,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                                    Text(
+                                      'Recordarme',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: textColor,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              Flexible(
-                                child: TextButton(
-                                  onPressed: () {},
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    '¿Olvidaste tu contraseña?',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  '¿Olvidaste tu contraseña?',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                               ),

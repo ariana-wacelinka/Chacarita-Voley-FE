@@ -100,13 +100,6 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         _hasNext = payPage.hasNext;
         _hasPrevious = payPage.hasPrevious;
         _isLoading = false;
-
-        // Debug: verificar fileName
-        for (final pay in _pays) {
-          print(
-            'Pay ${pay.id}: fileName="${pay.fileName}" (isEmpty: ${(pay.fileName?.isEmpty ?? true)})',
-          );
-        }
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -135,21 +128,47 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
             content: const Text('Comprobante descargado exitosamente'),
             backgroundColor: context.tokens.green,
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
         );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentMaterialBanner();
+        messenger.showMaterialBanner(
+          MaterialBanner(
             content: Text('Error al descargar comprobante: $e'),
-            backgroundColor: context.tokens.redToRosita,
+            backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
+            actions: [
+              TextButton(
+                onPressed: messenger.hideCurrentMaterialBanner,
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
         );
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) {
+            messenger.hideCurrentMaterialBanner();
+          }
+        });
       }
     } finally {
       if (mounted) {
@@ -193,8 +212,15 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          onPressed: () {
-            context.go('/payments/create');
+          onPressed: () async {
+            final created = await context.push<bool>('/payments/create');
+            if (created == true && mounted) {
+              setState(() {
+                _currentPage = 0;
+              });
+              _loadStats();
+              _loadPays();
+            }
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -219,8 +245,16 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   Widget _buildEmptyState(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _buildSummarySection(context)),
-        SliverToBoxAdapter(child: _buildFilterSection(context)),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _buildSummarySection(context),
+              const SizedBox(height: 16),
+              _buildFilterSection(context),
+            ]),
+          ),
+        ),
         SliverFillRemaining(
           child: Center(
             child: Column(
@@ -717,7 +751,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               children: [
                 InkWell(
                   onTap: () {
-                    context.go('/payments/detail/${payment.id}');
+                    context.push('/payments/detail/${payment.id}');
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(
@@ -852,8 +886,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       ),
                     ],
                   ),
-                if (payment.status == PayState.validated ||
-                    payment.status == PayState.rejected)
+                if (payment.status == PayState.rejected)
                   Container(
                     height: 40,
                     decoration: BoxDecoration(
@@ -867,7 +900,15 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          context.push('/payments/edit/${payment.id}');
+                          context
+                              .push(
+                                '/payments/edit/${payment.id}?from=validation',
+                              )
+                              .then((_) {
+                                // Recargar datos después de editar
+                                _loadStats();
+                                _loadPays();
+                              });
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
@@ -922,11 +963,8 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     final endIndex = (_currentPage * _itemsPerPage) + _pays.length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.tokens.background,
-        border: Border(top: BorderSide(color: context.tokens.stroke)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1183,11 +1221,10 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
       builder: (dialogContext) {
         // Capturar el ScaffoldMessenger antes de cerrar el diálogo
         final scaffoldMessenger = ScaffoldMessenger.of(context);
-        final theme = Theme.of(context);
         final tokens = context.tokens;
 
         return AlertDialog(
-          backgroundColor: tokens.card1,
+          backgroundColor: tokens.card1.withValues(alpha: 1),
           title: Text(
             approve ? '¿Aprobar pago?' : '¿Rechazar pago?',
             style: TextStyle(color: tokens.text),

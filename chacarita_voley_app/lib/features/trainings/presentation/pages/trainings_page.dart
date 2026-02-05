@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 
@@ -31,6 +32,9 @@ class _TrainingsPageState extends State<TrainingsPage>
   final _repository = TrainingRepository();
   List<Training> _trainings = [];
   bool _isLoading = true;
+  List<String> _userRoles = [];
+  bool _isAdmin = false;
+  bool _isProfessor = false;
 
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -49,7 +53,21 @@ class _TrainingsPageState extends State<TrainingsPage>
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _loadTrainings();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _isAdmin = _userRoles.contains('ADMIN');
+        _isProfessor =
+            _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
+      });
+    }
   }
 
   Future<void> _handleDeleteSession(Training training) async {
@@ -382,45 +400,53 @@ class _TrainingsPageState extends State<TrainingsPage>
                 ],
               ),
       ),
-      floatingActionButton: SizedBox(
-        width: 56,
-        height: 56,
-        child: FloatingActionButton(
-          onPressed: () async {
-            bool? created;
-            if (widget.teamId != null && widget.teamName != null) {
-              final teamNameEncoded = Uri.encodeComponent(widget.teamName!);
-              created = await context.push<bool>(
-                '/trainings/create?teamId=${widget.teamId}&teamName=$teamNameEncoded',
-              );
-            } else {
-              created = await context.push<bool>('/trainings/create');
-            }
-            if (created == true && mounted) {
-              setState(() {
-                _currentPage = 0;
-                _trainings = [];
-              });
-              _loadTrainings();
-            }
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: const [
-              Icon(Symbols.sports_volleyball, color: Colors.white, size: 26),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Icon(Symbols.add, color: Colors.white, size: 14),
+      floatingActionButton: _isAdmin
+          ? SizedBox(
+              width: 56,
+              height: 56,
+              child: FloatingActionButton(
+                onPressed: () async {
+                  bool? created;
+                  if (widget.teamId != null && widget.teamName != null) {
+                    final teamNameEncoded = Uri.encodeComponent(
+                      widget.teamName!,
+                    );
+                    created = await context.push<bool>(
+                      '/trainings/create?teamId=${widget.teamId}&teamName=$teamNameEncoded',
+                    );
+                  } else {
+                    created = await context.push<bool>('/trainings/create');
+                  }
+                  if (created == true && mounted) {
+                    setState(() {
+                      _currentPage = 0;
+                      _trainings = [];
+                    });
+                    _loadTrainings();
+                  }
+                },
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: const [
+                    Icon(
+                      Symbols.sports_volleyball,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Icon(Symbols.add, color: Colors.white, size: 14),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 
@@ -820,11 +846,8 @@ class _TrainingsPageState extends State<TrainingsPage>
     final endIndex = (_currentPage * _itemsPerPage) + _trainings.length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.tokens.background,
-        border: Border(top: BorderSide(color: context.tokens.stroke)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(color: context.tokens.background),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1039,20 +1062,23 @@ class _TrainingsPageState extends State<TrainingsPage>
                               ),
                             ),
                           ),
-                          PopupMenuItem(
-                            value: _TrainingMenuAction.editTraining,
-                            enabled:
-                                !isCancelled && !isCompleted && hasTraining,
-                            child: Text(
-                              'Modificar este y posteriores',
-                              style: TextStyle(
-                                color:
-                                    (isCancelled || isCompleted || !hasTraining)
-                                    ? context.tokens.placeholder
-                                    : context.tokens.text,
+                          if (_isAdmin)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.editTraining,
+                              enabled:
+                                  !isCancelled && !isCompleted && hasTraining,
+                              child: Text(
+                                'Modificar este y posteriores',
+                                style: TextStyle(
+                                  color:
+                                      (isCancelled ||
+                                          isCompleted ||
+                                          !hasTraining)
+                                      ? context.tokens.placeholder
+                                      : context.tokens.text,
+                                ),
                               ),
                             ),
-                          ),
                           if (isFuture && !isCancelled)
                             PopupMenuItem(
                               value: _TrainingMenuAction.cancel,
@@ -1085,13 +1111,34 @@ class _TrainingsPageState extends State<TrainingsPage>
                     ),
                   ],
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -12),
-                  child: Text(
-                    'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
-                    style: TextStyle(
-                      color: context.tokens.placeholder,
-                      fontSize: 12,
+                Padding(
+                  padding: const EdgeInsets.only(right: 50),
+                  child: Transform.translate(
+                    offset: const Offset(0, -12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        if (training.teamName != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            training.teamName!,
+                            style: TextStyle(
+                              color: context.tokens.placeholder,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -1215,7 +1262,7 @@ class _TrainingsPageState extends State<TrainingsPage>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: context.tokens.card1,
         title: Text(
-          '¿Qué querés eliminar?',
+          _isAdmin ? '¿Qué querés eliminar?' : 'Eliminar entrenamiento',
           style: TextStyle(color: context.tokens.text),
         ),
         content: Column(
@@ -1223,7 +1270,9 @@ class _TrainingsPageState extends State<TrainingsPage>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Podés eliminar solo este entrenamiento o este y todos los posteriores.',
+              _isAdmin
+                  ? 'Podés eliminar solo este entrenamiento o este y todos los posteriores.'
+                  : '¿Estás seguro de que querés eliminar este entrenamiento?',
               style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
             ),
           ],
@@ -1239,17 +1288,18 @@ class _TrainingsPageState extends State<TrainingsPage>
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, 'session'),
             child: Text(
-              'Solo este entrenamiento',
+              _isAdmin ? 'Solo este entrenamiento' : 'Eliminar',
               style: TextStyle(color: context.tokens.text),
             ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'all'),
-            child: Text(
-              'Este y todos los posteriores',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          if (_isAdmin)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'all'),
+              child: Text(
+                'Este y todos los posteriores',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
             ),
-          ),
         ],
       ),
     );

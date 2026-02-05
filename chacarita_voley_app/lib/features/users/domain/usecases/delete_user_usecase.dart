@@ -6,6 +6,14 @@ class DeleteUserUseCase {
   DeleteUserUseCase(this._userRepository);
 
   Future<void> execute(String userId) async {
-    await _userRepository.deleteUser(userId);
+    try {
+      await _userRepository.deleteUser(userId);
+      print('Usuario eliminado exitosamente desde use case');
+    } catch (e, stackTrace) {
+      print('ERROR en delete user use case:');
+      print('Exception: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 }

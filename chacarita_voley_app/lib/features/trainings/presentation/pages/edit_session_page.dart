@@ -47,11 +47,6 @@ class _EditSessionPageState extends State<EditSessionPage> {
     setState(() => _isLoading = true);
     try {
       final session = await _repository.getTrainingById(widget.sessionId);
-      print('[EditSession] Sesión cargada: ${session?.id}');
-      print('[EditSession] date: ${session?.date}');
-      print('[EditSession] startTime: ${session?.startTime}');
-      print('[EditSession] endTime: ${session?.endTime}');
-
       if (!mounted) return;
 
       if (session != null) {
@@ -62,9 +57,7 @@ class _EditSessionPageState extends State<EditSessionPage> {
           final formattedDate =
               '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
           _dateController.text = formattedDate;
-          print('[EditSession] dateController.text = $formattedDate');
         } else {
-          print('[EditSession] date es null');
         }
 
         _startTimeController.text = session.startTime;
@@ -72,7 +65,6 @@ class _EditSessionPageState extends State<EditSessionPage> {
         _locationController.text = session.location;
         _selectedType = session.type;
       } else {
-        print('[EditSession] session es null');
       }
 
       setState(() {

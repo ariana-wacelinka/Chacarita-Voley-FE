@@ -317,7 +317,16 @@ class PayRepository implements PayRepositoryInterface {
       ),
     );
 
-    if (result.hasException) throw result.exception!;
+    if (result.hasException) {
+      print('❌ ERROR en createPay: ${result.exception}');
+      if (result.exception?.graphqlErrors != null) {
+        print('   - GraphQL Errors: ${result.exception!.graphqlErrors}');
+      }
+      if (result.exception?.linkException != null) {
+        print('   - Link Exception: ${result.exception!.linkException}');
+      }
+      throw result.exception!;
+    }
 
     final payData = result.data!['createPay'] as Map<String, dynamic>;
     final newPay = Pay.fromJson(payData);
@@ -362,7 +371,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ ValidatePay Exception: ${result.exception}');
       throw result.exception!;
     }
 
@@ -409,7 +417,6 @@ class PayRepository implements PayRepositoryInterface {
       );
 
       if (result.hasException) {
-        print('❌ [getPayById] Exception: ${result.exception}');
         return null;
       }
 
@@ -418,7 +425,6 @@ class PayRepository implements PayRepositoryInterface {
 
       return Pay.fromJson(payData as Map<String, dynamic>);
     } catch (e) {
-      print('❌ [getPayById] Error: $e');
       return null;
     }
   }
@@ -455,7 +461,6 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ RejectPay Exception: ${result.exception}');
       throw result.exception!;
     }
 
@@ -476,10 +481,6 @@ class PayRepository implements PayRepositoryInterface {
       if (input.amount != null) 'amount': input.amount,
       if (input.date != null) 'date': input.date,
     };
-
-    print('🔷 UpdatePay Mutation:');
-    print('ID: ${input.id}');
-    print('Input: $inputMap');
 
     final result = await _mutate(
       MutationOptions(
@@ -511,11 +512,54 @@ class PayRepository implements PayRepositoryInterface {
     );
 
     if (result.hasException) {
-      print('❌ UpdatePay Exception: ${result.exception}');
       throw result.exception!;
     }
 
     final payData = result.data!['updatePay'] as Map<String, dynamic>;
+    final updatedPay = Pay.fromJson(payData);
+
+    // Actualizar caché
+    _paysCache[updatedPay.id] = updatedPay;
+
+    return updatedPay;
+  }
+
+  @override
+  Future<Pay> setPendingPay(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql('''
+          mutation SetPendingPay(\$id: ID!) {
+            setPendingPay(id: \$id) {
+              id
+              state
+              amount
+              date
+              fileName
+              fileUrl
+              createdAt
+              updateAt
+              player {
+                id
+                person {
+                  id
+                  name
+                  surname
+                  dni
+                }
+              }
+            }
+          }
+        '''),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw result.exception!;
+    }
+
+    final payData = result.data!['setPendingPay'] as Map<String, dynamic>;
     final updatedPay = Pay.fromJson(payData);
 
     // Actualizar caché

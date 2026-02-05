@@ -12,8 +12,9 @@ import '../widgets/player_profile_form_widget.dart';
 
 class EditUserPage extends StatefulWidget {
   final String userId;
+  final String? from;
 
-  const EditUserPage({super.key, required this.userId});
+  const EditUserPage({super.key, required this.userId, this.from});
 
   @override
   State<EditUserPage> createState() => _EditUserPageState();
@@ -29,6 +30,12 @@ class _EditUserPageState extends State<EditUserPage> {
   List<String> _userRoles = [];
   int? _currentUserId;
   bool _isOwnProfile = false;
+
+  void _handleBack() {
+    // Volver a view con el mismo parámetro from y refresh=true
+    final fromParam = widget.from != null ? 'from=${widget.from}&' : '';
+    context.go('/users/${widget.userId}/view?${fromParam}refresh=true');
+  }
 
   @override
   void initState() {
@@ -71,7 +78,7 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
-  Future<void> _handleUpdateUser(User user) async {
+  Future<bool> _handleUpdateUser(User user) async {
     setState(() {
       _isLoading = true;
     });
@@ -114,8 +121,9 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         );
 
-        context.pop(true);
+        _handleBack();
       }
+      return true;
     } catch (e) {
       print('\u274c Error al actualizar usuario:');
       print('  Tipo de error: ${e.runtimeType}');
@@ -152,6 +160,7 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         );
       }
+      return false; // Error
     } finally {
       if (mounted) {
         setState(() {
@@ -170,7 +179,7 @@ class _EditUserPageState extends State<EditUserPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Symbols.arrow_back, color: context.tokens.text),
-          onPressed: () => context.pop(),
+          onPressed: _handleBack,
         ),
         title: Text(
           'Modificar Usuario',

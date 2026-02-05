@@ -1,34 +1,49 @@
 import 'dart:io';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/io_client.dart';
+import '../services/auth_service.dart';
 
 class GraphQLClientFactory {
-  static late final GraphQLClient client;
+  static late GraphQLClient client;
   static bool _initialized = false;
-  static late final String _baseUrl;
-  static String? _token;
+  static late String _baseUrl;
+  static AuthService? _authService;
 
   static void init({required String baseUrl, String? token}) {
-    _baseUrl = baseUrl;
-    _token = token;
+    if (_initialized) {
+      // Si ya está inicializado, solo actualizar el cliente
+      _updateClient();
+      return;
+    }
 
+    _baseUrl = baseUrl;
+    _authService = AuthService();
+    _updateClient();
+    _initialized = true;
+  }
+
+  static void _updateClient() {
     final httpClient = HttpClient()
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 15);
 
     final ioClient = IOClient(httpClient);
     final httpLink = HttpLink(
-      baseUrl,
+      _baseUrl,
       httpClient: ioClient,
       defaultHeaders: {'Connection': 'close'},
     );
 
-    Link link = httpLink;
+    // AuthLink con renovación proactiva de token
+    final authLink = AuthLink(
+      getToken: () async {
+        if (_authService == null) return null;
+        final token = await _authService!.getValidAccessToken();
+        return token != null ? 'Bearer $token' : null;
+      },
+    );
 
-    if (token != null) {
-      final authLink = AuthLink(getToken: () async => 'Bearer $token');
-      link = authLink.concat(httpLink);
-    }
+    final link = authLink.concat(httpLink);
 
     client = GraphQLClient(
       cache: GraphQLCache(store: InMemoryStore()),
@@ -38,8 +53,6 @@ class GraphQLClientFactory {
         watchQuery: Policies(fetch: FetchPolicy.cacheAndNetwork),
       ),
     );
-
-    _initialized = true;
   }
 
   static String get baseUrl {
@@ -49,17 +62,15 @@ class GraphQLClientFactory {
     return _baseUrl;
   }
 
-  static String? get token => _token;
-
-  /// Actualiza el token y reinicializa el cliente
-  static void updateToken(String newToken) {
+  /// Actualiza el cliente (útil después de login/logout)
+  static void updateToken(String? newToken) {
     if (!_initialized) {
       throw StateError(
         'GraphQLClientFactory.init must be called first before updating token',
       );
     }
-    _token = newToken;
-    init(baseUrl: _baseUrl, token: newToken);
+    // Ya no necesitamos guardar el token, AuthLink lo obtiene dinámicamente
+    _updateClient();
   }
 
   /// Ejecuta una operación con un cliente HTTP "fresh" (IOClient nuevo)
@@ -83,12 +94,16 @@ class GraphQLClientFactory {
       defaultHeaders: {'Connection': 'keep-alive', 'Keep-Alive': 'timeout=30'},
     );
 
-    Link link = httpLink;
-    final token = _token;
-    if (token != null) {
-      final authLink = AuthLink(getToken: () async => 'Bearer $token');
-      link = authLink.concat(httpLink);
-    }
+    // AuthLink con renovación proactiva (igual que el cliente principal)
+    final authLink = AuthLink(
+      getToken: () async {
+        if (_authService == null) return null;
+        final token = await _authService!.getValidAccessToken();
+        return token != null ? 'Bearer $token' : null;
+      },
+    );
+
+    final link = authLink.concat(httpLink);
 
     final freshClient = GraphQLClient(
       cache: GraphQLCache(store: InMemoryStore()),

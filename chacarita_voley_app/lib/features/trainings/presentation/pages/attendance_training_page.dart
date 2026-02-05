@@ -90,14 +90,13 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
         ),
       );
 
-      // Navegar de vuelta al detalle del entrenamiento
       await Future.delayed(const Duration(milliseconds: 400));
 
       if (!mounted) {
         return;
       }
 
-      context.pushReplacement('/trainings/${widget.trainingId}');
+      context.pop(true);
     } catch (e) {
       print('[_saveAttendance] Error al guardar: $e');
       if (mounted) {
@@ -424,7 +423,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                       return _buildAttendanceItem(
                         context,
                         attendance,
-                        attendance.playerId,
+                        attendance.playerDni,
                       );
                     },
                   ),
@@ -442,16 +441,16 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   Widget _buildAttendanceItem(
     BuildContext context,
     PlayerAttendance attendance,
-    String playerId,
+    String playerDni,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
+            width: 80,
             child: Text(
-              playerId,
+              playerDni,
               style: TextStyle(color: context.tokens.placeholder, fontSize: 13),
             ),
           ),
@@ -500,8 +499,9 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   }
 
   Widget _buildBottomButtons(BuildContext context, Training training) {
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomPadding),
       decoration: BoxDecoration(
         color: context.tokens.background,
         border: Border(top: BorderSide(color: context.tokens.stroke)),
