@@ -1,7 +1,6 @@
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
@@ -86,11 +85,15 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Pasar a pendiente nuevamente',
-                                style: TextStyle(
-                                  color: tokens.text,
-                                  fontSize: 14,
+                              Expanded(
+                                child: Text(
+                                  'Pasar a pendiente nuevamente',
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: tokens.text,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ],
