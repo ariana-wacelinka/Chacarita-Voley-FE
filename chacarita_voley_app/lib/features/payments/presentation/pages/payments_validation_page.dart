@@ -212,8 +212,16 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
   Widget _buildEmptyState(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _buildSummarySection(context)),
-        SliverToBoxAdapter(child: _buildFilterSection(context)),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _buildSummarySection(context),
+              const SizedBox(height: 16),
+              _buildFilterSection(context),
+            ]),
+          ),
+        ),
         SliverFillRemaining(
           child: Center(
             child: Column(
