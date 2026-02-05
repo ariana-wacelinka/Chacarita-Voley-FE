@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
         rememberMe: _rememberMe,
       );
-      
+
       // Obtener información del usuario
       final user = await _authService.getCurrentUser();
       if (user != null) {
@@ -334,42 +334,36 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        'Recordarme',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: textColor,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                                    Text(
+                                      'Recordarme',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: textColor,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              Flexible(
-                                child: TextButton(
-                                  onPressed: () =>
-                                      context.push('/forgot-password'),
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    '¿Olvidaste tu contraseña?',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  '¿Olvidaste tu contraseña?',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                               ),
