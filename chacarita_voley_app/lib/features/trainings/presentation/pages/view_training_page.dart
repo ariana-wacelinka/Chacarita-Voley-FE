@@ -407,8 +407,9 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
   }
 
   Widget _buildBottomButtons(BuildContext context, Training training) {
+    final bottomPadding = 24.0 + MediaQuery.of(context).viewPadding.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding),
       decoration: BoxDecoration(
         color: context.tokens.background,
         border: Border(top: BorderSide(color: context.tokens.stroke)),
