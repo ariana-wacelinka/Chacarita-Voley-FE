@@ -46,8 +46,8 @@ class NotificationRepository {
   ''';
 
   String _getAllNotificationsQuery() => '''
-    query GetAllNotifications(\$page: Int!, \$size: Int!) {
-      getAllNotifications(page: \$page, size: \$size) {
+    query GetAllNotifications(\$page: Int!, \$size: Int!, \$search: String) {
+      getAllNotifications(page: \$page, size: \$size, filters: {search: \$search}) {
         totalPages
         totalElements
         pageSize
@@ -91,11 +91,18 @@ class NotificationRepository {
   Future<NotificationPageResult> getNotifications({
     int page = 0,
     int size = 10,
+    String? search,
   }) async {
+    final variables = {
+      'page': page,
+      'size': size,
+      'search': search ?? '',
+    };
+
     final result = await _query(
       QueryOptions(
         document: gql(_getAllNotificationsQuery()),
-        variables: {'page': page, 'size': size},
+        variables: variables,
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -137,7 +144,6 @@ class NotificationRepository {
   }
 
   Future<NotificationModel> getNotificationById(String id) async {
-
     final result = await _query(
       QueryOptions(
         document: gql(_getNotificationByIdQuery()),
