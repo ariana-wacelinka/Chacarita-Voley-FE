@@ -363,9 +363,9 @@ class _ViewTrainingPageState extends State<ViewTrainingPage> {
             child: Row(
               children: [
                 SizedBox(
-                  width: 16,
+                  width: 80,
                   child: Text(
-                    attendance.playerId,
+                    attendance.playerDni,
                     style: TextStyle(
                       color: context.tokens.placeholder,
                       fontSize: 13,

@@ -63,6 +63,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -107,6 +108,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -196,6 +198,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
             abbreviation
             players {
               id
+              person {
+                dni
+                name
+                surname
+              }
             }
             professors {
               person {
@@ -242,6 +249,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             leagueId
             person {
               id
+              dni
               name
               surname
             }
@@ -660,11 +668,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final attendances = playersData
         .whereType<Map<String, dynamic>>()
         .map(
-          (player) => PlayerAttendance(
-            playerId: player['id'] as String? ?? '',
-            playerName: '',
-            isPresent: false,
-          ),
+          (player) {
+            final personData = player['person'] as Map<String, dynamic>?;
+            final dni = personData?['dni'] as String? ?? '';
+            return PlayerAttendance(
+              playerId: player['id'] as String? ?? '',
+              playerDni: dni,
+              playerName: '',
+              isPresent: false,
+            );
+          },
         )
         .toList();
 
@@ -759,8 +772,10 @@ class TrainingRepository implements TrainingRepositoryInterface {
         }
       }
 
+      final dni = personData?['dni'] as String? ?? '';
       return PlayerAttendance(
         playerId: player['id'] as String? ?? '',
+        playerDni: dni,
         playerName: '$surname $name'.trim(),
         isPresent: isPresent,
         estadoCuota: estadoCuota,
@@ -829,11 +844,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
     final attendances = playersData
         .whereType<Map<String, dynamic>>()
         .map(
-          (player) => PlayerAttendance(
-            playerId: player['id'] as String? ?? '',
-            playerName: '',
-            isPresent: false,
-          ),
+          (player) {
+            final personData = player['person'] as Map<String, dynamic>?;
+            final dni = personData?['dni'] as String? ?? '';
+            return PlayerAttendance(
+              playerId: player['id'] as String? ?? '',
+              playerDni: dni,
+              playerName: '',
+              isPresent: false,
+            );
+          },
         )
         .toList();
 

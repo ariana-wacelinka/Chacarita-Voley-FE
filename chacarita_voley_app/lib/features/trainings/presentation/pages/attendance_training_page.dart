@@ -424,7 +424,7 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
                       return _buildAttendanceItem(
                         context,
                         attendance,
-                        attendance.playerId,
+                        attendance.playerDni,
                       );
                     },
                   ),
@@ -442,16 +442,16 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
   Widget _buildAttendanceItem(
     BuildContext context,
     PlayerAttendance attendance,
-    String playerId,
+    String playerDni,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
+            width: 80,
             child: Text(
-              playerId,
+              playerDni,
               style: TextStyle(color: context.tokens.placeholder, fontSize: 13),
             ),
           ),

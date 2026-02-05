@@ -121,12 +121,14 @@ enum TrainingStatus {
 
 class PlayerAttendance {
   final String playerId;
+  final String playerDni;
   final String playerName;
   final bool isPresent;
   final EstadoCuota? estadoCuota;
 
   PlayerAttendance({
     required this.playerId,
+    required this.playerDni,
     required this.playerName,
     required this.isPresent,
     this.estadoCuota,
@@ -134,12 +136,14 @@ class PlayerAttendance {
 
   PlayerAttendance copyWith({
     String? playerId,
+    String? playerDni,
     String? playerName,
     bool? isPresent,
     EstadoCuota? estadoCuota,
   }) {
     return PlayerAttendance(
       playerId: playerId ?? this.playerId,
+      playerDni: playerDni ?? this.playerDni,
       playerName: playerName ?? this.playerName,
       isPresent: isPresent ?? this.isPresent,
       estadoCuota: estadoCuota ?? this.estadoCuota,
