@@ -73,6 +73,7 @@ class _TeamsPageState extends State<TeamsPage> {
               page: 0,
               size: _teamsPerPage,
             );
+            _totalElementsFuture = _repository.getTotalTeams();
           });
         }
       });
@@ -99,6 +100,9 @@ class _TeamsPageState extends State<TeamsPage> {
           searchQuery: value.isEmpty ? null : value,
           page: 0,
           size: _teamsPerPage,
+        );
+        _totalElementsFuture = _repository.getTotalTeams(
+          searchQuery: value.isEmpty ? null : value,
         );
       });
     });
@@ -156,6 +160,9 @@ class _TeamsPageState extends State<TeamsPage> {
                     searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                     page: _currentPage,
                     size: _teamsPerPage,
+                  );
+                  _totalElementsFuture = _repository.getTotalTeams(
+                    searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                   );
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -327,6 +334,11 @@ class _TeamsPageState extends State<TeamsPage> {
                                 page: _currentPage,
                                 size: _teamsPerPage,
                               );
+                              _totalElementsFuture = _repository.getTotalTeams(
+                                searchQuery: _searchQuery.isEmpty
+                                    ? null
+                                    : _searchQuery,
+                              );
                             });
                             await Future.delayed(
                               const Duration(milliseconds: 500),
@@ -412,9 +424,37 @@ class _TeamsPageState extends State<TeamsPage> {
                                                       );
                                                       break;
                                                     case _TeamMenuAction.edit:
-                                                      context.push(
-                                                        '/teams/edit/${team.id}',
-                                                      );
+                                                      () async {
+                                                        final updated =
+                                                            await context.push(
+                                                          '/teams/edit/${team.id}',
+                                                        );
+                                                        if (updated == true &&
+                                                            mounted) {
+                                                          setState(() {
+                                                            _teamsFuture =
+                                                                _repository
+                                                                    .getTeamsListItems(
+                                                              searchQuery:
+                                                                  _searchQuery
+                                                                          .isEmpty
+                                                                      ? null
+                                                                      : _searchQuery,
+                                                              page: _currentPage,
+                                                              size: _teamsPerPage,
+                                                            );
+                                                            _totalElementsFuture =
+                                                                _repository
+                                                                    .getTotalTeams(
+                                                              searchQuery:
+                                                                  _searchQuery
+                                                                          .isEmpty
+                                                                      ? null
+                                                                      : _searchQuery,
+                                                            );
+                                                          });
+                                                        }
+                                                      }();
                                                       break;
                                                     case _TeamMenuAction.delete:
                                                       _showDeleteDialog(
@@ -526,65 +566,65 @@ class _TeamsPageState extends State<TeamsPage> {
                         decoration: BoxDecoration(
                           color: context.tokens.background,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: _currentPage > 0
-                                  ? _previousPage
-                                  : null,
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              icon: Icon(
-                                Symbols.chevron_left,
-                                color: _currentPage > 0
-                                    ? context.tokens.text
-                                    : context.tokens.placeholder,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            FutureBuilder<int>(
-                              future: _totalElementsFuture,
-                              builder: (context, snapshot) {
-                                final total = snapshot.data ?? 0;
-                                final start = teams.isEmpty
-                                    ? 0
-                                    : _currentPage * _teamsPerPage + 1;
-                                final end =
-                                    (_currentPage * _teamsPerPage) +
-                                    teams.length;
-                                return Text(
+                        child: FutureBuilder<int>(
+                          future: _totalElementsFuture,
+                          builder: (context, snapshot) {
+                            final total = snapshot.data ?? 0;
+                            final start = teams.isEmpty
+                                ? 0
+                                : _currentPage * _teamsPerPage + 1;
+                            final end =
+                                (_currentPage * _teamsPerPage) +
+                                teams.length;
+                            final canNext = end < total;
+
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                IconButton(
+                                  onPressed: _currentPage > 0
+                                      ? _previousPage
+                                      : null,
+                                  padding: const EdgeInsets.all(8),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  icon: Icon(
+                                    Symbols.chevron_left,
+                                    color: _currentPage > 0
+                                        ? context.tokens.text
+                                        : context.tokens.placeholder,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
                                   '$start-$end de $total',
                                   style: TextStyle(
                                     color: context.tokens.text,
                                     fontSize: 14,
                                   ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: teams.length >= _teamsPerPage
-                                  ? _nextPage
-                                  : null,
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              icon: Icon(
-                                Symbols.chevron_right,
-                                color: teams.length >= _teamsPerPage
-                                    ? context.tokens.text
-                                    : context.tokens.placeholder,
-                                size: 20,
-                              ),
-                            ),
-                          ],
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: canNext ? _nextPage : null,
+                                  padding: const EdgeInsets.all(8),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  icon: Icon(
+                                    Symbols.chevron_right,
+                                    color: canNext
+                                        ? context.tokens.text
+                                        : context.tokens.placeholder,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -606,6 +646,9 @@ class _TeamsPageState extends State<TeamsPage> {
                       searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                       page: _currentPage,
                       size: _teamsPerPage,
+                    );
+                    _totalElementsFuture = _repository.getTotalTeams(
+                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
                     );
                   });
                 }
