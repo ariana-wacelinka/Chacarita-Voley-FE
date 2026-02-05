@@ -16,6 +16,7 @@ class TeamInfo {
 }
 
 class User {
+  final bool? playerIsCompetitive;
   final String? id;
   final String? playerId;
   final String? professorId;
@@ -35,6 +36,7 @@ class User {
   final CurrentDue? currentDue;
 
   User({
+    this.playerIsCompetitive,
     this.id,
     this.playerId,
     this.professorId,

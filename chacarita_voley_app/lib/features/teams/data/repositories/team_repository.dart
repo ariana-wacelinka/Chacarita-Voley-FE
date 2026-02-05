@@ -276,6 +276,8 @@ class TeamRepository implements TeamRepositoryInterface {
       professorIds: team.professorIds,
     );
 
+    debugPrint('📤 createTeam request: ${request.toJson()}');
+
     final result = await _mutate(
       MutationOptions(
         document: gql(_createTeamMutation()),
@@ -284,10 +286,12 @@ class TeamRepository implements TeamRepositoryInterface {
     );
 
     if (result.hasException) {
+      debugPrint('❌ createTeam exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
 
     final data = result.data?['createTeam'] as Map<String, dynamic>?;
+    debugPrint('📥 createTeam response: ${result.data}');
     if (data == null) {
       throw Exception('Respuesta inválida de createTeam');
     }

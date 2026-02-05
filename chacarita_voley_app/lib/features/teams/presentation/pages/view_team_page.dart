@@ -58,7 +58,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
   }
 
   String _resolveUserIdForMember(TeamMember member) {
-    return member.dni;
+    return member.personId ?? member.playerId ?? member.dni;
   }
 
   void _showCompetitiveDataDialog(TeamMember member) {
@@ -1096,8 +1096,13 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () {
-                    context.go('/teams/edit/${_team!.id}');
+                  onPressed: () async {
+                    final result = await context.push(
+                      '/teams/edit/${_team!.id}',
+                    );
+                    if (result == true && mounted) {
+                      _loadTeam();
+                    }
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: context.tokens.secondaryButton,

@@ -199,7 +199,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
         // Pequeño delay para que el backend procese antes de redirigir
         await Future.delayed(const Duration(milliseconds: 100));
-        context.go('/teams/view/${team.id}');
+        context.pop(true);
       }
     } catch (e) {
       print('❌ Error updating team: $e');
@@ -247,7 +247,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
           ),
         );
         await Future.delayed(const Duration(milliseconds: 100));
-        context.go('/teams/view/${team.id}');
+        context.pop(true);
         return;
       }
 

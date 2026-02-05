@@ -132,6 +132,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     try {
       final players = await _userRepository.getUsers(
         role: 'PLAYER',
+        playerIsCompetitive: _selectedTipo == TeamType.competitivo,
         page: 0,
         size: 20,
         forTeamSelection: true,
@@ -167,6 +168,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         final results = await _userRepository.getUsers(
           role: 'PLAYER',
           searchQuery: query,
+          playerIsCompetitive: _selectedTipo == TeamType.competitivo,
           page: 0,
           size: 20,
           forTeamSelection: true,
@@ -241,8 +243,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             : _abreviacionController.text,
         tipo: _selectedTipo,
         professorIds: _selectedEntrenadores
-            .map((u) => u.professorId)
-            .whereType<String>()
+          .map((u) => u.professorId ?? u.id)
+          .whereType<String>()
             .toList(),
         entrenadores: _selectedEntrenadores
             .map((u) => u.nombreCompleto)
@@ -305,6 +307,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                             ? TeamType.competitivo
                             : TeamType.recreativo;
                       });
+                      _loadInitialPlayers();
                     },
                     title: const Text(
                       'Competitivo',
