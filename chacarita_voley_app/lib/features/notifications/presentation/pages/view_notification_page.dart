@@ -344,6 +344,39 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
               ),
             ],
           ),
+          if (_notification!.status != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _getStatusColor(_notification!.status!).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: _getStatusColor(_notification!.status!),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getStatusIcon(_notification!.status!),
+                    size: 16,
+                    color: _getStatusColor(_notification!.status!),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _notification!.status!.displayName,
+                    style: TextStyle(
+                      color: _getStatusColor(_notification!.status!),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (_notification!.getRepeatText().isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
@@ -519,40 +552,44 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final isSent = _notification?.status == NotificationStatus.SENT;
+    
     return Column(
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final result = await context.push(
-                '/notifications/${widget.notificationId}/edit',
-              );
-              if (result == true && mounted) {
-                _loadNotification();
-                // Propagate the update signal back to the list
-                context.pop(true);
-              }
-            },
-            icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
-            label: const Text(
-              'Modificar notificación',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+        if (!isSent) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final result = await context.push(
+                  '/notifications/${widget.notificationId}/edit',
+                );
+                if (result == true && mounted) {
+                  _loadNotification();
+                  // Propagate the update signal back to the list
+                  context.pop(true);
+                }
+              },
+              icon: const Icon(Symbols.edit, color: Colors.white, size: 18),
+              label: const Text(
+                'Modificar notificación',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.tokens.secondaryButton,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.tokens.secondaryButton,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -577,5 +614,35 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         ),
       ],
     );
+  }
+
+  Color _getStatusColor(NotificationStatus status) {
+    switch (status) {
+      case NotificationStatus.SENT:
+        return Colors.green;
+      case NotificationStatus.SCHEDULED:
+        return Colors.blue;
+      case NotificationStatus.PROCESSING:
+        return Colors.orange;
+      case NotificationStatus.FAILED:
+        return Colors.red;
+      case NotificationStatus.CREATED:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(NotificationStatus status) {
+    switch (status) {
+      case NotificationStatus.SENT:
+        return Symbols.check_circle;
+      case NotificationStatus.SCHEDULED:
+        return Symbols.schedule;
+      case NotificationStatus.PROCESSING:
+        return Symbols.sync;
+      case NotificationStatus.FAILED:
+        return Symbols.error;
+      case NotificationStatus.CREATED:
+        return Symbols.draft;
+    }
   }
 }

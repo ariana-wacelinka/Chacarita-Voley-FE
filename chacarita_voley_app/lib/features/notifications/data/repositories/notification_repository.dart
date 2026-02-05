@@ -23,6 +23,7 @@ class NotificationRepository {
         frequency
         createdAt
         countOfPlayers
+        status
         sender {
           id
           name
