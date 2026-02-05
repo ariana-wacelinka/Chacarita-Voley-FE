@@ -1,10 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
+import '../../../../core/services/file_upload_types.dart';
+import '../../../../core/utils/receipt_file_utils.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
 
@@ -567,14 +567,14 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         return;
       }
 
-      Map<String, String>? result;
+      SelectedFile? result;
 
       if (option == 'gallery') {
         final file = await FileUploadService.pickImage(
           source: ImageSource.gallery,
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!ReceiptFileUtils.isAllowedExtension(file.name)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -588,17 +588,14 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
             }
             return;
           }
-          result = {
-            'fileName': file.path.split('/').last,
-            'fileUrl': file.path,
-          };
+          result = file;
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
           allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!ReceiptFileUtils.isAllowedExtension(file.name)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -612,10 +609,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
             }
             return;
           }
-          result = {
-            'fileName': file.path.split('/').last,
-            'fileUrl': file.path,
-          };
+          result = file;
         }
       }
 
@@ -624,7 +618,7 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         try {
           final uploadResult = await FileUploadService.updatePaymentReceipt(
             paymentId: widget.payment.id,
-            file: File(result['fileUrl']!),
+            file: result,
           );
 
           if (mounted) {
@@ -643,7 +637,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
             );
           }
         } catch (e) {
-          print('❌ Error al subir archivo: $e');
           if (mounted) {
             setState(() => _isUploadingFile = false);
 
@@ -679,16 +672,6 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         );
       }
     }
-  }
-
-  bool _isAllowedReceiptExtension(String path) {
-    final parts = path.toLowerCase().split('.');
-    if (parts.length < 2) return false;
-    final extension = parts.last;
-    return extension == 'png' ||
-        extension == 'jpeg' ||
-        extension == 'jpg' ||
-        extension == 'pdf';
   }
 
   @override

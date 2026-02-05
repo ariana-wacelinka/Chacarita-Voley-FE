@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
+import '../../../../core/services/file_upload_types.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/utils/receipt_file_utils.dart';
 
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/entities/due.dart';
@@ -18,6 +20,7 @@ class PaymentCreateForm extends StatefulWidget {
     payment_entities.Pay newPayment,
     User selectedUser,
     String dueId,
+    SelectedFile? receiptFile,
   )
   onSave;
 
@@ -36,7 +39,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   final TextEditingController _montoController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
   String? _comprobanteFileName;
-  String? _comprobanteFileUrl;
+  SelectedFile? _comprobanteFile;
   bool _isUploadingFile = false;
   payment_state.PayState _selectedStatus = payment_state.PayState.pending;
 
@@ -96,9 +99,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         });
         _loadDuesForPlayer(user);
       }
-    } catch (e) {
-      print('⚠️ Error cargando usuario del player: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadInitialUser() async {
@@ -210,7 +211,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         });
       }
     } catch (e) {
-      print('❌ Error cargando cuotas: $e');
       if (mounted) {
         setState(() {
           _availableDues = [];
@@ -513,7 +513,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                   _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
-                print('❌ Validación fallida: ${_selectedUser?.nombreCompleto ?? "null"}');
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -555,11 +554,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                 ),
                 createdAt: DateTime.now().toIso8601String(),
                 fileName: _comprobanteFileName ?? '',
-                fileUrl: _comprobanteFileUrl ?? '',
+                fileUrl: '',
                 userName: _selectedUser!.nombreCompleto,
                 dni: _selectedUser!.dni,
               );
-              widget.onSave(newPayment, _selectedUser!, _selectedDue!.id);
+              widget.onSave(
+                newPayment,
+                _selectedUser!,
+                _selectedDue!.id,
+                _comprobanteFile,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
@@ -966,14 +970,14 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         return;
       }
 
-      Map<String, String>? result;
+      SelectedFile? result;
 
       if (option == 'gallery') {
         final file = await FileUploadService.pickImage(
           source: ImageSource.gallery,
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!ReceiptFileUtils.isAllowedExtension(file.name)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -987,17 +991,14 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
             }
             return;
           }
-          result = {
-            'fileName': file.path.split('/').last,
-            'fileUrl': file.path,
-          };
+          result = file;
         }
       } else if (option == 'file') {
         final file = await FileUploadService.pickFile(
           allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!ReceiptFileUtils.isAllowedExtension(file.name)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1011,17 +1012,14 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
             }
             return;
           }
-          result = {
-            'fileName': file.path.split('/').last,
-            'fileUrl': file.path,
-          };
+          result = file;
         }
       }
 
       if (result != null && mounted) {
         setState(() {
-          _comprobanteFileName = result!['fileName'];
-          _comprobanteFileUrl = result['fileUrl'];
+          _comprobanteFileName = result!.name;
+          _comprobanteFile = result;
           _isUploadingFile = false;
         });
       } else {
@@ -1039,16 +1037,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         );
       }
     }
-  }
-
-  bool _isAllowedReceiptExtension(String path) {
-    final parts = path.toLowerCase().split('.');
-    if (parts.length < 2) return false;
-    final extension = parts.last;
-    return extension == 'png' ||
-      extension == 'jpeg' ||
-      extension == 'jpg' ||
-      extension == 'pdf';
   }
 
   // Grupo de radios para estado
