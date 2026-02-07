@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/io_client.dart';
 import '../services/auth_service.dart';
+import '../errors/backend_error_mapper.dart';
+import '../services/snackbar_service.dart';
 
 class GraphQLClientFactory {
   static late GraphQLClient client;
@@ -43,7 +45,23 @@ class GraphQLClientFactory {
       },
     );
 
-    final link = authLink.concat(httpLink);
+    final errorLink = ErrorLink(
+      onGraphQLError: (request, forward, response) {
+        final errors = response?.errors ?? [];
+        for (final error in errors) {
+          final message = BackendErrorMapper.fromMessage(error.message);
+          SnackbarService.showError(message);
+        }
+        return forward(request);
+      },
+      onException: (request, forward, exception) {
+        final message = BackendErrorMapper.fromException(exception);
+        SnackbarService.showError(message);
+        return forward(request);
+      },
+    );
+
+    final link = Link.from([errorLink, authLink, httpLink]);
 
     client = GraphQLClient(
       cache: GraphQLCache(store: InMemoryStore()),
@@ -103,7 +121,23 @@ class GraphQLClientFactory {
       },
     );
 
-    final link = authLink.concat(httpLink);
+    final errorLink = ErrorLink(
+      onGraphQLError: (request, forward, response) {
+        final errors = response?.errors ?? [];
+        for (final error in errors) {
+          final message = BackendErrorMapper.fromMessage(error.message);
+          SnackbarService.showError(message);
+        }
+        return forward(request);
+      },
+      onException: (request, forward, exception) {
+        final message = BackendErrorMapper.fromException(exception);
+        SnackbarService.showError(message);
+        return forward(request);
+      },
+    );
+
+    final link = Link.from([errorLink, authLink, httpLink]);
 
     final freshClient = GraphQLClient(
       cache: GraphQLCache(store: InMemoryStore()),

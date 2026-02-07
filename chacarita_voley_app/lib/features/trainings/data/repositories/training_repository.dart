@@ -603,36 +603,72 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String trainingId,
     List<PlayerAttendance> attendances,
   ) async {
-    // Construir la lista de inputs como strings para la mutación
-    final inputListString = attendances
-        .map(
-          (attendance) =>
-              '{assistance: ${attendance.isPresent}, playerId: "${attendance.playerId}", sessionId: "$trainingId"}',
-        )
-        .join(', ');
-    // Construir la mutación con los valores inline
-    final mutation =
-        '''
-      mutation CreateAssistance {
-        createAssistance(inputList: [$inputListString]) {
-          id
-          assistance
-          date
-          player {
+    final toCreate = attendances.where((a) => a.assistanceId == null).toList();
+    final toUpdate = attendances.where((a) => a.assistanceId != null).toList();
+
+    if (toCreate.isNotEmpty) {
+      final createInputListString = toCreate
+          .map(
+            (attendance) =>
+                '{assistance: ${attendance.isPresent}, playerId: "${attendance.playerId}", sessionId: "$trainingId"}',
+          )
+          .join(', ');
+
+      final createMutation =
+          '''
+        mutation CreateAssistance {
+          createAssistance(inputList: [$createInputListString]) {
             id
-            person {
-              name
-              surname
+            assistance
+            date
+            player {
+              id
+              person {
+                name
+                surname
+              }
             }
           }
         }
+      ''';
+
+      final createResult = await _mutate(
+        MutationOptions(document: gql(createMutation)),
+      );
+
+      if (createResult.hasException) {
+        throw Exception(createResult.exception.toString());
       }
-    ''';
+    }
 
-    final result = await _mutate(MutationOptions(document: gql(mutation)));
+    if (toUpdate.isNotEmpty) {
+      for (final attendance in toUpdate) {
+        final updateMutation =
+            '''
+          mutation UpdateAssistance {
+            updateAssistance(sessionId: "$trainingId", input: {playerId: "${attendance.playerId}", assistanceId: "${attendance.assistanceId}", assistance: ${attendance.isPresent}}) {
+              id
+              assistance
+              date
+              player {
+                id
+                person {
+                  name
+                  surname
+                }
+              }
+            }
+          }
+        ''';
 
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
+        final updateResult = await _mutate(
+          MutationOptions(document: gql(updateMutation)),
+        );
+
+        if (updateResult.hasException) {
+          throw Exception(updateResult.exception.toString());
+        }
+      }
     }
 
     // Recargar el training actualizado
@@ -743,6 +779,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
       final assistancesData = (player['assistances'] as List<dynamic>?) ?? [];
       bool isPresent = false;
+      String? assistanceId;
 
       if (sessionDate != null && assistancesData.isNotEmpty) {
         for (final assistance in assistancesData) {
@@ -755,6 +792,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
                 parsedDate.month == sessionDate.month &&
                 parsedDate.day == sessionDate.day) {
               isPresent = assistanceMap['assistance'] as bool? ?? false;
+              assistanceId = assistanceMap['id'] as String?;
               break;
             }
           }
@@ -781,6 +819,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
         playerName: '$surname $name'.trim(),
         isPresent: isPresent,
         estadoCuota: estadoCuota,
+        assistanceId: assistanceId,
       );
     }).toList();
 

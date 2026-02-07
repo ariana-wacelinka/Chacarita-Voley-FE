@@ -132,6 +132,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     try {
       final players = await _userRepository.getUsers(
         role: 'PLAYER',
+        playerIsCompetitive: _selectedTipo == TeamType.competitivo,
         page: 0,
         size: 20,
         forTeamSelection: true,
@@ -167,6 +168,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         final results = await _userRepository.getUsers(
           role: 'PLAYER',
           searchQuery: query,
+          playerIsCompetitive: _selectedTipo == TeamType.competitivo,
           page: 0,
           size: 20,
           forTeamSelection: true,
@@ -233,6 +235,26 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
+      final invalidProfessors =
+          _selectedEntrenadores.where((u) => u.professorId == null).toList();
+      if (invalidProfessors.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'No se pudo obtener el ID de profesor. Recargá la lista y reintentá.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+        return;
+      }
+
+      for (final prof in _selectedEntrenadores) {
+        debugPrint(
+          '📌 Profesor seleccionado: personId=${prof.id}, professorId=${prof.professorId}',
+        );
+      }
+
       final team = Team(
         id: widget.team?.id ?? DateTime.now().toString(),
         nombre: _nombreController.text,
@@ -241,8 +263,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             : _abreviacionController.text,
         tipo: _selectedTipo,
         professorIds: _selectedEntrenadores
-            .map((u) => u.professorId)
-            .whereType<String>()
+          .map((u) => u.professorId)
+          .whereType<String>()
             .toList(),
         entrenadores: _selectedEntrenadores
             .map((u) => u.nombreCompleto)
@@ -305,6 +327,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
                             ? TeamType.competitivo
                             : TeamType.recreativo;
                       });
+                      _loadInitialPlayers();
                     },
                     title: const Text(
                       'Competitivo',

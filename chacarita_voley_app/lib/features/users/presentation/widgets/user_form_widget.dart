@@ -78,16 +78,6 @@ class _UserFormWidgetState extends State<UserFormWidget> {
       initialDate: _fechaNacimiento ?? DateTime(2000),
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {

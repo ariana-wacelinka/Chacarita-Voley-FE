@@ -124,6 +124,7 @@ class TeamRepository implements TeamRepositoryInterface {
     }
   ''';
 
+
   static const String _deleteTeamMutation = r'''
     mutation DeleteTeam($id: ID!) {
       deleteTeam(id: $id)
@@ -276,6 +277,8 @@ class TeamRepository implements TeamRepositoryInterface {
       professorIds: team.professorIds,
     );
 
+    debugPrint('📤 createTeam request: ${request.toJson()}');
+
     final result = await _mutate(
       MutationOptions(
         document: gql(_createTeamMutation()),
@@ -284,13 +287,37 @@ class TeamRepository implements TeamRepositoryInterface {
     );
 
     if (result.hasException) {
+      debugPrint('❌ createTeam exception: ${result.exception}');
       throw Exception(result.exception.toString());
     }
 
     final data = result.data?['createTeam'] as Map<String, dynamic>?;
+    debugPrint('📥 createTeam response: ${result.data}');
     if (data == null) {
       throw Exception('Respuesta inválida de createTeam');
     }
+
+    if (team.professorIds.isNotEmpty) {
+      final updateResult = await _mutate(
+        MutationOptions(
+          document: gql(_updateTeamMutation()),
+          variables: {
+            'id': data['id'].toString(),
+            'input': {
+              'professorIds': team.professorIds
+                  .map((id) => int.tryParse(id) ?? 0)
+                  .toList(),
+            },
+          },
+        ),
+      );
+
+      if (updateResult.hasException) {
+        debugPrint('❌ updateTeam post-create exception: ${updateResult.exception}');
+        throw Exception(updateResult.exception.toString());
+      }
+    }
+
   }
 
   @override

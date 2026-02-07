@@ -113,8 +113,8 @@ class UserRepository implements UserRepositoryInterface {
 
   String _getAllPersonsQuery() =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!, \$search: String, \$role: Role, \$statusCurrentDue: DuesState) {
-      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: \$role, statusCurrentDue: \$statusCurrentDue}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$search: String, \$role: Role, \$statusCurrentDue: DuesState, \$playerIsCompetitive: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: \$role, statusCurrentDue: \$statusCurrentDue, playerIsCompetitive: \$playerIsCompetitive}) {
         content {
           $_personFieldsMinimal
         }
@@ -130,8 +130,8 @@ class UserRepository implements UserRepositoryInterface {
 
   String _getAllPersonsForTeamsQuery() =>
       '''
-    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role) {
-      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role}) {
+    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role, \$playerIsCompetitive: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role, playerIsCompetitive: \$playerIsCompetitive}) {
         content {
           $_personFieldsForTeams
         }
@@ -226,11 +226,13 @@ class UserRepository implements UserRepositoryInterface {
     String? searchQuery,
     String? role,
     String? statusCurrentDue,
+    bool? playerIsCompetitive,
   }) {
     return {
       'search': searchQuery?.trim() ?? '',
       'role': role,
       'statusCurrentDue': statusCurrentDue,
+      'playerIsCompetitive': playerIsCompetitive,
     };
   }
 
@@ -239,6 +241,7 @@ class UserRepository implements UserRepositoryInterface {
     String? role,
     String? searchQuery,
     String? statusCurrentDue,
+    bool? playerIsCompetitive,
     int? page,
     int? size,
     bool forTeamSelection = false,
@@ -247,6 +250,7 @@ class UserRepository implements UserRepositoryInterface {
       searchQuery: searchQuery,
       role: role,
       statusCurrentDue: statusCurrentDue,
+      playerIsCompetitive: playerIsCompetitive,
     );
 
     final result = await _query(

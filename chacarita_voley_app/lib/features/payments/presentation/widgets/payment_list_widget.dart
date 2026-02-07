@@ -380,17 +380,7 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
   Widget _buildActionButtons(PayState status, AppTheme tokens, Pay payment) {
     final tokens = context.tokens;
     if (status == PayState.validated) {
-      return OutlinedButton.icon(
-        onPressed: () => context.push('/payments/edit/${payment.id}'),
-        icon: const Icon(Icons.edit, size: 18),
-        label: const Text('Modificar', style: TextStyle(fontSize: 13)),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          minimumSize: const Size(0, 36),
-          side: BorderSide(color: tokens.gray),
-          foregroundColor: tokens.gray,
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     // Pendiente o Rechazado → Aceptar / Rechazar

@@ -29,7 +29,7 @@ void main() async {
   final authService = AuthService();
   final token = await authService.getToken();
 
-  GraphQLClientFactory.init(baseUrl: Environment.baseUrl, token: token);
+  GraphQLClientFactory.init(baseUrl: Environment.graphqlBaseUrl, token: token);
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 

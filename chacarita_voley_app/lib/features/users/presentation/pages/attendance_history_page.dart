@@ -335,7 +335,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Resumen de Asistencias',
+                    'Resumen Mensual de Asistencias',
                     style: TextStyle(
                       color: context.tokens.text,
                       fontSize: 16,

@@ -333,7 +333,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Resumen de Validaciones',
+                'Resumen Mensual de Validaciones',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

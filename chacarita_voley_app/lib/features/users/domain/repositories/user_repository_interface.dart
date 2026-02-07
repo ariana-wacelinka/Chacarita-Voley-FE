@@ -7,6 +7,7 @@ abstract class UserRepositoryInterface {
     String? role,
     String? searchQuery,
     String? statusCurrentDue,
+    bool? playerIsCompetitive,
     int? page,
     int? size,
     bool forTeamSelection = false,

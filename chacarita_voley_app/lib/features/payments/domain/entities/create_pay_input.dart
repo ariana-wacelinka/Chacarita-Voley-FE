@@ -16,15 +16,16 @@ class CreatePayInput {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'dueId': dueId,
-      'input': {
-        'fileName': fileName,
-        'fileUrl': fileUrl,
-        'date': date,
-        'amount': amount,
-        'state': state,
-      },
-    };
+    final input = {'date': date, 'amount': amount, 'state': state};
+
+    if (fileName != null) {
+      input['fileName'] = fileName;
+    }
+
+    if (fileUrl != null) {
+      input['fileUrl'] = fileUrl;
+    }
+
+    return {'dueId': dueId, 'input': input};
   }
 }

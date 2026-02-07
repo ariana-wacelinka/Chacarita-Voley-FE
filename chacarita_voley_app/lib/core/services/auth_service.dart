@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../environment.dart';
 import '../network/graphql_client_factory.dart';
+import '../errors/backend_error_mapper.dart';
+import 'snackbar_service.dart';
 
 class AuthService {
   static const String _tokenKey = 'auth_token';
@@ -25,8 +28,7 @@ class AuthService {
     bool rememberMe = false,
   }) async {
     try {
-      // Construir URL REST (sin /graphql)
-      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final restBaseUrl = Environment.restBaseUrl;
       final url = Uri.parse('$restBaseUrl/api/auth/login');
 
       final response = await http
@@ -71,6 +73,10 @@ class AuthService {
             );
             return authResponse;
           } else {
+            _showBackendError(
+              redirectResponse.statusCode,
+              redirectResponse.body,
+            );
             print(
               '❌ Login falló después de redirección: ${redirectResponse.statusCode}',
             );
@@ -102,6 +108,7 @@ class AuthService {
         await _saveRememberMe(rememberMe);
         return authResponse;
       } else {
+        _showBackendError(response.statusCode, response.body);
         print('❌ Login falló: ${response.statusCode}');
         final errorBody = response.body;
         throw Exception('Error de autenticación: $errorBody');
@@ -134,6 +141,7 @@ class AuthService {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return;
       } else {
+        _showBackendError(response.statusCode, response.body);
         print('❌ Error al enviar email: ${response.statusCode}');
         final errorBody = response.body;
         throw Exception('Error al enviar email de recuperación: $errorBody');
@@ -154,7 +162,7 @@ class AuthService {
         return null;
       }
 
-      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final restBaseUrl = Environment.restBaseUrl;
       final url = Uri.parse('$restBaseUrl/api/auth/me');
 
       final response = await http
@@ -193,6 +201,10 @@ class AuthService {
             await _saveUserInfo(user);
             return user;
           } else {
+            _showBackendError(
+              redirectResponse.statusCode,
+              redirectResponse.body,
+            );
             print(
               '❌ Error al obtener usuario después de redirección: ${redirectResponse.statusCode}',
             );
@@ -208,6 +220,7 @@ class AuthService {
         await _saveUserInfo(user);
         return user;
       } else {
+        _showBackendError(response.statusCode, response.body);
         return null;
       }
     } catch (e) {
@@ -234,7 +247,7 @@ class AuthService {
         throw Exception('No hay sesión activa');
       }
 
-      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final restBaseUrl = Environment.restBaseUrl;
       final url = Uri.parse('$restBaseUrl/api/auth/change-password');
 
       final response = await http
@@ -258,9 +271,11 @@ class AuthService {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return;
       } else if (response.statusCode == 401) {
+        _showBackendError(response.statusCode, response.body);
         print('❌ Contraseña actual incorrecta');
         throw Exception('La contraseña actual es incorrecta');
       } else {
+        _showBackendError(response.statusCode, response.body);
         print('❌ Error al cambiar contraseña: ${response.statusCode}');
         final errorBody = response.body;
         throw Exception('Error al cambiar contraseña: $errorBody');
@@ -379,12 +394,17 @@ class AuthService {
     return prefs.getBool(_rememberMeKey) ?? false;
   }
 
+  void _showBackendError(int statusCode, String body) {
+    final message = BackendErrorMapper.fromHttpResponse(statusCode, body);
+    SnackbarService.showError(message);
+  }
+
   Future<void> logout() async {
     try {
       final refreshToken = await getRefreshToken();
 
       if (refreshToken != null && refreshToken.isNotEmpty) {
-        final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+        final restBaseUrl = Environment.restBaseUrl;
         final url = Uri.parse('$restBaseUrl/api/auth/logout');
 
         try {
@@ -406,6 +426,7 @@ class AuthService {
 
           if (response.statusCode == 200 || response.statusCode == 204) {
           } else {
+            _showBackendError(response.statusCode, response.body);
             print('⚠️ Logout en backend fallo: ${response.statusCode}');
           }
         } catch (e) {
@@ -457,13 +478,16 @@ class AuthService {
         return null;
       }
 
-      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
+      final restBaseUrl = Environment.restBaseUrl;
       final url = Uri.parse('$restBaseUrl/api/auth/refresh');
 
       final response = await http
           .post(
             url,
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $currentRefreshToken',
+            },
             body: json.encode({'refreshToken': currentRefreshToken}),
           )
           .timeout(
@@ -495,6 +519,7 @@ class AuthService {
         }
         return authResponse;
       } else {
+        _showBackendError(response.statusCode, response.body);
         print('❌ Error al renovar token: ${response.statusCode}');
         print('❌ Body: ${response.body}');
         // Si el refresh token es inválido, limpiar sesión

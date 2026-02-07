@@ -1,5 +1,6 @@
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -28,6 +29,7 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final canSetPending = widget.payment.status != PayState.pending;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -70,18 +72,21 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                         size: 24,
                       ),
                       onSelected: (value) {
-                        if (value == 'pending') {
+                        if (value == 'pending' && canSetPending) {
                           _setPendingPay();
                         }
                       },
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           value: 'pending',
+                          enabled: canSetPending,
                           child: Row(
                             children: [
                               Icon(
                                 Symbols.schedule,
-                                color: tokens.text,
+                                color: canSetPending
+                                    ? tokens.text
+                                    : tokens.placeholder,
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
@@ -91,7 +96,9 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
                                   maxLines: 2,
                                   softWrap: true,
                                   style: TextStyle(
-                                    color: tokens.text,
+                                    color: canSetPending
+                                        ? tokens.text
+                                        : tokens.placeholder,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -322,6 +329,10 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
 
         // Notificar a la página padre que el pago se actualizó
         widget.onPaymentUpdated?.call();
+
+        context.go(
+          '/payments?refresh=${DateTime.now().millisecondsSinceEpoch}',
+        );
       }
     } catch (e) {
       if (mounted) {
