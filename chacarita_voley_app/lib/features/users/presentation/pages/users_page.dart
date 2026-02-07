@@ -800,7 +800,15 @@ class _UsersPageState extends State<UsersPage> {
       ),
       floatingActionButton: _canCreate
           ? FloatingActionButton(
-              onPressed: () => context.push('/users/register'),
+              onPressed: () async {
+                final created = await context.push<bool>('/users/register');
+                if (created == true && mounted) {
+                  setState(() {
+                    _currentPage = 0;
+                  });
+                  _loadUsers();
+                }
+              },
               backgroundColor: Theme.of(context).colorScheme.primary,
               child: const Icon(Symbols.add, color: Colors.white),
             )

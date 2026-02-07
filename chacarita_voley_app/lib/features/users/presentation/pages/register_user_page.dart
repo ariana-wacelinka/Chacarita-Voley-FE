@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -9,7 +10,9 @@ import '../../data/repositories/user_repository.dart';
 import '../widgets/user_form_widget.dart';
 
 class RegisterUserPage extends StatefulWidget {
-  const RegisterUserPage({super.key});
+  final CreateUserUseCase? createUserUseCase;
+
+  const RegisterUserPage({super.key, this.createUserUseCase});
 
   @override
   State<RegisterUserPage> createState() => _RegisterUserPageState();
@@ -24,7 +27,8 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
   @override
   void initState() {
     super.initState();
-    _createUserUseCase = CreateUserUseCase(UserRepository());
+    _createUserUseCase =
+        widget.createUserUseCase ?? CreateUserUseCase(UserRepository());
     _loadUserRoles();
   }
 
@@ -76,7 +80,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
           ),
         );
 
-        context.pop();
+        context.pop(true);
       }
       return true; // Éxito
     } catch (e, stackTrace) {
@@ -121,6 +125,9 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
       }
     }
   }
+
+  @visibleForTesting
+  Future<bool> handleSaveUserForTest(User user) => _handleSaveUser(user);
 
   @override
   Widget build(BuildContext context) {
