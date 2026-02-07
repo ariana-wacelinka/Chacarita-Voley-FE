@@ -200,9 +200,14 @@ class Training {
     this.countOfAssisted,
   });
 
-  int get totalPlayers => countOfPlayers ?? attendances.length;
-  int get presentCount =>
-      countOfAssisted ?? attendances.where((a) => a.isPresent).length;
+    int get totalPlayers =>
+      (countOfPlayers == null || countOfPlayers == 0)
+        ? attendances.length
+        : countOfPlayers!;
+    int get presentCount =>
+      (countOfAssisted == null || countOfAssisted == 0)
+        ? attendances.where((a) => a.isPresent).length
+        : countOfAssisted!;
   int get absentCount => totalPlayers - presentCount;
 
   String get dateFormatted {
