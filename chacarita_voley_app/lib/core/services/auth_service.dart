@@ -26,7 +26,7 @@ class AuthService {
   }) async {
     try {
       // Construir URL REST (sin /graphql)
-      final restBaseUrl = Environment.restBaseUrl;
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/login');
 
       final response = await http
@@ -42,10 +42,6 @@ class AuthService {
               throw Exception('Timeout al conectar con el servidor');
             },
           );
-
-      // Log de respuesta para diagnóstico
-      print('📡 Login status code: ${response.statusCode}');
-      print('📡 Login response body: ${response.body}');
 
       // Manejar redirecciones
       if (response.statusCode == 301 || response.statusCode == 302) {
@@ -158,7 +154,7 @@ class AuthService {
         return null;
       }
 
-      final restBaseUrl = Environment.restBaseUrl;
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/me');
 
       final response = await http
@@ -238,7 +234,7 @@ class AuthService {
         throw Exception('No hay sesión activa');
       }
 
-      final restBaseUrl = Environment.restBaseUrl;
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/change-password');
 
       final response = await http
@@ -388,7 +384,7 @@ class AuthService {
       final refreshToken = await getRefreshToken();
 
       if (refreshToken != null && refreshToken.isNotEmpty) {
-        final restBaseUrl = Environment.restBaseUrl;
+        final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
         final url = Uri.parse('$restBaseUrl/api/auth/logout');
 
         try {
@@ -461,7 +457,7 @@ class AuthService {
         return null;
       }
 
-      final restBaseUrl = Environment.restBaseUrl;
+      final restBaseUrl = Environment.baseUrl.replaceAll('/graphql', '');
       final url = Uri.parse('$restBaseUrl/api/auth/refresh');
 
       final response = await http
