@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import './router.dart';
+import '../core/services/snackbar_service.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -23,6 +24,7 @@ class _MyAppState extends State<MyApp> {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeProvider.themeMode,
+          scaffoldMessengerKey: SnackbarService.messengerKey,
           routerConfig: appRouter,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,

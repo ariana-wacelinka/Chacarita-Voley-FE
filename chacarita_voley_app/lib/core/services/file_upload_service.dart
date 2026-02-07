@@ -10,6 +10,8 @@ import 'package:open_file/open_file.dart';
 import 'package:flutter/foundation.dart';
 import '../environment.dart';
 import 'auth_service.dart';
+import '../errors/backend_error_mapper.dart';
+import 'snackbar_service.dart';
 
 class FileUploadService {
   static const bool _mockUpload = false;
@@ -206,11 +208,18 @@ class FileUploadService {
           'fileName': jsonData['fileName'] as String,
         };
       } else {
+        SnackbarService.showError(
+          BackendErrorMapper.fromHttpResponse(
+            response.statusCode,
+            response.body,
+          ),
+        );
         throw Exception(
           'Error al subir comprobante: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
+      SnackbarService.showError(BackendErrorMapper.fromException(e));
       throw Exception('Error al subir comprobante: $e');
     }
   }
@@ -249,6 +258,12 @@ class FileUploadService {
       }());
 
       if (response.statusCode != 200) {
+        SnackbarService.showError(
+          BackendErrorMapper.fromHttpResponse(
+            response.statusCode,
+            response.body,
+          ),
+        );
         throw Exception(
           'Error al descargar: ${response.statusCode} - ${response.body}',
         );
@@ -306,6 +321,7 @@ class FileUploadService {
 
       return file;
     } catch (e) {
+      SnackbarService.showError(BackendErrorMapper.fromException(e));
       throw Exception('Error al descargar comprobante: $e');
     }
   }
@@ -356,11 +372,18 @@ class FileUploadService {
           'fileName': jsonData['fileName'] as String,
         };
       } else {
+        SnackbarService.showError(
+          BackendErrorMapper.fromHttpResponse(
+            response.statusCode,
+            response.body,
+          ),
+        );
         throw Exception(
           'Error al actualizar comprobante: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
+      SnackbarService.showError(BackendErrorMapper.fromException(e));
       throw Exception('Error al actualizar comprobante: $e');
     }
   }
