@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../environment.dart';
@@ -463,7 +464,10 @@ class AuthService {
       final response = await http
           .post(
             url,
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $currentRefreshToken',
+            },
             body: json.encode({'refreshToken': currentRefreshToken}),
           )
           .timeout(
