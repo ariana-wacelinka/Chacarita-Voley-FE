@@ -7,12 +7,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:open_file/open_file.dart';
+import 'package:flutter/foundation.dart';
 import '../environment.dart';
 import 'auth_service.dart';
 
 class FileUploadService {
   static const bool _mockUpload = false;
-  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'png'];
+  static const List<String> _allowedExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
   static const List<String> _pickerExtensions = ['pdf', 'jpeg', 'jpg', 'png'];
 
   /// Obtiene el MediaType correcto según la extensión del archivo
@@ -77,11 +78,7 @@ class FileUploadService {
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin
         >();
-    await iosPlugin?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
 
     _notificationsInitialized = true;
   }
@@ -126,16 +123,17 @@ class FileUploadService {
       throw Exception('Formato no permitido');
     }
     final extension = parts.last;
-    if (extension == 'jpg') {
-      final tempDir = await getTemporaryDirectory();
-      final newPath =
-          '${tempDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-      return file.copy(newPath);
-    }
     if (!_allowedExtensions.contains(extension)) {
       throw Exception('Formato no permitido');
     }
     return file;
+  }
+
+  static bool isAllowedReceiptExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return false;
+    final extension = parts.last;
+    return _allowedExtensions.contains(extension);
   }
 
   /// Sube un comprobante de pago al backend
@@ -157,25 +155,49 @@ class FileUploadService {
       final url = Uri.parse(
         '${Environment.restBaseUrl}/api/pays/$paymentId/receipt',
       );
-      final request = http.MultipartRequest('POST', url);
-
       final authService = AuthService();
       final token = await authService.getValidAccessToken();
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
+      final mediaType = _getMediaType(fileName);
+
+      Future<http.Response> sendRequest(String method) async {
+        final request = http.MultipartRequest(method, url);
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+        assert(() {
+          final length = normalizedFile.lengthSync();
+          debugPrint(
+            'Upload receipt: method=$method url=$url file=$fileName bytes=$length type=$mediaType',
+          );
+          return true;
+        }());
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            normalizedFile.path,
+            contentType: mediaType,
+          ),
+        );
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        assert(() {
+          debugPrint(
+            'Upload receipt response: status=${response.statusCode} body=${response.body}',
+          );
+          return true;
+        }());
+        return response;
       }
 
-      final mediaType = _getMediaType(fileName);
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          normalizedFile.path,
-          contentType: mediaType,
-        ),
-      );
+      var response = await sendRequest('POST');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        response = await sendRequest('POST');
+      }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        response = await sendRequest('PUT');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonData = json.decode(response.body);
@@ -218,6 +240,13 @@ class FileUploadService {
 
       // Descargar el archivo
       final response = await http.get(url, headers: headers);
+
+      assert(() {
+        debugPrint(
+          'Download receipt response: status=${response.statusCode} bytes=${response.bodyBytes.length}',
+        );
+        return true;
+      }());
 
       if (response.statusCode != 200) {
         throw Exception(

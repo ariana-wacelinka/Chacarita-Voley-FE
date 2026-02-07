@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,8 +13,21 @@ import '../../../users/data/repositories/user_repository.dart';
 import '../../domain/entities/pay.dart' as payment_entities;
 import '../../domain/entities/pay_state.dart' as payment_state;
 
+payment_state.PayState resolvePaymentStatus({
+  required bool isAdmin,
+  required payment_state.PayState selectedStatus,
+}) {
+  return isAdmin ? selectedStatus : payment_state.PayState.pending;
+}
+
+bool hasRole(List<String> roles, String role) {
+  final target = role.toUpperCase();
+  return roles.any((r) => r.trim().toUpperCase() == target);
+}
+
 class PaymentCreateForm extends StatefulWidget {
   final String? initialUserId; // Pre-cargar si viene de user
+  final UserRepository? userRepository;
   final Function(
     payment_entities.Pay newPayment,
     User selectedUser,
@@ -24,6 +38,7 @@ class PaymentCreateForm extends StatefulWidget {
   const PaymentCreateForm({
     super.key,
     this.initialUserId,
+    this.userRepository,
     required this.onSave,
   });
 
@@ -40,11 +55,14 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   bool _isUploadingFile = false;
   payment_state.PayState _selectedStatus = payment_state.PayState.pending;
 
-  List<User> _allUsers = [];
-  List<User> _filteredUsers = [];
+  late final UserRepository _userRepository;
+  final List<User> _searchResults = [];
   User? _selectedUser;
   List<String> _userRoles = [];
+  bool _isAdmin = false;
   bool _isPlayer = false;
+  Timer? _debounceTimer;
+  bool _isSearching = false;
 
   // Cuotas del jugador seleccionado
   List<CurrentDue> _availableDues = [];
@@ -57,8 +75,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   @override
   void initState() {
     super.initState();
+    _userRepository = widget.userRepository ?? UserRepository();
     _loadUserRoles();
-    _loadUsers();
     _searchController.addListener(_onSearchChanged);
     if (widget.initialUserId != null) {
       _loadInitialUser();
@@ -73,8 +91,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
-        // Mostrar estado solo si tiene rol ADMIN
-        _isPlayer = !_userRoles.contains('ADMIN');
+        _isAdmin = hasRole(_userRoles, 'ADMIN');
+        _isPlayer = !_isAdmin && hasRole(_userRoles, 'PLAYER');
       });
 
       // Si es player Y NO viene un initialUserId (no viene desde historial de otra persona),
@@ -86,9 +104,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   Future<void> _loadPlayerUser(String userId) async {
-    final repo = UserRepository();
     try {
-      final user = await repo.getUserById(userId);
+      final user = await _userRepository.getUserById(userId);
       if (user != null && mounted) {
         setState(() {
           _selectedUser = user;
@@ -103,8 +120,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
   Future<void> _loadInitialUser() async {
     // Pre-cargar usuario si proporcionado
-    final repo = UserRepository();
-    _selectedUser = await repo.getUserById(widget.initialUserId!);
+    _selectedUser = await _userRepository.getUserById(widget.initialUserId!);
     if (_selectedUser != null && mounted) {
       setState(() {
         _searchController.text = _selectedUser!.nombreCompleto;
@@ -114,23 +130,46 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     }
   }
 
-  Future<void> _loadUsers() async {
-    final repo = UserRepository();
-    _allUsers = await repo
-        .getUsersForPayments(); // Solo jugadores con player.id
-    if (_allUsers.isEmpty) {
-      _allUsers = []; // Fallback empty list
+  Future<void> _loadUsers(String? searchQuery) async {
+    final query = searchQuery?.trim() ?? '';
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _searchResults.clear();
+          _isSearching = false;
+        });
+      }
+      return;
     }
-    _filteredUsers = [];
+
+    setState(() => _isSearching = true);
+
+    try {
+      final users = await _userRepository.getUsersForPayments(
+        searchQuery: query,
+      );
+      if (mounted) {
+        setState(() {
+          _searchResults
+            ..clear()
+            ..addAll(users);
+          _isSearching = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _searchResults.clear();
+          _isSearching = false;
+        });
+      }
+    }
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredUsers = _allUsers.where((user) {
-        return user.nombreCompleto.toLowerCase().contains(query) ||
-            user.dni.contains(query);
-      }).toList();
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _loadUsers(_searchController.text);
     });
   }
 
@@ -138,7 +177,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     setState(() {
       _selectedUser = user;
       _searchController.text = user.nombreCompleto;
-      _filteredUsers = []; // Ocultar sugerencias
+      _searchResults.clear(); // Ocultar sugerencias
 
       // Resetear cuota seleccionada
       _selectedDue = null;
@@ -163,8 +202,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
     setState(() => _isLoadingDues = true);
 
     try {
-      final repo = UserRepository();
-      var dues = await repo.getAllDuesByPlayerId(
+      var dues = await _userRepository.getAllDuesByPlayerId(
         user.playerId!,
         states: [DueState.PENDING, DueState.OVERDUE],
       );
@@ -321,7 +359,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                         ),
                       ),
                     ),
-                    if (_filteredUsers.isNotEmpty)
+                    if (_isSearching)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (_searchResults.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(top: 8),
                         constraints: const BoxConstraints(maxHeight: 200),
@@ -332,9 +379,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                         ),
                         child: ListView.builder(
                           shrinkWrap: true,
-                          itemCount: _filteredUsers.length,
+                          itemCount: _searchResults.length,
                           itemBuilder: (context, index) {
-                            final user = _filteredUsers[index];
+                            final user = _searchResults[index];
                             return ListTile(
                               title: Text(user.nombreCompleto),
                               subtitle: Text('DNI: ${user.dni}'),
@@ -470,8 +517,8 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
         const SizedBox(height: 16),
 
-        // Sección Estado del pago con card - Solo visible para ADMIN/PROFESOR
-        if (!_isPlayer)
+        // Sección Estado del pago con card - Solo visible para ADMIN
+        if (_isAdmin)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -513,7 +560,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
                   _selectedDue == null ||
                   _montoController.text.isEmpty ||
                   _fechaController.text.isEmpty) {
-                print('❌ Validación fallida: ${_selectedUser?.nombreCompleto ?? "null"}');
+                print(
+                  '❌ Validación fallida: ${_selectedUser?.nombreCompleto ?? "null"}',
+                );
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -546,9 +595,10 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
               final newPayment = payment_entities.Pay(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-                status: _isPlayer
-                    ? payment_state.PayState.pending
-                    : _selectedStatus,
+                status: resolvePaymentStatus(
+                  isAdmin: _isAdmin,
+                  selectedStatus: _selectedStatus,
+                ),
                 amount: double.parse(_montoController.text),
                 date: _dateFormat.format(
                   _dateFormat.parse(_fechaController.text),
@@ -973,7 +1023,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           source: ImageSource.gallery,
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!FileUploadService.isAllowedReceiptExtension(file.path)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -997,7 +1047,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
           allowedExtensions: ['pdf', 'jpeg', 'jpg', 'png'],
         );
         if (file != null) {
-          if (!_isAllowedReceiptExtension(file.path)) {
+          if (!FileUploadService.isAllowedReceiptExtension(file.path)) {
             if (mounted) {
               setState(() => _isUploadingFile = false);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1039,16 +1089,6 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         );
       }
     }
-  }
-
-  bool _isAllowedReceiptExtension(String path) {
-    final parts = path.toLowerCase().split('.');
-    if (parts.length < 2) return false;
-    final extension = parts.last;
-    return extension == 'png' ||
-      extension == 'jpeg' ||
-      extension == 'jpg' ||
-      extension == 'pdf';
   }
 
   // Grupo de radios para estado
@@ -1136,6 +1176,7 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _montoController.dispose();
     _fechaController.dispose();

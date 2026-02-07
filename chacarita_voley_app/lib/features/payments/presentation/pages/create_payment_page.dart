@@ -7,6 +7,8 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/create_pay_input.dart';
+import '../../domain/mappers/create_pay_input_mapper.dart';
+import '../../domain/mappers/post_upload_action_mapper.dart';
 import '../../domain/usecases/create_pay_usecase.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../widgets/payment_create_form_widget.dart'; // Import del nuevo widget
@@ -24,12 +26,14 @@ class CreatePaymentPage extends StatefulWidget {
 
 class _CreatePaymentPageState extends State<CreatePaymentPage> {
   late final CreatePayUseCase _createPaymentUseCase;
+  late final PayRepository _payRepository;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _createPaymentUseCase = CreatePayUseCase(PayRepository());
+    _payRepository = PayRepository();
   }
 
   Future<void> _handleCreatePayment(
@@ -41,6 +45,8 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       _isLoading = true;
     });
 
+    CreatePayInput? input;
+
     try {
       // Convertir fecha de dd/MM/yyyy a yyyy-MM-dd (formato ISO)
       final inputFormat = DateFormat('dd/MM/yyyy');
@@ -49,17 +55,10 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       final isoDate = outputFormat.format(parsedDate);
 
       // Crear input para el backend
-      final input = CreatePayInput(
+      input = buildCreatePayInput(
+        newPay: newPay,
         dueId: dueId,
-        fileName: newPay.fileName != null && newPay.fileName!.isNotEmpty
-            ? newPay.fileName
-            : null,
-        fileUrl: newPay.fileUrl != null && newPay.fileUrl!.isNotEmpty
-            ? newPay.fileUrl
-            : null,
-        date: isoDate, // Usar fecha en formato ISO
-        amount: newPay.amount,
-        state: newPay.status.name.toUpperCase(),
+        isoDate: isoDate,
       );
 
       // Llamada real al backend
@@ -71,6 +70,13 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
           paymentId: createdPay.id,
           file: file,
         );
+
+        final action = postUploadAction(newPay.status);
+        if (action == PostUploadAction.validate) {
+          await _payRepository.validatePay(createdPay.id);
+        } else if (action == PostUploadAction.reject) {
+          await _payRepository.rejectPay(createdPay.id);
+        }
       }
 
       if (mounted) {
@@ -108,7 +114,13 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
 
         context.pop(true);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      assert(() {
+        debugPrint('CreatePayment error: $e');
+        debugPrint('CreatePayment input: ${input?.toJson()}');
+        debugPrint('CreatePayment stack: $stackTrace');
+        return true;
+      }());
       // Determinar el mensaje de error apropiado
       String errorMessage = 'Error al registrar pago';
 
