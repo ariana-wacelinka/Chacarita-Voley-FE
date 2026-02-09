@@ -74,6 +74,14 @@ class PermissionsService {
     return roles.contains('PROFESSOR') || roles.contains('ADMIN');
   }
 
+  static bool canSelectNotificationPlayers(List<String> roles) {
+    return roles.contains('ADMIN');
+  }
+
+  static bool canSelectNotificationFilters(List<String> roles) {
+    return roles.contains('ADMIN');
+  }
+
   // EQUIPOS
   static bool canAccessTeams(List<String> roles) {
     return roles.contains('PROFESSOR') || roles.contains('ADMIN');
@@ -125,5 +133,21 @@ class PermissionsService {
     return roles.contains('PLAYER') &&
         !roles.contains('PROFESSOR') &&
         !roles.contains('ADMIN');
+  }
+
+  static bool canShowUserQuickActions({
+    required bool isViewingPlayer,
+    required bool isOwnProfile,
+    required List<String> viewerRoles,
+  }) {
+    if (!isViewingPlayer) {
+      return false;
+    }
+
+    if (isOwnProfile && isPlayer(viewerRoles)) {
+      return false;
+    }
+
+    return true;
   }
 }
