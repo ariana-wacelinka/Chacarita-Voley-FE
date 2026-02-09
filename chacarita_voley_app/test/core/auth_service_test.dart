@@ -54,4 +54,16 @@ void main() {
       expect(await service.getEmail(), 'new@mail.com');
     });
   });
+
+  group('AuthService.shouldShowBackendErrorForLogin', () {
+    test('returns false for 401 and 403', () {
+      expect(AuthService.shouldShowBackendErrorForLogin(401), isFalse);
+      expect(AuthService.shouldShowBackendErrorForLogin(403), isFalse);
+    });
+
+    test('returns true for other status codes', () {
+      expect(AuthService.shouldShowBackendErrorForLogin(400), isTrue);
+      expect(AuthService.shouldShowBackendErrorForLogin(500), isTrue);
+    });
+  });
 }

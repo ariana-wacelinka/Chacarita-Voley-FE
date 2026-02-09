@@ -7,14 +7,21 @@ import 'package:chacarita_voley_app/features/payments/presentation/widgets/payme
 import 'package:chacarita_voley_app/features/users/data/repositories/user_repository.dart';
 import 'package:chacarita_voley_app/features/users/domain/entities/gender.dart';
 import 'package:chacarita_voley_app/features/users/domain/entities/user.dart';
+import 'package:chacarita_voley_app/features/users/domain/entities/due.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeUserRepository extends UserRepository {
-  FakeUserRepository() : super();
+  FakeUserRepository({this.user}) : super();
 
+  final User? user;
   final List<String?> queries = [];
+
+  @override
+  Future<User?> getUserById(String id) async {
+    return user;
+  }
 
   @override
   Future<List<User>> getUsersForPayments({String? searchQuery}) async {
@@ -35,6 +42,14 @@ class FakeUserRepository extends UserRepository {
         estadoCuota: EstadoCuota.alDia,
       ),
     ];
+  }
+
+  @override
+  Future<List<CurrentDue>> getAllDuesByPlayerId(
+    String playerId, {
+    List<DueState>? states,
+  }) async {
+    return [];
   }
 }
 
@@ -81,5 +96,53 @@ void main() {
 
     expect(repo.queries.last, 'juan');
     expect(find.text('Juan Perez'), findsOneWidget);
+  });
+
+  testWidgets('player does not trigger user search', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'user_roles': json.encode(['PLAYER']),
+      'user_id': 42,
+    });
+
+    final repo = FakeUserRepository(
+      user: User(
+        id: 'person-42',
+        playerId: 'player-42',
+        dni: '12345678',
+        nombre: 'Jugador',
+        apellido: 'Uno',
+        fechaNacimiento: DateTime(2000, 1, 1),
+        genero: Gender.masculino,
+        email: 'jugador@example.com',
+        telefono: '123456789',
+        equipo: 'CHR',
+        tipos: {UserType.jugador},
+        estadoCuota: EstadoCuota.alDia,
+        currentDue: CurrentDue(
+          id: 'due-1',
+          period: '2026-02',
+          state: DueState.PENDING,
+          pay: null,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PaymentCreateForm(
+              onSave: (_, __, ___) {},
+              userRepository: repo,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(repo.queries, isEmpty);
   });
 }

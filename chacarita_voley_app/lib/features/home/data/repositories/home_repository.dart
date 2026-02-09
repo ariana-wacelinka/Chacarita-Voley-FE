@@ -5,6 +5,7 @@ import '../../domain/models/training_preview.dart';
 import '../../domain/models/delivery_preview.dart';
 import '../../domain/models/deliveries_page.dart';
 import '../../../../core/network/graphql_client_factory.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeRepository {
   HomeRepository({GraphQLClient? graphQLClient})
@@ -256,10 +257,19 @@ class HomeRepository {
     final now = DateTime.now().toUtc().add(const Duration(hours: -3));
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
 
-    final sentTo =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final sentFrom =
-        '${sevenDaysAgo.year}-${sevenDaysAgo.month.toString().padLeft(2, '0')}-${sevenDaysAgo.day.toString().padLeft(2, '0')}';
+    final sentTo = formatDeliveryDateTime(
+      DateTime(now.year, now.month, now.day, 23, 59, 59),
+    );
+    final sentFrom = formatDeliveryDateTime(
+      DateTime(
+        sevenDaysAgo.year,
+        sevenDaysAgo.month,
+        sevenDaysAgo.day,
+        0,
+        0,
+        0,
+      ),
+    );
 
     final query =
         '''
@@ -319,7 +329,7 @@ class HomeRepository {
         getAllDeliveries(
           page: $page
           size: $size
-          filters: {recipientId: "$personId", sentFrom: "", sentTo: "", status: SENT}
+          filters: {recipientId: "$personId", status: SENT}
         ) {
           totalPages
           totalElements
@@ -360,5 +370,16 @@ class HomeRepository {
     } catch (e) {
       return DeliveriesPage.empty();
     }
+  }
+
+  @visibleForTesting
+  static String formatDeliveryDateTime(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    final second = value.second.toString().padLeft(2, '0');
+    return '$year-$month-${day}T$hour:$minute:$second';
   }
 }

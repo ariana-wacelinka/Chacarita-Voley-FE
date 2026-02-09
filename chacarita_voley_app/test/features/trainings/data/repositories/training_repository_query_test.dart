@@ -14,4 +14,12 @@ void main() {
       expect(query, contains('statuses: UPCOMING'));
     });
   });
+
+  test('getAllAssistance by session query uses sessionId variable', () {
+    final repository = TrainingRepository();
+    final query = repository.buildGetAllAssistanceBySessionQuery();
+
+    expect(query, contains('getAllAssistance'));
+    expect(query, contains('sessionId: \$sessionId'));
+  });
 }

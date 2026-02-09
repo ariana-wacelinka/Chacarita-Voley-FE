@@ -15,9 +15,12 @@ import '../../domain/models/training_preview.dart';
 import '../../domain/models/delivery_preview.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import '../../../users/data/repositories/user_repository.dart';
 
 class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.userRepository});
+
+  final UserRepository? userRepository;
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -31,10 +34,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool _isLoading = true;
   List<String> _userRoles = [];
   int? _userId;
+  String? _playerId;
+  late final UserRepository _userRepository;
 
   @override
   void initState() {
     super.initState();
+    _userRepository = widget.userRepository ?? UserRepository();
     _initialize();
   }
 
@@ -61,35 +67,44 @@ class _HomePageState extends ConsumerState<HomePage> {
       final repository = ref.read(homeRepositoryProvider);
       final isPlayer = PermissionsService.isPlayer(_userRoles);
 
-      final stats = await repository.getStats();
+      if (isPlayer) {
+        if (_userId != null) {
+          final playerId = await _resolvePlayerId(_userId!.toString());
+          final deliveries = await repository.getPlayerDeliveries(
+            _userId.toString(),
+          );
+          final trainings = playerId == null
+              ? <TrainingPreview>[]
+              : await repository.getPlayerTrainings(playerId);
+          if (mounted) {
+            setState(() {
+              _stats = HomeStats.empty();
+              _deliveries = deliveries;
+              _trainings = trainings;
+              _isLoading = false;
+            });
+          }
+        } else if (mounted) {
+          setState(() {
+            _stats = HomeStats.empty();
+            _deliveries = [];
+            _trainings = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
 
-      // Si es player exclusivo, cargar deliveries y entrenamientos del player
-      if (isPlayer && _userId != null) {
-        final deliveries = await repository.getPlayerDeliveries(
-          _userId.toString(),
-        );
-        final trainings = await repository.getPlayerTrainings(
-          _userId.toString(),
-        );
-        if (mounted) {
-          setState(() {
-            _stats = stats;
-            _deliveries = deliveries;
-            _trainings = trainings;
-            _isLoading = false;
-          });
-        }
-      } else {
-        final notifications = await repository.getScheduledNotifications();
-        final trainings = await repository.getTodayTrainings();
-        if (mounted) {
-          setState(() {
-            _stats = stats;
-            _notifications = notifications;
-            _trainings = trainings;
-            _isLoading = false;
-          });
-        }
+      final stats = await repository.getStats();
+      final notifications = await repository.getScheduledNotifications();
+      final trainings = await repository.getTodayTrainings();
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+          _notifications = notifications;
+          _trainings = trainings;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -101,6 +116,26 @@ class _HomePageState extends ConsumerState<HomePage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<String?> _resolvePlayerId(String userId) async {
+    final cached = _playerId;
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    try {
+      final user = await _userRepository.getUserById(userId);
+      final playerId = user?.playerId;
+      if (mounted) {
+        setState(() {
+          _playerId = playerId;
+        });
+      }
+      return playerId;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -326,15 +361,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: TrainingItem(
                           category: training.teamName,
                           subtitle:
-                            'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
+                              'Prof. ${training.professorName} - ${training.totalPlayers} jugadores',
                           time: training.formattedTime,
                           attendance:
-                            '${training.attendance}/${training.totalPlayers}',
+                              '${training.attendance}/${training.totalPlayers}',
                           onTap: isPlayer
-                            ? null
-                            : () => context.push(
-                              '/trainings/${training.id}?from=home',
-                              ),
+                              ? null
+                              : () => context.push(
+                                  '/trainings/${training.id}?from=home',
+                                ),
                         ),
                       );
                     }),

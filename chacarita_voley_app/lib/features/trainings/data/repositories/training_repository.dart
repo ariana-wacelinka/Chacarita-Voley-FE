@@ -1,4 +1,5 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../../users/domain/entities/due.dart' show DueState;
@@ -213,10 +214,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
               }
             }
           }
-          training {
-            id
-            dayOfWeek
-          }
         }
       }
     }
@@ -305,6 +302,25 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  String _getAllAssistanceBySessionQuery() => '''
+    query GetAllAssistanceBySession(\$sessionId: ID!) {
+      getAllAssistance(filters: {sessionId: \$sessionId}) {
+        content {
+          id
+          assistance
+          player {
+            id
+          }
+        }
+      }
+    }
+  ''';
+
+  @visibleForTesting
+  String buildGetAllAssistanceBySessionQuery() {
+    return _getAllAssistanceBySessionQuery();
+  }
+
   Future<Map<String, dynamic>> getTrainingsWithPagination({
     String? dateFrom,
     String? dateTo,
@@ -337,6 +353,24 @@ class TrainingRepository implements TrainingRepositoryInterface {
     );
 
     if (result.hasException) {
+      assert(() {
+        final exception = result.exception;
+        if (exception != null) {
+          debugPrint('[getAllSessions] GraphQL exception: $exception');
+          if (exception.graphqlErrors.isNotEmpty) {
+            for (final error in exception.graphqlErrors) {
+              debugPrint('[getAllSessions] Error: ${error.message}');
+              debugPrint('[getAllSessions] Extensions: ${error.extensions}');
+            }
+          }
+          if (exception.linkException != null) {
+            debugPrint(
+              '[getAllSessions] Link exception: ${exception.linkException}',
+            );
+          }
+        }
+        return true;
+      }());
       throw Exception(result.exception.toString());
     }
 
@@ -403,7 +437,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
   @override
   Future<Training?> getTrainingById(String id) async {
-    final result = await _query(
+    final sessionResult = await _query(
       QueryOptions(
         document: gql(_getSessionByIdQuery()),
         variables: {'id': id},
@@ -411,14 +445,39 @@ class TrainingRepository implements TrainingRepositoryInterface {
       ),
     );
 
-    if (result.hasException) {
-      throw Exception(result.exception.toString());
+    if (sessionResult.hasException) {
+      throw Exception(sessionResult.exception.toString());
     }
 
-    final data = result.data?['getSessionById'] as Map<String, dynamic>?;
+    final data = sessionResult.data?['getSessionById'] as Map<String, dynamic>?;
     if (data == null) return null;
 
-    return _mapSessionDetailFromBackend(data);
+    final assistanceResult = await _query(
+      QueryOptions(
+        document: gql(_getAllAssistanceBySessionQuery()),
+        variables: {'sessionId': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (assistanceResult.hasException) {
+      throw Exception(assistanceResult.exception.toString());
+    }
+
+    final content =
+        assistanceResult.data?['getAllAssistance']?['content'] as List?;
+    final assistanceByPlayer = <String, Map<String, dynamic>>{};
+    if (content != null) {
+      for (final item in content.whereType<Map<String, dynamic>>()) {
+        final player = item['player'] as Map<String, dynamic>?;
+        final playerId = player?['id'] as String?;
+        if (playerId != null && playerId.isNotEmpty) {
+          assistanceByPlayer[playerId] = item;
+        }
+      }
+    }
+
+    return _mapSessionDetailFromBackend(data, assistanceByPlayer);
   }
 
   @override
@@ -730,21 +789,18 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
 
     final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
-    final attendances = playersData
-        .whereType<Map<String, dynamic>>()
-        .map(
-          (player) {
-            final personData = player['person'] as Map<String, dynamic>?;
-            final dni = personData?['dni'] as String? ?? '';
-            return PlayerAttendance(
-              playerId: player['id'] as String? ?? '',
-              playerDni: dni,
-              playerName: '',
-              isPresent: false,
-            );
-          },
-        )
-        .toList();
+    final attendances = playersData.whereType<Map<String, dynamic>>().map((
+      player,
+    ) {
+      final personData = player['person'] as Map<String, dynamic>?;
+      final dni = personData?['dni'] as String? ?? '';
+      return PlayerAttendance(
+        playerId: player['id'] as String? ?? '',
+        playerDni: dni,
+        playerName: '',
+        isPresent: false,
+      );
+    }).toList();
 
     return Training(
       id: data['id'] as String? ?? '',
@@ -772,7 +828,10 @@ class TrainingRepository implements TrainingRepositoryInterface {
     );
   }
 
-  Training _mapSessionDetailFromBackend(Map<String, dynamic> data) {
+  Training _mapSessionDetailFromBackend(
+    Map<String, dynamic> data,
+    Map<String, Map<String, dynamic>> assistanceByPlayer,
+  ) {
     final teamData = data['team'] as Map<String, dynamic>?;
     final trainingData = data['training'] as Map<String, dynamic>?;
 
@@ -804,26 +863,12 @@ class TrainingRepository implements TrainingRepositoryInterface {
       final name = personData?['name'] as String? ?? '';
       final surname = personData?['surname'] as String? ?? '';
 
-      final assistancesData = (player['assistances'] as List<dynamic>?) ?? [];
       bool isPresent = false;
       String? assistanceId;
-
-      if (sessionDate != null && assistancesData.isNotEmpty) {
-        for (final assistance in assistancesData) {
-          final assistanceMap = assistance as Map<String, dynamic>;
-          final assistanceDate = assistanceMap['date'] as String?;
-          if (assistanceDate != null) {
-            final parsedDate = DateTime.tryParse(assistanceDate);
-            if (parsedDate != null &&
-                parsedDate.year == sessionDate.year &&
-                parsedDate.month == sessionDate.month &&
-                parsedDate.day == sessionDate.day) {
-              isPresent = assistanceMap['assistance'] as bool? ?? false;
-              assistanceId = assistanceMap['id'] as String?;
-              break;
-            }
-          }
-        }
+      final assistance = assistanceByPlayer[player['id'] as String? ?? ''];
+      if (assistance != null) {
+        isPresent = assistance['assistance'] as bool? ?? false;
+        assistanceId = assistance['id'] as String?;
       }
 
       EstadoCuota? estadoCuota;
@@ -851,8 +896,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }).toList();
 
     final calculatedCountOfPlayers = attendances.length;
-    final calculatedCountOfAssisted =
-        attendances.where((a) => a.isPresent).length;
+    final calculatedCountOfAssisted = attendances
+        .where((a) => a.isPresent)
+        .length;
     final countOfPlayers = data['countOfPlayers'] as int?;
     final countOfAssisted = data['countOfAssisted'] as int?;
     final effectiveCountOfPlayers =
@@ -893,11 +939,17 @@ class TrainingRepository implements TrainingRepositoryInterface {
           ? DayOfWeek.fromBackend(trainingData!['dayOfWeek'] as String)
           : null,
       startTime:
-          data['startTime'] as String? ?? trainingData?['startTime'] as String? ?? '',
+          data['startTime'] as String? ??
+          trainingData?['startTime'] as String? ??
+          '',
       endTime:
-          data['endTime'] as String? ?? trainingData?['endTime'] as String? ?? '',
+          data['endTime'] as String? ??
+          trainingData?['endTime'] as String? ??
+          '',
       location:
-          data['location'] as String? ?? trainingData?['location'] as String? ?? '',
+          data['location'] as String? ??
+          trainingData?['location'] as String? ??
+          '',
       type: TrainingType.fromBackend(
         data['trainingType'] as String? ??
             trainingData?['trainingType'] as String? ??
@@ -930,21 +982,18 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
 
     final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
-    final attendances = playersData
-        .whereType<Map<String, dynamic>>()
-        .map(
-          (player) {
-            final personData = player['person'] as Map<String, dynamic>?;
-            final dni = personData?['dni'] as String? ?? '';
-            return PlayerAttendance(
-              playerId: player['id'] as String? ?? '',
-              playerDni: dni,
-              playerName: '',
-              isPresent: false,
-            );
-          },
-        )
-        .toList();
+    final attendances = playersData.whereType<Map<String, dynamic>>().map((
+      player,
+    ) {
+      final personData = player['person'] as Map<String, dynamic>?;
+      final dni = personData?['dni'] as String? ?? '';
+      return PlayerAttendance(
+        playerId: player['id'] as String? ?? '',
+        playerDni: dni,
+        playerName: '',
+        isPresent: false,
+      );
+    }).toList();
 
     return Training(
       id: data['id'] as String? ?? '',

@@ -73,10 +73,12 @@ class AuthService {
             );
             return authResponse;
           } else {
-            _showBackendError(
-              redirectResponse.statusCode,
-              redirectResponse.body,
-            );
+            if (shouldShowBackendErrorForLogin(redirectResponse.statusCode)) {
+              _showBackendError(
+                redirectResponse.statusCode,
+                redirectResponse.body,
+              );
+            }
             print(
               '❌ Login falló después de redirección: ${redirectResponse.statusCode}',
             );
@@ -108,7 +110,9 @@ class AuthService {
         await _saveRememberMe(rememberMe);
         return authResponse;
       } else {
-        _showBackendError(response.statusCode, response.body);
+        if (shouldShowBackendErrorForLogin(response.statusCode)) {
+          _showBackendError(response.statusCode, response.body);
+        }
         print('❌ Login falló: ${response.statusCode}');
         final errorBody = response.body;
         throw Exception('Error de autenticación: $errorBody');
@@ -116,6 +120,10 @@ class AuthService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  static bool shouldShowBackendErrorForLogin(int statusCode) {
+    return statusCode != 401 && statusCode != 403;
   }
 
   /// Solicita reseteo de contraseña enviando email

@@ -131,6 +131,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   Future<void> _loadUsers(String? searchQuery) async {
+    if (_isPlayer) {
+      if (mounted) {
+        setState(() {
+          _searchResults.clear();
+          _isSearching = false;
+        });
+      }
+      return;
+    }
+
     final query = searchQuery?.trim() ?? '';
     if (query.isEmpty) {
       if (mounted) {
@@ -167,6 +177,16 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
   }
 
   void _onSearchChanged() {
+    if (_isPlayer) {
+      if (mounted) {
+        setState(() {
+          _searchResults.clear();
+          _isSearching = false;
+        });
+      }
+      return;
+    }
+
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
       _loadUsers(_searchController.text);

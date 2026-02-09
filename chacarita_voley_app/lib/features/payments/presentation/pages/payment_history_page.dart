@@ -17,11 +17,15 @@ import '../../../users/data/repositories/user_repository.dart';
 class PaymentHistoryPage extends StatefulWidget {
   final String userId;
   final String userName;
+  final PayRepository? payRepository;
+  final UserRepository? userRepository;
 
   const PaymentHistoryPage({
     super.key,
     required this.userId,
     required this.userName,
+    this.payRepository,
+    this.userRepository,
   });
 
   @override
@@ -37,6 +41,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   int? _currentUserId;
   bool _isOwnPaymentHistory = false;
   CurrentDue? _currentDue;
+  String? _playerId;
 
   int _currentPage = 0;
   static const int _itemsPerPage = 7;
@@ -53,8 +58,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _payRepository = PayRepository();
-    _userRepository = UserRepository();
+    _payRepository = widget.payRepository ?? PayRepository();
+    _userRepository = widget.userRepository ?? UserRepository();
     _loadUserRoles();
     _loadData();
   }
@@ -99,6 +104,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       if (mounted) {
         setState(() {
           _currentDue = user?.currentDue;
+          _playerId = user?.playerId;
         });
       }
     } catch (e) {
@@ -110,8 +116,22 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     setState(() => _isLoading = true);
 
     try {
+      final playerId = _playerId;
+      if (playerId == null || playerId.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _payments = [];
+          _totalElements = 0;
+          _totalPages = 0;
+          _hasNext = false;
+          _hasPrevious = false;
+          _isLoading = false;
+        });
+        return;
+      }
+
       final payPage = await _payRepository.getPaysByPlayerId(
-        playerId: widget.userId,
+        playerId: playerId,
         page: _currentPage,
         size: _itemsPerPage,
         dateFrom: _startDate?.toIso8601String().split('T')[0],
