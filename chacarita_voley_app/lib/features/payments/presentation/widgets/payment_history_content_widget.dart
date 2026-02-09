@@ -180,9 +180,6 @@ class _PaymentHistoryContentState extends State<PaymentHistoryContent> {
           textColor = Colors.amber.shade700;
           iconData = Symbols.schedule;
           statusTitle = 'Pendiente de pago';
-          statusMessage = pay != null
-              ? 'Sin pago registrado'
-              : 'Sin pago registrado';
         }
         break;
     }

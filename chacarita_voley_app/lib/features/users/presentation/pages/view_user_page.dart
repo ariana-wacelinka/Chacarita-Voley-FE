@@ -229,6 +229,12 @@ class _ViewUserPageState extends State<ViewUserPage> {
       );
     }
 
+    final showQuickActions = PermissionsService.canShowUserQuickActions(
+      isViewingPlayer: _user!.tipos.contains(UserType.jugador),
+      isOwnProfile: _isOwnProfile,
+      viewerRoles: _userRoles,
+    );
+
     return Scaffold(
       backgroundColor: context.tokens.background,
       appBar: AppBar(
@@ -261,11 +267,8 @@ class _ViewUserPageState extends State<ViewUserPage> {
               const SizedBox(height: 24),
               _buildTeamsSection(context),
               const SizedBox(height: 24),
-              // Ocultar acciones rápidas si es jugador solo player viendo su propio perfil
-              if (!(_isOwnProfile && PermissionsService.isPlayer(_userRoles)))
-                _buildQuickActionsSection(context),
-              if (!(_isOwnProfile && PermissionsService.isPlayer(_userRoles)))
-                const SizedBox(height: 24),
+              if (showQuickActions) _buildQuickActionsSection(context),
+              if (showQuickActions) const SizedBox(height: 24),
               _buildActionButtons(context),
               const SizedBox(height: 24),
             ],
@@ -404,9 +407,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
           textColor = Colors.amber.shade700;
           iconData = Symbols.schedule;
           statusTitle = 'Pendiente de pago';
-          statusMessage = pay != null
-              ? 'Sin pago registrado'
-              : 'Sin pago registrado';
         }
         break;
     }
@@ -542,16 +542,6 @@ class _ViewUserPageState extends State<ViewUserPage> {
                   ),
                 ],
               ],
-
-              const SizedBox(height: 8),
-              Text(
-                statusMessage,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
             ],
           ),
         ),
