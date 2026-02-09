@@ -214,6 +214,16 @@ class TrainingRepository implements TrainingRepositoryInterface {
               }
             }
           }
+          training {
+            id
+            dayOfWeek
+            trainingType
+            startTime
+            endTime
+            location
+            startDate
+            endDate
+          }
         }
       }
     }

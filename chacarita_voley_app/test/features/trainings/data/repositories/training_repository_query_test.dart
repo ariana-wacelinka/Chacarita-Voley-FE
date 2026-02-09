@@ -13,6 +13,16 @@ void main() {
       expect(query, contains('professorId: "1"'));
       expect(query, contains('statuses: UPCOMING'));
     });
+
+    test('includes training fields for list', () {
+      final repository = TrainingRepository();
+      final query = repository.buildGetAllSessionsQuery();
+
+      expect(query, contains('training {'));
+      expect(query, contains('trainingType'));
+      expect(query, contains('startDate'));
+      expect(query, contains('endDate'));
+    });
   });
 
   test('getAllAssistance by session query uses sessionId variable', () {
