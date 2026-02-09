@@ -12,11 +12,11 @@ class FirebaseMessagingService {
   factory FirebaseMessagingService() => _instance;
   FirebaseMessagingService._internal();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   static const String _tokenKey = 'fcm_token';
 
   Future<void> initialize() async {
-    await _firebaseMessaging.setAutoInitEnabled(true);
+    await _messaging.setAutoInitEnabled(true);
 
     await _requestPermission();
 
@@ -28,7 +28,7 @@ class FirebaseMessagingService {
   }
 
   Future<void> _requestPermission() async {
-    final settings = await _firebaseMessaging.requestPermission(
+    final settings = await _messaging.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -41,11 +41,9 @@ class FirebaseMessagingService {
 
   Future<void> _getAndRegisterToken() async {
     try {
-      final token = await _firebaseMessaging.getToken();
+      final token = await _messaging.getToken();
       if (token != null) {
-        if (kDebugMode) {
-          debugPrint('📡 FCM token obtenido: ${_maskToken(token)}');
-        }
+        _logToken('📡 FCM token obtenido', token);
         await _saveTokenLocally(token);
         await _registerDeviceInBackend(token);
       }
@@ -57,7 +55,8 @@ class FirebaseMessagingService {
   }
 
   void _setupTokenRefreshListener() {
-    _firebaseMessaging.onTokenRefresh.listen((newToken) {
+    _messaging.onTokenRefresh.listen((newToken) {
+      _logToken('🔄 FCM token renovado', newToken);
       _saveTokenLocally(newToken);
       _registerDeviceInBackend(newToken);
     });
@@ -102,7 +101,7 @@ class FirebaseMessagingService {
   }
 
   Future<RemoteMessage?> getInitialMessage() async {
-    return await _firebaseMessaging.getInitialMessage();
+    return await _messaging.getInitialMessage();
   }
 
   Future<void> _saveTokenLocally(String token) async {
@@ -118,27 +117,33 @@ class FirebaseMessagingService {
     return prefs.getString(_tokenKey);
   }
 
-  Future<void> _registerDeviceInBackend(
-    String token, {
-    GraphQLClient? clientOverride,
-  }) async {
-    const mutation = r'''
+  static const String _registerDeviceMutation = r'''
       mutation RegisterDevice($input: RegisterDeviceInput!) {
         registerDevice(input: $input)
       }
     ''';
 
+  Future<void> _registerDeviceInBackend(
+    String token, {
+    GraphQLClient? clientOverride,
+  }) async {
     final platform = _getCurrentPlatform();
 
     try {
       final client = clientOverride ?? GraphQLClientFactory.client;
-      final result = await client.mutate(
-        MutationOptions(
-          document: gql(mutation),
-          variables: {'input': buildRegisterDeviceInput(token, platform)},
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
+      if (kDebugMode) {
+        debugPrint(
+          '📤 RegisterDevice input: ${buildRegisterDeviceInput(_maskToken(token), platform)}',
+        );
+      }
+      final result = await registerDeviceWithToken(
+        token: token,
+        platform: platform,
+        client: client,
       );
+      if (kDebugMode) {
+        debugPrint('✅ RegisterDevice response: ${result.data?['registerDevice']}');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Exception registering device: $e');
@@ -166,6 +171,40 @@ class FirebaseMessagingService {
     await _registerDeviceInBackend(token, clientOverride: clientOverride);
   }
 
+  Future<void> registerDeviceForLogin({
+    String? tokenOverride,
+    GraphQLClient? clientOverride,
+  }) async {
+    var token = tokenOverride ?? await getStoredToken();
+    if (token == null || token.isEmpty) {
+      token = await _messaging.getToken();
+      if (token == null || token.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️ RegisterDevice skipped: no FCM token');
+        }
+        return;
+      }
+      _logToken('📡 FCM token obtenido en login', token);
+      await _saveTokenLocally(token);
+    }
+
+    await _registerDeviceInBackend(token, clientOverride: clientOverride);
+  }
+
+  static Future<QueryResult> registerDeviceWithToken({
+    required String token,
+    required NotificationPlatform platform,
+    required GraphQLClient client,
+  }) {
+    return client.mutate(
+      MutationOptions(
+        document: gql(_registerDeviceMutation),
+        variables: {'input': buildRegisterDeviceInput(token, platform)},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+  }
+
   static Map<String, dynamic> buildRegisterDeviceInput(
     String token,
     NotificationPlatform platform,
@@ -178,8 +217,14 @@ class FirebaseMessagingService {
     return '${token.substring(0, 4)}...${token.substring(token.length - 4)}';
   }
 
+  void _logToken(String label, String token) {
+    if (kDebugMode) {
+      debugPrint('$label: ${_maskToken(token)}');
+    }
+  }
+
   Future<void> deleteToken() async {
-    await _firebaseMessaging.deleteToken();
+    await _messaging.deleteToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
   }

@@ -64,4 +64,25 @@ void main() {
       expect(input['platform'], 'ANDROID');
     });
   });
+
+  group('FirebaseMessagingService.registerDeviceWithToken', () {
+    test('sends token and platform to backend', () async {
+      final link = _RecordingLink();
+      final client = GraphQLClient(
+        link: link,
+        cache: GraphQLCache(store: InMemoryStore()),
+      );
+
+      await FirebaseMessagingService.registerDeviceWithToken(
+        token: 'fcm-999',
+        platform: NotificationPlatform.ANDROID,
+        client: client,
+      );
+
+      final variables = link.lastRequest?.variables ?? {};
+      final input = variables['input'] as Map<String, dynamic>;
+      expect(input['fcmToken'], 'fcm-999');
+      expect(input['platform'], 'ANDROID');
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/network/graphql_client_factory.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -83,6 +84,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('📡 Login request: /api/auth/login');
       final response = await _authService.login(
         email: _usernameController.text.trim(),
         password: _passwordController.text,
@@ -90,6 +92,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Obtener información del usuario
+      debugPrint('📡 Login request: /api/auth/me');
       final user = await _authService.getCurrentUser();
       if (user != null) {
       } else {
@@ -103,6 +106,9 @@ class _LoginPageState extends State<LoginPage> {
         // Si falla actualizar el token, solo logueamos pero seguimos
         print('⚠️ Error actualizando token en GraphQL: $e');
       }
+
+      debugPrint('📡 Login request: registerDevice');
+      await FirebaseMessagingService().registerDeviceForLogin();
 
       if (mounted) {
         context.go('/home');
