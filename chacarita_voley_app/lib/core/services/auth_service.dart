@@ -289,13 +289,15 @@ class AuthService {
   Future<void> _saveTokens({
     required String accessToken,
     required String refreshToken,
-    required String email,
+    String? email,
     int? expiresIn,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
-    await prefs.setString(_emailKey, email);
+    if (email != null && email.isNotEmpty) {
+      await prefs.setString(_emailKey, email);
+    }
 
     // Guardar timestamp de expiración
     if (expiresIn != null) {
@@ -305,6 +307,21 @@ class AuthService {
 
     // Actualizar el token en GraphQLClient
     GraphQLClientFactory.updateToken(accessToken);
+  }
+
+  @visibleForTesting
+  Future<void> saveTokensForTest({
+    required String accessToken,
+    required String refreshToken,
+    String? email,
+    int? expiresIn,
+  }) {
+    return _saveTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      email: email,
+      expiresIn: expiresIn,
+    );
   }
 
   Future<String?> getToken() async {
@@ -480,14 +497,12 @@ class AuthService {
 
       final restBaseUrl = Environment.restBaseUrl;
       final url = Uri.parse('$restBaseUrl/api/auth/refresh');
+      final accessToken = await getToken();
 
       final response = await http
           .post(
             url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $currentRefreshToken',
-            },
+            headers: buildRefreshHeaders(accessToken: accessToken),
             body: json.encode({'refreshToken': currentRefreshToken}),
           )
           .timeout(
@@ -509,14 +524,12 @@ class AuthService {
         );
 
         final email = await getEmail();
-        if (email != null) {
-          await _saveTokens(
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-            email: email,
-            expiresIn: authResponse.expiresIn,
-          );
-        }
+        await _saveTokens(
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+          email: email,
+          expiresIn: authResponse.expiresIn,
+        );
         return authResponse;
       } else {
         _showBackendError(response.statusCode, response.body);
@@ -533,6 +546,14 @@ class AuthService {
       print('🔥 Error en refresh token: $e');
       return null;
     }
+  }
+
+  static Map<String, String> buildRefreshHeaders({String? accessToken}) {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (accessToken != null && accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+    return headers;
   }
 }
 
