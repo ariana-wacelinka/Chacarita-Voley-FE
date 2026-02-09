@@ -15,12 +15,16 @@ class ViewUserPage extends StatefulWidget {
   final String userId;
   final String? from;
   final String? refresh;
+  final UserRepository? userRepository;
+  final DeleteUserUseCase? deleteUserUseCase;
 
   const ViewUserPage({
     super.key,
     required this.userId,
     this.from,
     this.refresh,
+    this.userRepository,
+    this.deleteUserUseCase,
   });
 
   @override
@@ -40,8 +44,9 @@ class _ViewUserPageState extends State<ViewUserPage> {
   @override
   void initState() {
     super.initState();
-    _userRepository = UserRepository();
-    _deleteUserUseCase = DeleteUserUseCase(_userRepository);
+    _userRepository = widget.userRepository ?? UserRepository();
+    _deleteUserUseCase =
+        widget.deleteUserUseCase ?? DeleteUserUseCase(_userRepository);
     _loadUserRoles();
     _loadUser();
   }
@@ -582,7 +587,11 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDataColumn(context, 'Nombre', _user!.nombre),
+                    _buildDataColumn(
+                      context,
+                      'Nombre',
+                      _user!.nombreCompleto,
+                    ),
                     const SizedBox(height: 16),
                     _buildDataColumn(
                       context,
