@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/utils/date_formatters.dart';
+import '../../../../core/services/permissions_service.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../domain/entities/notification.dart';
 import '../../../teams/data/repositories/team_repository.dart';
@@ -42,6 +45,12 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
 
   String? _recipientFilter;
 
+  List<String> _userRoles = [];
+  bool _isProfessor = false;
+  bool _canSelectPlayers = false;
+  bool _canSelectFilters = false;
+  String? _professorId;
+
   Set<String> _selectedTeams = {};
   Set<String> _selectedPlayers = {};
 
@@ -55,15 +64,71 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   @override
   void initState() {
     super.initState();
-    _loadTeams();
-    _loadPlayers();
-    _loadNotification();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadUserRoles();
+    await _loadProfessorIdIfNeeded();
+    await _loadTeams();
+    if (_canSelectPlayers) {
+      await _loadPlayers();
+    }
+    await _loadNotification();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final authService = AuthService();
+    final roles = await authService.getUserRoles();
+    if (mounted) {
+      setState(() {
+        _userRoles = roles ?? [];
+        _isProfessor =
+            _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
+        _canSelectPlayers =
+            PermissionsService.canSelectNotificationPlayers(_userRoles);
+        _canSelectFilters =
+          PermissionsService.canSelectNotificationFilters(_userRoles);
+      });
+    }
+  }
+
+  Future<void> _loadProfessorIdIfNeeded() async {
+    if (!_isProfessor || _professorId != null) {
+      return;
+    }
+
+    final authService = AuthService();
+    final userId = await authService.getUserId();
+    if (userId == null) {
+      return;
+    }
+
+    final user = await _userRepository.getUserById(userId.toString());
+    if (!mounted) return;
+    if (user?.professorId == null) return;
+
+    setState(() {
+      _professorId = user?.professorId;
+    });
   }
 
   Future<void> _loadTeams() async {
     setState(() => _isLoadingTeams = true);
     try {
-      final teams = await _teamRepository.getTeamsListItems();
+      if (_isProfessor && _professorId == null) {
+        if (mounted) {
+          setState(() {
+            _allTeams = [];
+            _isLoadingTeams = false;
+          });
+        }
+        return;
+      }
+
+      final teams = await _teamRepository.getTeamsListItems(
+        professorId: _isProfessor ? _professorId : null,
+      );
       if (mounted) {
         setState(() {
           _allTeams = teams;
@@ -78,6 +143,16 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
   }
 
   Future<void> _loadPlayers() async {
+    if (!_canSelectPlayers) {
+      if (mounted) {
+        setState(() {
+          _allPlayers = [];
+          _isLoadingPlayers = false;
+        });
+      }
+      return;
+    }
+
     setState(() => _isLoadingPlayers = true);
     try {
       final users = await _userRepository.getUsers();
@@ -111,8 +186,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           _isProgrammed = true;
           _scheduledDate = notification.scheduledAt;
           _scheduledTime = TimeOfDay.fromDateTime(notification.scheduledAt!);
-          _dateController.text =
-              '${notification.scheduledAt!.day.toString().padLeft(2, '0')}/${notification.scheduledAt!.month.toString().padLeft(2, '0')}/${notification.scheduledAt!.year}';
+          _dateController.text = formatDateDdMmYyyy(notification.scheduledAt!);
           _timeController.text =
               '${notification.scheduledAt!.hour.toString().padLeft(2, '0')}:${notification.scheduledAt!.minute.toString().padLeft(2, '0')}';
         }
@@ -181,36 +255,12 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           _scheduledDate ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
-              onPrimary: Colors.white,
-              onSurface: Colors.white,
-            ),
-            iconTheme: const IconThemeData(color: Colors.white),
-            datePickerTheme: const DatePickerThemeData(
-              headerForegroundColor: Colors.white,
-              headerHelpStyle: TextStyle(color: Colors.white),
-              headerHeadlineStyle: TextStyle(color: Colors.white),
-              weekdayStyle: TextStyle(color: Colors.white70),
-              dayForegroundColor: MaterialStatePropertyAll(Colors.white),
-              yearForegroundColor: MaterialStatePropertyAll(Colors.white),
-              todayForegroundColor: MaterialStatePropertyAll(Colors.white),
-              todayBorder: BorderSide(color: Colors.white70),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
       setState(() {
         _scheduledDate = picked;
-        _dateController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+        _dateController.text = formatDateDdMmYyyy(picked);
       });
     }
   }
@@ -924,14 +974,19 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
         .where((team) => team.nombre.toLowerCase().contains(searchText))
         .toList();
 
-    final searchTextPlayers = _playersSearchController.text.toLowerCase();
-    final filteredPlayers = _allPlayers
+    final searchTextPlayers =
+      _canSelectPlayers ? _playersSearchController.text.toLowerCase() : '';
+    final filteredPlayers = _canSelectPlayers
+      ? _allPlayers
         .where(
           (player) =>
-              player.nombreCompleto.toLowerCase().contains(searchTextPlayers) ||
-              player.dni.toLowerCase().contains(searchTextPlayers),
+            player.nombreCompleto
+              .toLowerCase()
+              .contains(searchTextPlayers) ||
+            player.dni.toLowerCase().contains(searchTextPlayers),
         )
-        .toList();
+        .toList()
+      : <User>[];
 
     return [
       Text(
@@ -942,57 +997,58 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
           fontWeight: FontWeight.w600,
         ),
       ),
-      const SizedBox(height: 12),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _buildFilterChip(
-            label: 'Seleccionar todos',
-            isSelected: _recipientFilter == 'todos',
-            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(() {
-              if (_recipientFilter == 'todos') {
-                _recipientFilter = null;
-              } else {
-                _recipientFilter = 'todos';
-                _selectedTeams.clear();
-                _selectedPlayers.clear();
-              }
-            }),
-          ),
-          _buildFilterChip(
-            label: 'Cuota vencida',
-            isSelected: _recipientFilter == 'vencida',
-            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(() {
-              if (_recipientFilter == 'vencida') {
-                _recipientFilter = null;
-              } else {
-                _recipientFilter = 'vencida';
-                _selectedTeams.clear();
-                _selectedPlayers.clear();
-              }
-            }),
-          ),
-          _buildFilterChip(
-            label: 'Cuota pendiente',
-            isSelected: _recipientFilter == 'pendiente',
-            enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
-            onTap: () => setState(() {
-              if (_recipientFilter == 'pendiente') {
-                _recipientFilter = null;
-              } else {
-                _recipientFilter = 'pendiente';
-                _selectedTeams.clear();
-                _selectedPlayers.clear();
-              }
-            }),
-          ),
-        ],
-      ),
-
-      const SizedBox(height: 24),
+      if (_canSelectFilters) ...[
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildFilterChip(
+              label: 'Seleccionar todos',
+              isSelected: _recipientFilter == 'todos',
+              enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
+              onTap: () => setState(() {
+                if (_recipientFilter == 'todos') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'todos';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              }),
+            ),
+            _buildFilterChip(
+              label: 'Cuota vencida',
+              isSelected: _recipientFilter == 'vencida',
+              enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
+              onTap: () => setState(() {
+                if (_recipientFilter == 'vencida') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'vencida';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              }),
+            ),
+            _buildFilterChip(
+              label: 'Cuota pendiente',
+              isSelected: _recipientFilter == 'pendiente',
+              enabled: _selectedTeams.isEmpty && _selectedPlayers.isEmpty,
+              onTap: () => setState(() {
+                if (_recipientFilter == 'pendiente') {
+                  _recipientFilter = null;
+                } else {
+                  _recipientFilter = 'pendiente';
+                  _selectedTeams.clear();
+                  _selectedPlayers.clear();
+                }
+              }),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
       Container(
         decoration: BoxDecoration(
           color: context.tokens.card1,
@@ -1111,131 +1167,131 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       ),
 
       const SizedBox(height: 16),
-      Container(
-        decoration: BoxDecoration(
-          color: context.tokens.card1,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.tokens.stroke),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Symbols.person, size: 20, color: context.tokens.text),
-                const SizedBox(width: 8),
-                Text(
-                  'Jugadores',
-                  style: TextStyle(
-                    color: context.tokens.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _playersSearchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar por nombre o DNI...',
-                prefixIcon: const Icon(Symbols.search, size: 20),
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF1E1E1E)
-                    : Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: context.tokens.text.withOpacity(0.2),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: context.tokens.text.withOpacity(0.2),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-              ),
-              onChanged: (value) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 150,
-              child: _isLoadingPlayers
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : filteredPlayers.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No se encontraron jugadores',
-                        style: TextStyle(
-                          color: context.tokens.placeholder,
-                          fontSize: 14,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredPlayers.length,
-                      itemBuilder: (context, index) {
-                        final player = filteredPlayers[index];
-                        final isSelected = _selectedPlayers.contains(
-                          player.id ?? '',
-                        );
-                        return CheckboxListTile(
-                          value: isSelected,
-                          onChanged: (value) {
-                            setState(() {
-                              if (value == true) {
-                                _selectedPlayers.add(player.id ?? '');
-                                _recipientFilter =
-                                    null; // Clear filter when selecting player
-                              } else {
-                                _selectedPlayers.remove(player.id ?? '');
-                              }
-                            });
-                          },
-                          title: Text(
-                            player.nombreCompleto,
-                            style: TextStyle(
-                              color: context.tokens.text,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'DNI: ${player.dni}',
-                            style: TextStyle(
-                              color: context.tokens.placeholder,
-                              fontSize: 12,
-                            ),
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Theme.of(context).colorScheme.primary,
-                        );
-                      },
+      if (_canSelectPlayers)
+        Container(
+          decoration: BoxDecoration(
+            color: context.tokens.card1,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.tokens.stroke),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Symbols.person, size: 20, color: context.tokens.text),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Jugadores',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
-            ),
-          ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _playersSearchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar por nombre o DNI...',
+                  prefixIcon: const Icon(Symbols.search, size: 20),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: context.tokens.text.withOpacity(0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: context.tokens.text.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                onChanged: (value) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 150,
+                child: _isLoadingPlayers
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      )
+                    : filteredPlayers.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No se encontraron jugadores',
+                          style: TextStyle(
+                            color: context.tokens.placeholder,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: filteredPlayers.length,
+                        itemBuilder: (context, index) {
+                          final player = filteredPlayers[index];
+                          final isSelected = _selectedPlayers.contains(
+                            player.id ?? '',
+                          );
+                          return CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedPlayers.add(player.id ?? '');
+                                  _recipientFilter = null;
+                                } else {
+                                  _selectedPlayers.remove(player.id ?? '');
+                                }
+                              });
+                            },
+                            title: Text(
+                              player.nombreCompleto,
+                              style: TextStyle(
+                                color: context.tokens.text,
+                                fontSize: 14,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'DNI: ${player.dni}',
+                              style: TextStyle(
+                                color: context.tokens.placeholder,
+                                fontSize: 12,
+                              ),
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Theme.of(context).colorScheme.primary,
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
-      ),
     ];
   }
 
