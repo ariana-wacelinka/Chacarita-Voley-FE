@@ -8,6 +8,7 @@ import '../../../../core/network/graphql_client_factory.dart';
 import 'package:flutter/foundation.dart';
 
 class HomeRepository {
+  static const int _playerDeliveriesPageSize = 3;
   HomeRepository({GraphQLClient? graphQLClient})
     : _clientOverride = graphQLClient;
 
@@ -271,24 +272,12 @@ class HomeRepository {
       ),
     );
 
-    final query =
-        '''
-      query GetPlayerDeliveries {
-        getAllDeliveries(
-          page: 0
-          size: 10
-          filters: {recipientId: "$personId", sentFrom: "$sentFrom", sentTo: "$sentTo", status: SENT}
-        ) {
-          content {
-            id
-            notification {
-              title
-              message
-            }
-          }
-        }
-      }
-    ''';
+    final query = buildPlayerDeliveriesQuery(
+      personId: personId,
+      sentFrom: sentFrom,
+      sentTo: sentTo,
+      size: _playerDeliveriesPageSize,
+    );
 
     try {
       final result = await _query(
@@ -370,6 +359,32 @@ class HomeRepository {
     } catch (e) {
       return DeliveriesPage.empty();
     }
+  }
+
+  @visibleForTesting
+  String buildPlayerDeliveriesQuery({
+    required String personId,
+    required String sentFrom,
+    required String sentTo,
+    int size = _playerDeliveriesPageSize,
+  }) {
+    return '''
+      query GetPlayerDeliveries {
+        getAllDeliveries(
+          page: 0
+          size: $size
+          filters: {recipientId: "$personId", sentFrom: "$sentFrom", sentTo: "$sentTo", status: SENT}
+        ) {
+          content {
+            id
+            notification {
+              title
+              message
+            }
+          }
+        }
+      }
+    ''';
   }
 
   @visibleForTesting

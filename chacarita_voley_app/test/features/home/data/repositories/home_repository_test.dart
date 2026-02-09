@@ -8,4 +8,15 @@ void main() {
 
     expect(formatted, '2026-02-09T07:05:03');
   });
+
+  test('player deliveries query limits to 3 items', () {
+    final repository = HomeRepository();
+    final query = repository.buildPlayerDeliveriesQuery(
+      personId: '1',
+      sentFrom: '2026-02-01T00:00:00',
+      sentTo: '2026-02-08T23:59:59',
+    );
+
+    expect(query, contains('size: 3'));
+  });
 }
