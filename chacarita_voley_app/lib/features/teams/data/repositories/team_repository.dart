@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:meta/meta.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../domain/entities/team.dart';
 import '../../domain/entities/team_type.dart';
@@ -82,8 +83,8 @@ class TeamRepository implements TeamRepositoryInterface {
 
   String _getAllTeamsQuery({bool minimal = true}) =>
       '''
-    query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String) {
-      getAllTeams(page: \$page, size: \$size, filters: {name: \$name}) {
+    query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String, \$professorId: ID, \$isCompetitive: Boolean, \$playerId: ID) {
+      getAllTeams(page: \$page, size: \$size, filters: {professorId: \$professorId, name: \$name, isCompetitive: \$isCompetitive, playerId: \$playerId}) {
         content {
           ${minimal ? _teamFieldsMinimal : _teamFields}
         }
@@ -96,6 +97,11 @@ class TeamRepository implements TeamRepositoryInterface {
       }
     }
   ''';
+
+  @visibleForTesting
+  String buildGetAllTeamsQuery({bool minimal = true}) {
+    return _getAllTeamsQuery(minimal: minimal);
+  }
 
   String _getTeamByIdQuery() =>
       '''
@@ -134,6 +140,9 @@ class TeamRepository implements TeamRepositoryInterface {
   @override
   Future<List<TeamListItem>> getTeamsListItems({
     String? searchQuery,
+    String? professorId,
+    bool? isCompetitive,
+    String? playerId,
     int? page,
     int? size,
   }) async {
@@ -141,6 +150,9 @@ class TeamRepository implements TeamRepositoryInterface {
       'page': page ?? 0,
       'size': size ?? 100,
       'name': searchQuery ?? '',
+      'professorId': professorId,
+      'isCompetitive': isCompetitive,
+      'playerId': playerId,
     };
 
     final result = await _query(
@@ -168,6 +180,9 @@ class TeamRepository implements TeamRepositoryInterface {
   @override
   Future<List<Team>> getTeams({
     String? searchQuery,
+    String? professorId,
+    bool? isCompetitive,
+    String? playerId,
     int? page,
     int? size,
   }) async {
@@ -175,6 +190,9 @@ class TeamRepository implements TeamRepositoryInterface {
       'page': page ?? 0,
       'size': size ?? 100,
       'name': searchQuery ?? '',
+      'professorId': professorId,
+      'isCompetitive': isCompetitive,
+      'playerId': playerId,
     };
 
     final result = await _query(
@@ -202,11 +220,19 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
-  Future<int> getTotalTeams({String? searchQuery}) async {
+  Future<int> getTotalTeams({
+    String? searchQuery,
+    String? professorId,
+    bool? isCompetitive,
+    String? playerId,
+  }) async {
     final variables = <String, dynamic>{
       'page': 0,
       'size': 1,
       'name': searchQuery ?? '',
+      'professorId': professorId,
+      'isCompetitive': isCompetitive,
+      'playerId': playerId,
     };
 
     final result = await _query(

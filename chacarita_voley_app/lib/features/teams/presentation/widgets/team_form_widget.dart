@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../users/data/repositories/user_repository.dart';
+import '../../../users/domain/repositories/user_repository_interface.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/entities/gender.dart';
 import '../../domain/entities/team.dart';
@@ -12,8 +13,14 @@ import '../../domain/entities/team_type.dart';
 class TeamFormWidget extends StatefulWidget {
   final TeamDetail? team;
   final Function(Team) onSubmit;
+  final UserRepositoryInterface? userRepository;
 
-  const TeamFormWidget({super.key, this.team, required this.onSubmit});
+  const TeamFormWidget({
+    super.key,
+    this.team,
+    required this.onSubmit,
+    this.userRepository,
+  });
 
   @override
   State<TeamFormWidget> createState() => _TeamFormWidgetState();
@@ -23,7 +30,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _abreviacionController = TextEditingController();
-  final _userRepository = UserRepository();
+  late final UserRepositoryInterface _userRepository;
 
   TeamType _selectedTipo = TeamType.recreativo;
   List<User> _selectedEntrenadores = [];
@@ -38,6 +45,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   @override
   void initState() {
     super.initState();
+    _userRepository = widget.userRepository ?? UserRepository();
     _loadInitialProfessors();
     if (widget.team != null) {
       _nombreController.text = widget.team!.nombre;
@@ -45,6 +53,13 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
       _selectedTipo = widget.team!.tipo;
       _integrantes = List.from(widget.team!.integrantes);
     }
+  }
+
+  bool? _playerCompetitiveFilter() {
+    if (_selectedTipo == TeamType.recreativo) {
+      return false;
+    }
+    return null;
   }
 
   Future<void> _loadInitialProfessors() async {
@@ -132,7 +147,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
     try {
       final players = await _userRepository.getUsers(
         role: 'PLAYER',
-        playerIsCompetitive: _selectedTipo == TeamType.competitivo,
+        playerIsCompetitive: _playerCompetitiveFilter(),
         page: 0,
         size: 20,
         forTeamSelection: true,
@@ -168,7 +183,7 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
         final results = await _userRepository.getUsers(
           role: 'PLAYER',
           searchQuery: query,
-          playerIsCompetitive: _selectedTipo == TeamType.competitivo,
+          playerIsCompetitive: _playerCompetitiveFilter(),
           page: 0,
           size: 20,
           forTeamSelection: true,

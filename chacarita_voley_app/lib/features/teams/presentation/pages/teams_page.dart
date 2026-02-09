@@ -7,6 +7,7 @@ import '../../domain/entities/team_list_item.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import '../../../users/data/repositories/user_repository.dart';
 
 enum _TeamMenuAction { view, edit, delete }
 
@@ -20,6 +21,7 @@ class TeamsPage extends StatefulWidget {
 class _TeamsPageState extends State<TeamsPage> {
   final TextEditingController _searchController = TextEditingController();
   final _repository = TeamRepository();
+  final _userRepository = UserRepository();
 
   Future<List<TeamListItem>>? _teamsFuture;
   Future<int>? _totalElementsFuture;
@@ -35,13 +37,19 @@ class _TeamsPageState extends State<TeamsPage> {
   bool _canEdit = false;
   bool _canDelete = false;
   bool _canCreate = false;
+  bool _isProfessor = false;
+  String? _professorId;
 
   @override
   void initState() {
     super.initState();
-    _loadUserRoles();
-    _teamsFuture = _repository.getTeamsListItems(page: 0, size: _teamsPerPage);
-    _totalElementsFuture = _repository.getTotalTeams();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadUserRoles();
+    await _loadProfessorIdIfNeeded();
+    _loadTeams(page: 0);
   }
 
   Future<void> _loadUserRoles() async {
@@ -53,8 +61,55 @@ class _TeamsPageState extends State<TeamsPage> {
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canDelete = PermissionsService.canDeleteTeam(_userRoles);
         _canCreate = PermissionsService.canCreateTeam(_userRoles);
+        _isProfessor =
+            _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
       });
     }
+  }
+
+  Future<void> _loadProfessorIdIfNeeded() async {
+    if (!_isProfessor || _professorId != null) {
+      return;
+    }
+
+    final authService = AuthService();
+    final userId = await authService.getUserId();
+    if (userId == null) {
+      return;
+    }
+
+    final user = await _userRepository.getUserById(userId.toString());
+    if (!mounted) return;
+    if (user?.professorId == null) return;
+
+    setState(() {
+      _professorId = user?.professorId;
+    });
+  }
+
+  void _loadTeams({int? page}) {
+    final targetPage = page ?? _currentPage;
+
+    if (_isProfessor && _professorId == null) {
+      setState(() {
+        _teamsFuture = Future.value([]);
+        _totalElementsFuture = Future.value(0);
+      });
+      return;
+    }
+
+    setState(() {
+      _teamsFuture = _repository.getTeamsListItems(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        professorId: _isProfessor ? _professorId : null,
+        page: targetPage,
+        size: _teamsPerPage,
+      );
+      _totalElementsFuture = _repository.getTotalTeams(
+        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+        professorId: _isProfessor ? _professorId : null,
+      );
+    });
   }
 
   @override
@@ -68,13 +123,7 @@ class _TeamsPageState extends State<TeamsPage> {
         location == '/teams') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {
-            _teamsFuture = _repository.getTeamsListItems(
-              page: 0,
-              size: _teamsPerPage,
-            );
-            _totalElementsFuture = _repository.getTotalTeams();
-          });
+          _loadTeams(page: 0);
         }
       });
     }
@@ -96,39 +145,24 @@ class _TeamsPageState extends State<TeamsPage> {
       setState(() {
         _searchQuery = value;
         _currentPage = 0;
-        _teamsFuture = _repository.getTeamsListItems(
-          searchQuery: value.isEmpty ? null : value,
-          page: 0,
-          size: _teamsPerPage,
-        );
-        _totalElementsFuture = _repository.getTotalTeams(
-          searchQuery: value.isEmpty ? null : value,
-        );
       });
+      _loadTeams(page: 0);
     });
   }
 
   void _nextPage() {
     setState(() {
       _currentPage++;
-      _teamsFuture = _repository.getTeamsListItems(
-        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        page: _currentPage,
-        size: _teamsPerPage,
-      );
     });
+    _loadTeams();
   }
 
   void _previousPage() {
     if (_currentPage > 0) {
       setState(() {
         _currentPage--;
-        _teamsFuture = _repository.getTeamsListItems(
-          searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-          page: _currentPage,
-          size: _teamsPerPage,
-        );
       });
+      _loadTeams();
     }
   }
 
@@ -155,16 +189,7 @@ class _TeamsPageState extends State<TeamsPage> {
               await _repository.deleteTeam(teamId);
               if (context.mounted) {
                 Navigator.pop(context);
-                setState(() {
-                  _teamsFuture = _repository.getTeamsListItems(
-                    searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                    page: _currentPage,
-                    size: _teamsPerPage,
-                  );
-                  _totalElementsFuture = _repository.getTotalTeams(
-                    searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                  );
-                });
+                _loadTeams();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Row(
@@ -326,20 +351,7 @@ class _TeamsPageState extends State<TeamsPage> {
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: () async {
-                            setState(() {
-                              _teamsFuture = _repository.getTeamsListItems(
-                                searchQuery: _searchQuery.isEmpty
-                                    ? null
-                                    : _searchQuery,
-                                page: _currentPage,
-                                size: _teamsPerPage,
-                              );
-                              _totalElementsFuture = _repository.getTotalTeams(
-                                searchQuery: _searchQuery.isEmpty
-                                    ? null
-                                    : _searchQuery,
-                              );
-                            });
+                            _loadTeams();
                             await Future.delayed(
                               const Duration(milliseconds: 500),
                             );
@@ -431,28 +443,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                                         );
                                                         if (updated == true &&
                                                             mounted) {
-                                                          setState(() {
-                                                            _teamsFuture =
-                                                                _repository
-                                                                    .getTeamsListItems(
-                                                              searchQuery:
-                                                                  _searchQuery
-                                                                          .isEmpty
-                                                                      ? null
-                                                                      : _searchQuery,
-                                                              page: _currentPage,
-                                                              size: _teamsPerPage,
-                                                            );
-                                                            _totalElementsFuture =
-                                                                _repository
-                                                                    .getTotalTeams(
-                                                              searchQuery:
-                                                                  _searchQuery
-                                                                          .isEmpty
-                                                                      ? null
-                                                                      : _searchQuery,
-                                                            );
-                                                          });
+                                                          _loadTeams();
                                                         }
                                                       }();
                                                       break;
@@ -641,16 +632,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 final created = await context.push<bool>('/teams/register');
 
                 if (created == true && mounted) {
-                  setState(() {
-                    _teamsFuture = _repository.getTeamsListItems(
-                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                      page: _currentPage,
-                      size: _teamsPerPage,
-                    );
-                    _totalElementsFuture = _repository.getTotalTeams(
-                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                    );
-                  });
+                  _loadTeams();
                 }
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
