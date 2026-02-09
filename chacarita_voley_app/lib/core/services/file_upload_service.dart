@@ -42,7 +42,7 @@ class FileUploadService {
     if (_notificationsInitialized) return;
 
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      '@mipmap/launcher_icon',
     );
     const iosSettings = DarwinInitializationSettings();
     const initSettings = InitializationSettings(

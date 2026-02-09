@@ -1,3 +1,4 @@
+import 'package:chacarita_voley_app/core/utils/banner_action_color.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -275,6 +276,13 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
             actions: [
               TextButton(
                 onPressed: messenger.hideCurrentMaterialBanner,
+                style: TextButton.styleFrom(
+                  foregroundColor: bannerActionColor(
+                    isSuccess: true,
+                    successColor: context.tokens.permanentWhite,
+                    errorColor: context.tokens.redToRosita,
+                  ),
+                ),
                 child: const Text('Cerrar'),
               ),
             ],

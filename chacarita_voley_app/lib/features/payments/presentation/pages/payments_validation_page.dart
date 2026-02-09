@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/utils/banner_action_color.dart';
 import '../../domain/entities/pay.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
@@ -137,6 +138,13 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             actions: [
               TextButton(
                 onPressed: messenger.hideCurrentMaterialBanner,
+                style: TextButton.styleFrom(
+                  foregroundColor: bannerActionColor(
+                    isSuccess: true,
+                    successColor: context.tokens.permanentWhite,
+                    errorColor: context.tokens.redToRosita,
+                  ),
+                ),
                 child: const Text('Cerrar'),
               ),
             ],
@@ -159,6 +167,13 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
             actions: [
               TextButton(
                 onPressed: messenger.hideCurrentMaterialBanner,
+                style: TextButton.styleFrom(
+                  foregroundColor: bannerActionColor(
+                    isSuccess: false,
+                    successColor: context.tokens.permanentWhite,
+                    errorColor: context.tokens.redToRosita,
+                  ),
+                ),
                 child: const Text('Cerrar'),
               ),
             ],
