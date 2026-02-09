@@ -1,4 +1,5 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:meta/meta.dart';
 import '../../../../core/network/graphql_client_factory.dart';
 import '../../../users/domain/entities/due.dart' show DueState;
 import '../../../users/domain/entities/user.dart'
@@ -171,12 +172,13 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? startTimeFrom,
     String? startTimeTo,
     String? statusValue,
+    String? professorId,
     String? teamId,
     String? playerId,
   }) =>
       '''
     query GetAllSessions(\$page: Int!, \$size: Int!) {
-      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, teamId: "${teamId ?? ''}", playerId: "${playerId ?? ''}"}) {
+      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, professorId: "${professorId ?? ''}", teamId: "${teamId ?? ''}", playerId: "${playerId ?? ''}"}) {
         totalPages
         totalElements
         pageSize
@@ -219,6 +221,29 @@ class TrainingRepository implements TrainingRepositoryInterface {
       }
     }
   ''';
+
+  @visibleForTesting
+  String buildGetAllSessionsQuery({
+    String? dateFrom,
+    String? dateTo,
+    String? startTimeFrom,
+    String? startTimeTo,
+    String? statusValue,
+    String? professorId,
+    String? teamId,
+    String? playerId,
+  }) {
+    return _getAllSessionsQuery(
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      startTimeFrom: startTimeFrom,
+      startTimeTo: startTimeTo,
+      statusValue: statusValue,
+      professorId: professorId,
+      teamId: teamId,
+      playerId: playerId,
+    );
+  }
 
   String _getSessionByIdQuery() => '''
     query GetSessionById(\$id: ID!) {
@@ -286,6 +311,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? startTimeFrom,
     String? startTimeTo,
     TrainingStatus? status,
+    String? professorId,
     String? teamId,
     String? playerId,
     int page = 0,
@@ -300,6 +326,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             startTimeFrom: startTimeFrom,
             startTimeTo: startTimeTo,
             statusValue: status?.backendValue,
+            professorId: professorId,
             teamId: teamId,
             playerId: playerId,
           ),

@@ -6,6 +6,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
+import '../../../users/data/repositories/user_repository.dart';
 
 enum _TrainingMenuAction {
   view,
@@ -30,11 +31,13 @@ class TrainingsPage extends StatefulWidget {
 class _TrainingsPageState extends State<TrainingsPage>
     with AutomaticKeepAliveClientMixin {
   final _repository = TrainingRepository();
+  final _userRepository = UserRepository();
   List<Training> _trainings = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
   bool _isAdmin = false;
   bool _isProfessor = false;
+  String? _professorId;
 
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -53,8 +56,13 @@ class _TrainingsPageState extends State<TrainingsPage>
   @override
   void initState() {
     super.initState();
-    _loadUserRoles();
-    _loadTrainings();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadUserRoles();
+    await _loadProfessorIdIfNeeded();
+    await _loadTrainings();
   }
 
   Future<void> _loadUserRoles() async {
@@ -68,6 +76,26 @@ class _TrainingsPageState extends State<TrainingsPage>
             _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
       });
     }
+  }
+
+  Future<void> _loadProfessorIdIfNeeded() async {
+    if (!_isProfessor || _professorId != null) {
+      return;
+    }
+
+    final authService = AuthService();
+    final userId = await authService.getUserId();
+    if (userId == null) {
+      return;
+    }
+
+    final user = await _userRepository.getUserById(userId.toString());
+    if (!mounted) return;
+    if (user?.professorId == null) return;
+
+    setState(() {
+      _professorId = user?.professorId;
+    });
   }
 
   Future<void> _handleDeleteSession(Training training) async {
@@ -234,6 +262,23 @@ class _TrainingsPageState extends State<TrainingsPage>
   Future<void> _loadTrainings() async {
     setState(() => _isLoading = true);
     try {
+      if (_isProfessor) {
+        await _loadProfessorIdIfNeeded();
+        if (_professorId == null) {
+          if (mounted) {
+            setState(() {
+              _trainings = [];
+              _totalPages = 0;
+              _totalElements = 0;
+              _hasNext = false;
+              _hasPrevious = false;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+
       // Convertir fechas de DD/MM/AAAA a AAAA-MM-DD para el backend
       String? dateFrom;
       String? dateTo;
@@ -262,6 +307,7 @@ class _TrainingsPageState extends State<TrainingsPage>
             ? _endTimeController.text
             : null,
         status: _selectedStatus,
+        professorId: _isProfessor ? _professorId : null,
         teamId: widget.teamId,
         page: _currentPage,
         size: _itemsPerPage,
