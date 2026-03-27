@@ -1,13 +1,18 @@
+import '../../../../core/entities/soft_deletable.dart';
 import 'team_type.dart';
 
-class TeamMember {
-  final String? playerId; // ID del jugador para mutaciones relacionadas con player
-  final String? personId; // ID de la persona para mutaciones relacionadas con person
+class TeamMember with SoftDeletable {
+  final String?
+  playerId; // ID del jugador para mutaciones relacionadas con player
+  final String?
+  personId; // ID de la persona para mutaciones relacionadas con person
   final String dni;
   final String nombre;
   final String apellido;
   final String? numeroAfiliado;
   final String? numeroCamiseta;
+  @override
+  final bool isDeleted;
 
   TeamMember({
     this.playerId,
@@ -17,6 +22,7 @@ class TeamMember {
     required this.apellido,
     this.numeroAfiliado,
     this.numeroCamiseta,
+    this.isDeleted = false,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -29,6 +35,7 @@ class TeamMember {
     String? apellido,
     String? numeroAfiliado,
     String? numeroCamiseta,
+    bool? isDeleted,
   }) {
     return TeamMember(
       playerId: playerId ?? this.playerId,
@@ -38,11 +45,15 @@ class TeamMember {
       apellido: apellido ?? this.apellido,
       numeroAfiliado: numeroAfiliado ?? this.numeroAfiliado,
       numeroCamiseta: numeroCamiseta ?? this.numeroCamiseta,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
+
+  @override
+  TeamMember copyWithIsDeleted(bool value) => copyWith(isDeleted: value);
 }
 
-class Team {
+class Team with SoftDeletable {
   final String id;
   final String nombre;
   final String abreviacion;
@@ -50,6 +61,8 @@ class Team {
   final List<String> professorIds; // IDs de profesores (para mutations)
   final List<String> entrenadores; // Nombres completos (para UI)
   final List<TeamMember> integrantes;
+  @override
+  final bool isDeleted;
 
   Team({
     required this.id,
@@ -59,6 +72,7 @@ class Team {
     List<String>? professorIds,
     List<String>? entrenadores,
     required List<TeamMember> integrantes,
+    this.isDeleted = false,
   }) : professorIds = professorIds ?? [],
        entrenadores = entrenadores ?? [],
        integrantes = integrantes.isEmpty ? [] : integrantes;
@@ -77,6 +91,7 @@ class Team {
     List<String>? professorIds,
     List<String>? entrenadores,
     List<TeamMember>? integrantes,
+    bool? isDeleted,
   }) {
     return Team(
       id: id,
@@ -86,6 +101,10 @@ class Team {
       professorIds: professorIds ?? this.professorIds,
       entrenadores: entrenadores ?? this.entrenadores,
       integrantes: integrantes ?? this.integrantes,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
+
+  @override
+  Team copyWithIsDeleted(bool value) => copyWith(isDeleted: value);
 }

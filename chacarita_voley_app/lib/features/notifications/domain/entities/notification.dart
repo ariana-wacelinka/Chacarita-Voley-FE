@@ -1,3 +1,5 @@
+import '../../../../core/entities/soft_deletable.dart';
+
 enum NotificationType {
   general,
   recordatorio,
@@ -163,15 +165,18 @@ enum DeliveryStatus {
   }
 }
 
-class NotificationDestination {
+class NotificationDestination with SoftDeletable {
   final String id;
   final String? referenceId;
   final DestinationType type;
+  @override
+  final bool isDeleted;
 
   NotificationDestination({
     required this.id,
     this.referenceId,
     required this.type,
+    this.isDeleted = false,
   });
 
   factory NotificationDestination.fromJson(Map<String, dynamic> json) {
@@ -179,12 +184,27 @@ class NotificationDestination {
       id: json['id'] as String,
       referenceId: json['referenceId'] as String?,
       type: DestinationType.fromString(json['type'] as String),
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'referenceId': referenceId, 'type': type.name};
+    return {
+      'id': id,
+      'referenceId': referenceId,
+      'type': type.name,
+      'isDeleted': isDeleted,
+    };
   }
+
+  @override
+  NotificationDestination copyWithIsDeleted(bool value) =>
+      NotificationDestination(
+        id: id,
+        referenceId: referenceId,
+        type: type,
+        isDeleted: value,
+      );
 }
 
 class NotificationDelivery {

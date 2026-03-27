@@ -7,6 +7,7 @@ class PayResponseModel {
   final String? updateAt;
   final double amount;
   final String state; // Map to PayState in repo
+  final bool isDeleted;
 
   PayResponseModel({
     required this.id,
@@ -17,6 +18,7 @@ class PayResponseModel {
     this.updateAt,
     required this.amount,
     required this.state,
+    this.isDeleted = false,
   });
 
   factory PayResponseModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class PayResponseModel {
       updateAt: json['updateAt'] as String?,
       amount: (json['amount'] as num).toDouble(),
       state: json['state'] as String,
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -42,6 +45,7 @@ class PayResponseModel {
       if (updateAt != null) 'updateAt': updateAt,
       'amount': amount,
       'state': state,
+      'isDeleted': isDeleted,
     };
   }
 }
@@ -54,6 +58,7 @@ class PaginatedPayResponse {
   final int pageSize;
   final bool hasNext;
   final bool hasPrevious;
+  final bool isDeleted;
 
   PaginatedPayResponse({
     required this.content,
@@ -63,6 +68,7 @@ class PaginatedPayResponse {
     required this.pageSize,
     required this.hasNext,
     required this.hasPrevious,
+    this.isDeleted = false,
   });
 
   factory PaginatedPayResponse.fromJson(Map<String, dynamic> json) {
@@ -76,6 +82,7 @@ class PaginatedPayResponse {
       pageSize: json['pageSize'] as int,
       hasNext: json['hasNext'] as bool,
       hasPrevious: json['hasPrevious'] as bool,
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -88,6 +95,7 @@ class PaginatedPayResponse {
       'pageSize': pageSize,
       'hasNext': hasNext,
       'hasPrevious': hasPrevious,
+      'isDeleted': isDeleted,
     };
   }
 }

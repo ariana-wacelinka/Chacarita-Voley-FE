@@ -1,3 +1,4 @@
+import '../../../../core/entities/soft_deletable.dart';
 import 'pay_state.dart';
 
 class PayFilterInput {
@@ -13,6 +14,7 @@ class PayFilterInput {
   final double? amountFrom;
   final double? amountTo;
   final PayState? state;
+  final bool? isDeleted;
 
   const PayFilterInput({
     this.fileName,
@@ -27,6 +29,7 @@ class PayFilterInput {
     this.amountFrom,
     this.amountTo,
     this.state,
+    this.isDeleted,
   });
 
   Map<String, dynamic> toJson() {
@@ -43,6 +46,7 @@ class PayFilterInput {
       if (amountFrom != null) 'amountFrom': amountFrom,
       if (amountTo != null) 'amountTo': amountTo,
       if (state != null) 'state': state!.name.toUpperCase(),
+      if (isDeleted != null) 'isDeleted': isDeleted,
       // Asumiendo uppercase en API
     };
   }

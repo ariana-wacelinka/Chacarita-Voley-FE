@@ -1,9 +1,10 @@
+import '../../../../core/entities/soft_deletable.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/pay_state.dart';
 import 'package:chacarita_voley_app/features/payments/domain/entities/player.dart';
 import 'package:flutter/foundation.dart'; // Para @immutable si quieres
 
 @immutable
-class Pay {
+class Pay with SoftDeletable {
   final String id;
   final PayState status; // state en backend
   final double amount;
@@ -20,6 +21,8 @@ class Pay {
   final String? userName; // Deprecado: usar player.person.fullName
   final String? dni; // Deprecado: usar player.person.dni
   final String? notes; // Notas opcionales
+  @override
+  final bool isDeleted;
 
   const Pay({
     required this.id,
@@ -34,6 +37,7 @@ class Pay {
     this.userName,
     this.dni,
     this.notes,
+    this.isDeleted = false,
   });
 
   // Getters para obtener datos del player o fallback a campos legacy
@@ -72,6 +76,7 @@ class Pay {
     String? userName,
     String? dni,
     String? notes,
+    bool? isDeleted,
   }) {
     return Pay(
       id: id ?? this.id,
@@ -86,6 +91,7 @@ class Pay {
       userName: userName ?? this.userName,
       dni: dni ?? this.dni,
       notes: notes ?? this.notes,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -109,6 +115,7 @@ class Pay {
       userName: json['userName'] as String?,
       dni: json['dni'] as String?,
       notes: json['notes'] as String?,
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -125,8 +132,12 @@ class Pay {
       if (userName != null) 'userName': userName,
       if (dni != null) 'dni': dni,
       if (notes != null) 'notes': notes,
+      'isDeleted': isDeleted,
     };
   }
+
+  @override
+  Pay copyWithIsDeleted(bool value) => copyWith(isDeleted: value);
 
   @override
   String toString() {

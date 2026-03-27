@@ -1,4 +1,5 @@
 import '../../../users/domain/entities/user.dart' show EstadoCuota;
+import '../../../../core/entities/soft_deletable.dart';
 
 enum TrainingType {
   fisico('PHYSICAL'),
@@ -155,7 +156,7 @@ class PlayerAttendance {
   }
 }
 
-class Training {
+class Training with SoftDeletable {
   final String id;
   final DateTime? date;
   final DateTime? startDate;
@@ -176,6 +177,8 @@ class Training {
   final bool hasTraining;
   final int? countOfPlayers;
   final int? countOfAssisted;
+  @override
+  final bool isDeleted;
 
   Training({
     required this.id,
@@ -198,16 +201,15 @@ class Training {
     this.hasTraining = true,
     this.countOfPlayers,
     this.countOfAssisted,
+    this.isDeleted = false,
   });
 
-    int get totalPlayers =>
-      (countOfPlayers == null || countOfPlayers == 0)
-        ? attendances.length
-        : countOfPlayers!;
-    int get presentCount =>
-      (countOfAssisted == null || countOfAssisted == 0)
-        ? attendances.where((a) => a.isPresent).length
-        : countOfAssisted!;
+  int get totalPlayers => (countOfPlayers == null || countOfPlayers == 0)
+      ? attendances.length
+      : countOfPlayers!;
+  int get presentCount => (countOfAssisted == null || countOfAssisted == 0)
+      ? attendances.where((a) => a.isPresent).length
+      : countOfAssisted!;
   int get absentCount => totalPlayers - presentCount;
 
   String get dateFormatted {
@@ -292,6 +294,32 @@ class Training {
       trainingId: trainingId ?? this.trainingId,
       countOfPlayers: countOfPlayers ?? this.countOfPlayers,
       countOfAssisted: countOfAssisted ?? this.countOfAssisted,
+      isDeleted: isDeleted,
     );
   }
+
+  @override
+  Training copyWithIsDeleted(bool value) => Training(
+    id: id,
+    date: date,
+    startDate: startDate,
+    endDate: endDate,
+    teamId: teamId,
+    teamName: teamName,
+    professorId: professorId,
+    professorName: professorName,
+    dayOfWeek: dayOfWeek,
+    daysOfWeek: daysOfWeek,
+    startTime: startTime,
+    endTime: endTime,
+    location: location,
+    type: type,
+    status: status,
+    attendances: attendances,
+    trainingId: trainingId,
+    hasTraining: hasTraining,
+    countOfPlayers: countOfPlayers,
+    countOfAssisted: countOfAssisted,
+    isDeleted: value,
+  );
 }

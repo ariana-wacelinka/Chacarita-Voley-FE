@@ -1,9 +1,10 @@
+import '../../../../core/entities/soft_deletable.dart';
 import 'team.dart';
 import 'team_type.dart';
 
 /// Modelo completo para DETALLE de equipo
 /// Incluye toda la información necesaria para ViewTeam y EditTeam
-class TeamDetail {
+class TeamDetail with SoftDeletable {
   final String id;
   final String nombre;
   final String abreviacion;
@@ -12,6 +13,8 @@ class TeamDetail {
   final List<String> entrenadores; // Nombres completos (para UI)
   final List<TeamMember> integrantes;
   final List<Training> entrenamientos;
+  @override
+  final bool isDeleted;
 
   TeamDetail({
     required this.id,
@@ -22,6 +25,7 @@ class TeamDetail {
     List<String>? entrenadores,
     required List<TeamMember> integrantes,
     List<Training>? entrenamientos,
+    this.isDeleted = false,
   }) : professorIds = professorIds ?? [],
        entrenadores = entrenadores ?? [],
        integrantes = integrantes.isEmpty ? [] : integrantes,
@@ -42,6 +46,7 @@ class TeamDetail {
     List<String>? entrenadores,
     List<TeamMember>? integrantes,
     List<Training>? entrenamientos,
+    bool? isDeleted,
   }) {
     return TeamDetail(
       id: id,
@@ -52,8 +57,12 @@ class TeamDetail {
       entrenadores: entrenadores ?? this.entrenadores,
       integrantes: integrantes ?? this.integrantes,
       entrenamientos: entrenamientos ?? this.entrenamientos,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
+
+  @override
+  TeamDetail copyWithIsDeleted(bool value) => copyWith(isDeleted: value);
 }
 
 class Training {

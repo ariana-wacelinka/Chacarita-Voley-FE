@@ -114,6 +114,7 @@ class TeamResponseModel {
   final List<UserModel>? players;
   final List<UserModel>? professors;
   final List<TrainingModel>? trainings;
+  final bool isDeleted;
 
   TeamResponseModel({
     required this.id,
@@ -123,6 +124,7 @@ class TeamResponseModel {
     this.players,
     this.professors,
     this.trainings,
+    this.isDeleted = false,
   });
 
   factory TeamResponseModel.fromJson(Map<String, dynamic> json) {
@@ -140,6 +142,7 @@ class TeamResponseModel {
       trainings: (json['trainings'] as List<dynamic>?)
           ?.map((t) => TrainingModel.fromJson(t as Map<String, dynamic>))
           .toList(),
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -154,6 +157,7 @@ class TeamResponseModel {
         'professors': professors!.map((p) => p.toJson()).toList(),
       if (trainings != null)
         'trainings': trainings!.map((t) => t.toJson()).toList(),
+      'isDeleted': isDeleted,
     };
   }
 }
@@ -209,10 +213,12 @@ class UpdateTeamRequestModel {
       if (name != null) 'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       if (isCompetitive != null) 'isCompetitive': isCompetitive,
-      if (playerIds != null && playerIds!.isNotEmpty) 
+      if (playerIds != null && playerIds!.isNotEmpty)
         'playerIds': playerIds!.map((id) => int.tryParse(id) ?? 0).toList(),
       if (professorIds != null && professorIds!.isNotEmpty)
-        'professorIds': professorIds!.map((id) => int.tryParse(id) ?? 0).toList(),
+        'professorIds': professorIds!
+            .map((id) => int.tryParse(id) ?? 0)
+            .toList(),
       if (trainingIds != null && trainingIds!.isNotEmpty)
         'trainingIds': trainingIds,
     };

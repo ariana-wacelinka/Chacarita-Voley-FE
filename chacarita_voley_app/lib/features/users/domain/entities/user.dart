@@ -1,21 +1,34 @@
+import '../../../../core/entities/soft_deletable.dart';
 import 'due.dart';
 import 'gender.dart';
 
-class TeamInfo {
+class TeamInfo with SoftDeletable {
   final String id;
   final String name;
   final String abbreviation;
   final bool isCompetitive;
+  @override
+  final bool isDeleted;
 
   TeamInfo({
     required this.id,
     required this.name,
     required this.abbreviation,
     required this.isCompetitive,
+    this.isDeleted = false,
   });
+
+  @override
+  TeamInfo copyWithIsDeleted(bool value) => TeamInfo(
+    id: id,
+    name: name,
+    abbreviation: abbreviation,
+    isCompetitive: isCompetitive,
+    isDeleted: value,
+  );
 }
 
-class User {
+class User with SoftDeletable {
   final bool? playerIsCompetitive;
   final String? id;
   final String? playerId;
@@ -34,6 +47,8 @@ class User {
   final Set<UserType> tipos;
   final EstadoCuota estadoCuota;
   final CurrentDue? currentDue;
+  @override
+  final bool isDeleted;
 
   User({
     this.playerIsCompetitive,
@@ -54,6 +69,7 @@ class User {
     required this.tipos,
     required this.estadoCuota,
     this.currentDue,
+    this.isDeleted = false,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -80,6 +96,7 @@ class User {
                   name: e['name'] as String,
                   abbreviation: e['abbreviation'] as String,
                   isCompetitive: e['isCompetitive'] as bool,
+                  isDeleted: e['isDeleted'] ?? false,
                 ),
               )
               .toList() ??
@@ -90,6 +107,7 @@ class User {
       estadoCuota: EstadoCuota.values.firstWhere(
         (e) => e.name == json['estadoCuota'],
       ),
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -112,13 +130,38 @@ class User {
               'name': e.name,
               'abbreviation': e.abbreviation,
               'isCompetitive': e.isCompetitive,
+              'isDeleted': e.isDeleted,
             },
           )
           .toList(),
       'tipos': tipos.map((e) => e.name).toList(),
       'estadoCuota': estadoCuota.name,
+      'isDeleted': isDeleted,
     };
   }
+
+  @override
+  User copyWithIsDeleted(bool value) => User(
+    playerIsCompetitive: playerIsCompetitive,
+    id: id,
+    playerId: playerId,
+    professorId: professorId,
+    dni: dni,
+    nombre: nombre,
+    apellido: apellido,
+    fechaNacimiento: fechaNacimiento,
+    genero: genero,
+    email: email,
+    telefono: telefono,
+    numeroCamiseta: numeroCamiseta,
+    numeroAfiliado: numeroAfiliado,
+    equipo: equipo,
+    equipos: equipos,
+    tipos: tipos,
+    estadoCuota: estadoCuota,
+    currentDue: currentDue,
+    isDeleted: value,
+  );
 }
 
 enum UserType { jugador, profesor, administrador }

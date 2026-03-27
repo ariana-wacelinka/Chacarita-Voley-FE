@@ -1,9 +1,13 @@
-class Assistance {
+import '../../../../core/entities/soft_deletable.dart';
+
+class Assistance with SoftDeletable {
   final String id;
   final String date;
   final bool assistance;
   final String? startTime;
   final String? endTime;
+  @override
+  final bool isDeleted;
 
   Assistance({
     required this.id,
@@ -11,6 +15,7 @@ class Assistance {
     required this.assistance,
     this.startTime,
     this.endTime,
+    this.isDeleted = false,
   });
 
   factory Assistance.fromJson(Map<String, dynamic> json) {
@@ -21,6 +26,7 @@ class Assistance {
       assistance: json['assistance'] as bool,
       startTime: sessionData?['startTime'] as String?,
       endTime: sessionData?['endTime'] as String?,
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 
@@ -30,8 +36,30 @@ class Assistance {
       'date': date,
       'assistance': assistance,
       'session': {'startTime': startTime, 'endTime': endTime},
+      'isDeleted': isDeleted,
     };
   }
+
+  Assistance copyWith({
+    String? id,
+    String? date,
+    bool? assistance,
+    String? startTime,
+    String? endTime,
+    bool? isDeleted,
+  }) {
+    return Assistance(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      assistance: assistance ?? this.assistance,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
+
+  @override
+  Assistance copyWithIsDeleted(bool value) => copyWith(isDeleted: value);
 }
 
 class AssistancePage {
