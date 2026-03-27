@@ -8,6 +8,7 @@ abstract class UserRepositoryInterface {
     String? searchQuery,
     String? statusCurrentDue,
     bool? playerIsCompetitive,
+    bool includeDeleted,
     int? page,
     int? size,
     bool forTeamSelection = false,
@@ -16,11 +17,13 @@ abstract class UserRepositoryInterface {
     String? role,
     String? searchQuery,
     String? statusCurrentDue,
+    bool includeDeleted,
   });
   Future<User?> getUserById(String id);
   Future<User> createUser(User user);
   Future<User> updateUser(User user);
   Future<void> deleteUser(String id);
+  Future<void> restoreUser(String id);
   Future<AssistancePage> getAllAssistance({
     required String playerId,
     String? startTimeFrom,
@@ -29,4 +32,9 @@ abstract class UserRepositoryInterface {
     required int size,
   });
   Future<AssistanceStats> getAssistanceStatsByPlayerId(String playerId);
+  Future<List<User>> getUsersForNotifications({bool includeDeleted = false});
+  Future<List<User>> getUsersForPayments({
+    String? searchQuery,
+    bool includeDeleted = false,
+  });
 }

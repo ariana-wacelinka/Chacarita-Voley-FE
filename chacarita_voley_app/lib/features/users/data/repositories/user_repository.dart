@@ -45,6 +45,7 @@ class UserRepository implements UserRepositoryInterface {
         abbreviation
       }
     }
+    isDeleted
   ''';
 
   // Query para selección en equipos - Incluye IDs necesarios
@@ -62,6 +63,7 @@ class UserRepository implements UserRepositoryInterface {
     professor {
       id
     }
+    isDeleted
   ''';
 
   // Query ultra liviana para notificaciones - Solo id, nombre y apellido
@@ -69,6 +71,7 @@ class UserRepository implements UserRepositoryInterface {
     id
     name
     surname
+    isDeleted
   ''';
 
   // Query completa para DETALLE (ver/editar usuario)
@@ -109,12 +112,13 @@ class UserRepository implements UserRepositoryInterface {
       id
       teams { id isCompetitive name abbreviation }
     }
+    isDeleted
   ''';
 
   String _getAllPersonsQuery() =>
       '''
-    query GetAllPersons(\$page: Int!, \$size: Int!, \$search: String, \$role: Role, \$statusCurrentDue: DuesState, \$playerIsCompetitive: Boolean) {
-      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: \$role, statusCurrentDue: \$statusCurrentDue, playerIsCompetitive: \$playerIsCompetitive}) {
+    query GetAllPersons(\$page: Int!, \$size: Int!, \$search: String, \$role: Role, \$statusCurrentDue: DuesState, \$playerIsCompetitive: Boolean, \$isDeleted: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: \$role, statusCurrentDue: \$statusCurrentDue, playerIsCompetitive: \$playerIsCompetitive, isDeleted: \$isDeleted}) {
         content {
           $_personFieldsMinimal
         }
@@ -130,8 +134,8 @@ class UserRepository implements UserRepositoryInterface {
 
   String _getAllPersonsForTeamsQuery() =>
       '''
-    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role, \$playerIsCompetitive: Boolean) {
-      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role, playerIsCompetitive: \$playerIsCompetitive}) {
+    query GetAllPersonsForTeams(\$page: Int!, \$size: Int!, \$dni: String, \$name: String, \$surname: String, \$role: Role, \$playerIsCompetitive: Boolean, \$isDeleted: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {dni: \$dni, name: \$name, surname: \$surname, role: \$role, playerIsCompetitive: \$playerIsCompetitive, isDeleted: \$isDeleted}) {
         content {
           $_personFieldsForTeams
         }
@@ -147,8 +151,8 @@ class UserRepository implements UserRepositoryInterface {
 
   String _getAllPersonsForNotificationsQuery() =>
       '''
-    query GetAllPersonsForNotifications(\$page: Int!, \$size: Int!) {
-      getAllPersons(page: \$page, size: \$size) {
+    query GetAllPersonsForNotifications(\$page: Int!, \$size: Int!, \$isDeleted: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {isDeleted: \$isDeleted}) {
         content {
           $_personFieldsForNotifications
         }
@@ -158,8 +162,8 @@ class UserRepository implements UserRepositoryInterface {
   ''';
 
   String _getAllPersonsForPaymentsQuery() => '''
-    query GetAllPersonsForPayments(\$page: Int!, \$size: Int!, \$search: String) {
-      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: PLAYER}) {
+    query GetAllPersonsForPayments(\$page: Int!, \$size: Int!, \$search: String, \$isDeleted: Boolean) {
+      getAllPersons(page: \$page, size: \$size, filters: {search: \$search, role: PLAYER, isDeleted: \$isDeleted}) {
         content {
           id
           name
@@ -220,6 +224,14 @@ class UserRepository implements UserRepositoryInterface {
     }
   ''';
 
+  static const String _restorePersonMutation = r'''
+    mutation RestorePerson($id: ID!) {
+      restorePerson(id: $id) {
+        id
+      }
+    }
+  ''';
+
   /// Construye los filtros para el backend
   /// Ahora el backend maneja la búsqueda con OR en un solo parámetro 'search'
   Map<String, dynamic> _buildFilters({
@@ -227,12 +239,14 @@ class UserRepository implements UserRepositoryInterface {
     String? role,
     String? statusCurrentDue,
     bool? playerIsCompetitive,
+    required bool includeDeleted,
   }) {
     return {
       'search': searchQuery?.trim() ?? '',
       'role': role,
       'statusCurrentDue': statusCurrentDue,
       'playerIsCompetitive': playerIsCompetitive,
+      'isDeleted': includeDeleted ? true : false,
     };
   }
 
@@ -242,6 +256,7 @@ class UserRepository implements UserRepositoryInterface {
     String? searchQuery,
     String? statusCurrentDue,
     bool? playerIsCompetitive,
+    bool includeDeleted = false,
     int? page,
     int? size,
     bool forTeamSelection = false,
@@ -251,6 +266,7 @@ class UserRepository implements UserRepositoryInterface {
       role: role,
       statusCurrentDue: statusCurrentDue,
       playerIsCompetitive: playerIsCompetitive,
+      includeDeleted: includeDeleted,
     );
 
     final result = await _query(
@@ -260,7 +276,12 @@ class UserRepository implements UserRepositoryInterface {
               ? _getAllPersonsForTeamsQuery()
               : _getAllPersonsQuery(),
         ),
-        variables: {'page': page ?? 0, 'size': size ?? 12, ...filters},
+        variables: {
+          'page': page ?? 0,
+          'size': size ?? 12,
+          'isDeleted': includeDeleted,
+          ...filters,
+        },
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -281,11 +302,13 @@ class UserRepository implements UserRepositoryInterface {
 
   /// Método específico para cargar usuarios para notificaciones
   /// Solo trae id, name y surname para ser ultra liviano
-  Future<List<User>> getUsersForNotifications() async {
+  Future<List<User>> getUsersForNotifications({
+    bool includeDeleted = false,
+  }) async {
     final result = await _query(
       QueryOptions(
         document: gql(_getAllPersonsForNotificationsQuery()),
-        variables: {'page': 0, 'size': 100},
+        variables: {'page': 0, 'size': 100, 'isDeleted': includeDeleted},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -304,11 +327,19 @@ class UserRepository implements UserRepositoryInterface {
         .toList();
   }
 
-  Future<List<User>> getUsersForPayments({String? searchQuery}) async {
+  Future<List<User>> getUsersForPayments({
+    String? searchQuery,
+    bool includeDeleted = false,
+  }) async {
     final result = await _query(
       QueryOptions(
         document: gql(_getAllPersonsForPaymentsQuery()),
-        variables: {'page': 0, 'size': 10, 'search': searchQuery ?? ''},
+        variables: {
+          'page': 0,
+          'size': 10,
+          'search': searchQuery ?? '',
+          'isDeleted': includeDeleted,
+        },
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -332,17 +363,24 @@ class UserRepository implements UserRepositoryInterface {
     String? role,
     String? searchQuery,
     String? statusCurrentDue,
+    bool includeDeleted = false,
   }) async {
     final filters = _buildFilters(
       searchQuery: searchQuery,
       role: role,
       statusCurrentDue: statusCurrentDue,
+      includeDeleted: includeDeleted,
     );
 
     final result = await _query(
       QueryOptions(
         document: gql(_getAllPersonsQuery()),
-        variables: {'page': 0, 'size': 1, ...filters},
+        variables: {
+          'page': 0,
+          'size': 1,
+          'isDeleted': includeDeleted,
+          ...filters,
+        },
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -486,6 +524,25 @@ class UserRepository implements UserRepositoryInterface {
       print('Exception: $e');
       print('Stack trace: $stackTrace');
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> restoreUser(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_restorePersonMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final restored = result.data?['restorePerson'] as Map<String, dynamic>?;
+    if (restored == null || restored['id'] == null) {
+      throw Exception('No se pudo restaurar el usuario');
     }
   }
 
