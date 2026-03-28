@@ -33,4 +33,5 @@ abstract class TeamRepositoryInterface {
   Future<void> createTeam(Team team);
   Future<void> updateTeam(Team team);
   Future<void> deleteTeam(String id);
+  Future<void> restoreTeam(String id);
 }

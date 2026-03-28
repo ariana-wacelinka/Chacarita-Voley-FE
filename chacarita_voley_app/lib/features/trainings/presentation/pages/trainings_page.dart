@@ -21,8 +21,19 @@ class TrainingsPage extends StatefulWidget {
   final String? teamId;
   final String? teamName;
   final String? refresh;
+  final TrainingRepository? repository;
+  final UserRepository? userRepository;
+  final AuthService? authService;
 
-  const TrainingsPage({super.key, this.teamId, this.teamName, this.refresh});
+  const TrainingsPage({
+    super.key,
+    this.teamId,
+    this.teamName,
+    this.refresh,
+    this.repository,
+    this.userRepository,
+    this.authService,
+  });
 
   @override
   State<TrainingsPage> createState() => _TrainingsPageState();
@@ -30,8 +41,9 @@ class TrainingsPage extends StatefulWidget {
 
 class _TrainingsPageState extends State<TrainingsPage>
     with AutomaticKeepAliveClientMixin {
-  final _repository = TrainingRepository();
-  final _userRepository = UserRepository();
+  late final TrainingRepository _repository;
+  late final UserRepository _userRepository;
+  late final AuthService _authService;
   List<Training> _trainings = [];
   bool _isLoading = true;
   List<String> _userRoles = [];
@@ -56,6 +68,9 @@ class _TrainingsPageState extends State<TrainingsPage>
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? TrainingRepository();
+    _userRepository = widget.userRepository ?? UserRepository();
+    _authService = widget.authService ?? AuthService();
     _initialize();
   }
 
@@ -66,8 +81,7 @@ class _TrainingsPageState extends State<TrainingsPage>
   }
 
   Future<void> _loadUserRoles() async {
-    final authService = AuthService();
-    final roles = await authService.getUserRoles();
+    final roles = await _authService.getUserRoles();
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
@@ -83,8 +97,7 @@ class _TrainingsPageState extends State<TrainingsPage>
       return;
     }
 
-    final authService = AuthService();
-    final userId = await authService.getUserId();
+    final userId = await _authService.getUserId();
     if (userId == null) {
       return;
     }

@@ -99,6 +99,10 @@ class PermissionsService {
     return roles.contains('ADMIN');
   }
 
+  static bool canRestoreTeam(List<String> roles) {
+    return roles.contains('ADMIN');
+  }
+
   // ENTRENAMIENTOS
   static bool canAccessTrainings(List<String> roles) {
     return roles.contains('PROFESSOR') || roles.contains('ADMIN');

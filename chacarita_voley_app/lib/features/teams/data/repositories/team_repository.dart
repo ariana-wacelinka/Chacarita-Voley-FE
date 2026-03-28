@@ -136,6 +136,14 @@ class TeamRepository implements TeamRepositoryInterface {
     }
   ''';
 
+  static const String _restoreTeamMutation = r'''
+    mutation RestoreTeam($id: ID!) {
+      restoreTeam(id: $id) {
+        id
+      }
+    }
+  ''';
+
   @override
   Future<List<TeamListItem>> getTeamsListItems({
     String? searchQuery,
@@ -399,6 +407,25 @@ class TeamRepository implements TeamRepositoryInterface {
     final deleted = result.data?['deleteTeam'] as bool?;
     if (deleted != true) {
       throw Exception('No se pudo eliminar el equipo');
+    }
+  }
+
+  @override
+  Future<void> restoreTeam(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_restoreTeamMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final restored = result.data?['restoreTeam'] as Map<String, dynamic>?;
+    if (restored == null || restored['id'] == null) {
+      throw Exception('No se pudo restaurar el equipo');
     }
   }
 

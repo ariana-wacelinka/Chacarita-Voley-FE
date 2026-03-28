@@ -18,8 +18,17 @@ enum _MemberMenuAction {
 
 class ViewTeamPage extends StatefulWidget {
   final String teamId;
+  final TeamRepository? repository;
+  final UserRepository? userRepository;
+  final AuthService? authService;
 
-  const ViewTeamPage({super.key, required this.teamId});
+  const ViewTeamPage({
+    super.key,
+    required this.teamId,
+    this.repository,
+    this.userRepository,
+    this.authService,
+  });
 
   @override
   State<ViewTeamPage> createState() => _ViewTeamPageState();
@@ -28,31 +37,35 @@ class ViewTeamPage extends StatefulWidget {
 class _ViewTeamPageState extends State<ViewTeamPage> {
   late final TeamRepository _repository;
   late final UserRepository _userRepository;
+  late final AuthService _authService;
   Team? _team;
   bool _isLoading = true;
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canEditUser = false;
   bool _canDelete = false;
+  bool _canRestore = false;
+  bool _isRestoring = false;
 
   @override
   void initState() {
     super.initState();
-    _repository = TeamRepository();
-    _userRepository = UserRepository();
+    _repository = widget.repository ?? TeamRepository();
+    _userRepository = widget.userRepository ?? UserRepository();
+    _authService = widget.authService ?? AuthService();
     _loadUserRoles();
     _loadTeam();
   }
 
   Future<void> _loadUserRoles() async {
-    final authService = AuthService();
-    final roles = await authService.getUserRoles();
+    final roles = await _authService.getUserRoles();
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canEditUser = PermissionsService.canEditUser(_userRoles);
         _canDelete = PermissionsService.canDeleteTeam(_userRoles);
+        _canRestore = PermissionsService.canRestoreTeam(_userRoles);
       });
     }
   }
@@ -482,6 +495,58 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
     }
   }
 
+  Future<void> _handleRestoreTeam() async {
+    if (_team == null || _isRestoring) return;
+    setState(() => _isRestoring = true);
+
+    try {
+      await _repository.restoreTeam(_team!.id);
+      await _loadTeam();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '${_team!.nombre} fue restaurado exitosamente',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: context.tokens.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al restaurar el equipo: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isRestoring = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -556,6 +621,30 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (_team!.isDeleted)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: context.tokens.redToRosita.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Equipo eliminado',
+                  style: TextStyle(
+                    color: context.tokens.redToRosita,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.only(
@@ -584,6 +673,40 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_team!.isDeleted)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: context.tokens.redToRosita.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: context.tokens.redToRosita.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Symbols.info,
+                              color: context.tokens.redToRosita,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Este equipo fue eliminado. Solo podés verlo y restaurarlo. Todas las acciones están deshabilitadas hasta que lo restaures.',
+                                style: TextStyle(
+                                  color: context.tokens.redToRosita,
+                                  fontSize: 13,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Row(
                       children: [
                         Icon(
@@ -609,7 +732,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.tokens.strokeToNoStroke),
+                        border: Border.all(
+                          color: context.tokens.strokeToNoStroke,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -907,7 +1032,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                               'Ver datos competitivos',
                                             ),
                                           ),
-                                          if (_canEdit)
+                                          if (_canEdit && !_team!.isDeleted)
                                             const PopupMenuItem(
                                               value: _MemberMenuAction
                                                   .editCompetitiveData,
@@ -919,7 +1044,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                             value: _MemberMenuAction.viewUser,
                                             child: Text('Visualizar jugador'),
                                           ),
-                                          if (_canEditUser)
+                                          if (_canEditUser && !_team!.isDeleted)
                                             const PopupMenuItem(
                                               value: _MemberMenuAction.editUser,
                                               child: Text('Modificar usuario'),
@@ -931,7 +1056,7 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                                             value: _MemberMenuAction.viewUser,
                                             child: Text('Ver'),
                                           ),
-                                          if (_canEditUser)
+                                          if (_canEditUser && !_team!.isDeleted)
                                             const PopupMenuItem(
                                               value: _MemberMenuAction.editUser,
                                               child: Text('Modificar'),
@@ -992,7 +1117,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       decoration: BoxDecoration(
                         color: context.tokens.card1,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.tokens.strokeToNoStroke),
+                        border: Border.all(
+                          color: context.tokens.strokeToNoStroke,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -1091,59 +1218,132 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
             const SizedBox(height: 20),
 
             // Botones de edición solo para ADMIN
-            if (_canEdit) ...[
-              // Botón Modificar equipo
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    final result = await context.push(
-                      '/teams/edit/${_team!.id}',
-                    );
-                    if (result == true && mounted) {
-                      _loadTeam();
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: context.tokens.secondaryButton,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+            if (_canEdit)
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _team!.isDeleted
+                          ? null
+                          : () async {
+                              final result = await context.push(
+                                '/teams/edit/${_team!.id}',
+                              );
+                              if (result == true && mounted) {
+                                _loadTeam();
+                              }
+                            },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: context.tokens.secondaryButton,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Symbols.edit, size: 18),
+                      label: const Text(
+                        'Modificar equipo',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                  icon: const Icon(Symbols.edit, size: 18),
-                  label: const Text(
-                    'Modificar equipo',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
+                  const SizedBox(height: 12),
+                  if (_team!.isDeleted)
+                    if (_canRestore)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _isRestoring ? null : _handleRestoreTeam,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: context.tokens.green,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: _isRestoring
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  Symbols.settings_backup_restore,
+                                  size: 18,
+                                ),
+                          label: Text(
+                            _isRestoring
+                                ? 'Restaurando...'
+                                : 'Restaurar equipo',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: context.tokens.redToRosita
+                                .withOpacity(0.2),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: Icon(
+                            Symbols.info,
+                            size: 18,
+                            color: context.tokens.redToRosita,
+                          ),
+                          label: const Text(
+                            'No tenés permisos para restaurar',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                  else if (_canDelete)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _handleDeleteTeam,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(Symbols.delete, size: 18),
+                        label: const Text(
+                          'Eliminar equipo',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              if (_canDelete) ...[
-                const SizedBox(height: 12),
-                // Botón Eliminar equipo
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _handleDeleteTeam,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Symbols.delete, size: 18),
-                    label: const Text(
-                      'Eliminar equipo',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
             const SizedBox(height: 20),
           ],
         ),
