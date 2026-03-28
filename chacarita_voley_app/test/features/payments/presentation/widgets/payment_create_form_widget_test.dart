@@ -24,7 +24,10 @@ class FakeUserRepository extends UserRepository {
   }
 
   @override
-  Future<List<User>> getUsersForPayments({String? searchQuery}) async {
+  Future<List<User>> getUsersForPayments({
+    String? searchQuery,
+    bool includeDeleted = false,
+  }) async {
     queries.add(searchQuery);
     return [
       User(

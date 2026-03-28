@@ -103,10 +103,10 @@ class TeamRepository implements TeamRepositoryInterface {
     return _getAllTeamsQuery(minimal: minimal);
   }
 
-  String _getTeamByIdQuery() =>
+  String _getTeamByIdQuery({bool includeDeleted = false}) =>
       '''
-    query GetTeamById(\$id: ID!) {
-      getTeamById(id: \$id) {
+    query GetTeamById(\$id: ID!, \$isDeleted: Boolean) {
+      getTeamById(id: \$id, isDeleted: \$isDeleted) {
         $_teamFields
       }
     }
@@ -130,7 +130,6 @@ class TeamRepository implements TeamRepositoryInterface {
     }
   ''';
 
-
   static const String _deleteTeamMutation = r'''
     mutation DeleteTeam($id: ID!) {
       deleteTeam(id: $id)
@@ -145,6 +144,7 @@ class TeamRepository implements TeamRepositoryInterface {
     String? playerId,
     int? page,
     int? size,
+    bool includeDeleted = false,
   }) async {
     final variables = <String, dynamic>{
       'page': page ?? 0,
@@ -153,6 +153,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
+      'isDeleted': includeDeleted ? null : false,
     };
 
     final result = await _query(
@@ -185,6 +186,7 @@ class TeamRepository implements TeamRepositoryInterface {
     String? playerId,
     int? page,
     int? size,
+    bool includeDeleted = false,
   }) async {
     final variables = <String, dynamic>{
       'page': page ?? 0,
@@ -193,6 +195,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
+      'isDeleted': includeDeleted ? null : false,
     };
 
     final result = await _query(
@@ -225,6 +228,7 @@ class TeamRepository implements TeamRepositoryInterface {
     String? professorId,
     bool? isCompetitive,
     String? playerId,
+    bool includeDeleted = false,
   }) async {
     final variables = <String, dynamic>{
       'page': 0,
@@ -233,6 +237,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
+      'isDeleted': includeDeleted ? null : false,
     };
 
     final result = await _query(
@@ -254,8 +259,8 @@ class TeamRepository implements TeamRepositoryInterface {
   Future<TeamDetail?> getTeamDetailById(String id) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getTeamByIdQuery()),
-        variables: {'id': id},
+        document: gql(_getTeamByIdQuery(includeDeleted: false)),
+        variables: {'id': id, 'isDeleted': false},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -270,11 +275,11 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
-  Future<Team?> getTeamById(String id) async {
+  Future<Team?> getTeamById(String id, {bool includeDeleted = false}) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getTeamByIdQuery()),
-        variables: {'id': id},
+        document: gql(_getTeamByIdQuery(includeDeleted: includeDeleted)),
+        variables: {'id': id, 'isDeleted': includeDeleted ? null : false},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -339,11 +344,12 @@ class TeamRepository implements TeamRepositoryInterface {
       );
 
       if (updateResult.hasException) {
-        debugPrint('❌ updateTeam post-create exception: ${updateResult.exception}');
+        debugPrint(
+          '❌ updateTeam post-create exception: ${updateResult.exception}',
+        );
         throw Exception(updateResult.exception.toString());
       }
     }
-
   }
 
   @override
@@ -470,23 +476,19 @@ class TeamRepository implements TeamRepositoryInterface {
             (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),
           )
           .toList(),
-      integrantes: (model.players ?? [])
-          .map(
-            (player) {
-              final member = TeamMember(
-                playerId: player.id,
-                personId: player.person?.id,
-                dni: player.person?.dni ?? '',
-                nombre: player.person?.name ?? '',
-                apellido: player.person?.surname ?? '',
-                numeroAfiliado: player.leagueId?.toString(),
-                numeroCamiseta: player.jerseyNumber?.toString(),
-              );
-              
-              return member;
-            },
-          )
-          .toList(),
+      integrantes: (model.players ?? []).map((player) {
+        final member = TeamMember(
+          playerId: player.id,
+          personId: player.person?.id,
+          dni: player.person?.dni ?? '',
+          nombre: player.person?.name ?? '',
+          apellido: player.person?.surname ?? '',
+          numeroAfiliado: player.leagueId?.toString(),
+          numeroCamiseta: player.jerseyNumber?.toString(),
+        );
+
+        return member;
+      }).toList(),
       entrenamientos: (model.trainings ?? [])
           .map(
             (training) => Training(

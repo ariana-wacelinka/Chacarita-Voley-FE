@@ -26,6 +26,7 @@ class FakeUserRepository implements UserRepositoryInterface {
     String? searchQuery,
     String? statusCurrentDue,
     bool? playerIsCompetitive,
+    bool includeDeleted = false,
     int? page,
     int? size,
     bool forTeamSelection = false,
@@ -36,6 +37,7 @@ class FakeUserRepository implements UserRepositoryInterface {
     String? role,
     String? searchQuery,
     String? statusCurrentDue,
+    bool includeDeleted = false,
   }) async => 0;
 
   @override
@@ -43,6 +45,9 @@ class FakeUserRepository implements UserRepositoryInterface {
 
   @override
   Future<User> updateUser(User user) async => user;
+
+  @override
+  Future<void> restoreUser(String id) async => Future.value();
 
   @override
   Future<AssistancePage> getAllAssistance({
@@ -56,6 +61,17 @@ class FakeUserRepository implements UserRepositoryInterface {
   @override
   Future<AssistanceStats> getAssistanceStatsByPlayerId(String playerId) async =>
       throw UnimplementedError();
+
+  @override
+  Future<List<User>> getUsersForNotifications({
+    bool includeDeleted = false,
+  }) async => [];
+
+  @override
+  Future<List<User>> getUsersForPayments({
+    String? searchQuery,
+    bool includeDeleted = false,
+  }) async => [];
 }
 
 void main() {

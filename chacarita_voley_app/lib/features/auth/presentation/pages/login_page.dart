@@ -312,11 +312,10 @@ class _LoginPageState extends State<LoginPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Row(
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              Widget buildRememberMeRow() {
+                                return Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SizedBox(
@@ -338,17 +337,21 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 6),
-                                    Text(
-                                      'Recordarme',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: textColor,
+                                    Flexible(
+                                      child: Text(
+                                        'Recordarme',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: textColor,
+                                        ),
+                                        softWrap: true,
                                       ),
                                     ),
                                   ],
-                                ),
-                              ),
-                              TextButton(
+                                );
+                              }
+
+                              final forgotPasswordButton = TextButton(
                                 onPressed: () =>
                                     context.push('/forgot-password'),
                                 style: TextButton.styleFrom(
@@ -370,8 +373,28 @@ class _LoginPageState extends State<LoginPage> {
                                     ).colorScheme.primary,
                                   ),
                                 ),
-                              ),
-                            ],
+                              );
+
+                              if (constraints.maxWidth < 260) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    buildRememberMeRow(),
+                                    const SizedBox(height: 12),
+                                    forgotPasswordButton,
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Flexible(child: buildRememberMeRow()),
+                                  forgotPasswordButton,
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 24),
                           SizedBox(

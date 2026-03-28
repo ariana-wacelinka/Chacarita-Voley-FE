@@ -6,12 +6,19 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:chacarita_voley_app/app/app.dart';
+import 'package:chacarita_voley_app/app/theme/theme_provider.dart';
 
 void main() {
   testWidgets('App should load without errors', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: const MyApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Verify that the app loads successfully by checking for any common text
