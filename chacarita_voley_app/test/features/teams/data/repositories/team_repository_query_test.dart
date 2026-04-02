@@ -8,6 +8,15 @@ void main() {
       final query = repository.buildGetAllTeamsQuery();
 
       expect(query, contains('professorId: \$professorId'));
+      expect(query, contains('isDeleted: \$isDeleted'));
+      expect(query, contains('isDeleted'));
+    });
+
+    test('includes isDeleted variable when show deleted is enabled', () {
+      final repository = TeamRepository();
+      final query = repository.buildGetAllTeamsQuery();
+
+      expect(query, contains('\$isDeleted: Boolean'));
     });
   });
 }

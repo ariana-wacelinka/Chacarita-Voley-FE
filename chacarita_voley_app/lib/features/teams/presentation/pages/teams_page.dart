@@ -9,10 +9,19 @@ import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
 import '../../../users/data/repositories/user_repository.dart';
 
-enum _TeamMenuAction { view, edit, delete }
+enum _TeamMenuAction { view, edit, delete, restore }
 
 class TeamsPage extends StatefulWidget {
-  const TeamsPage({super.key});
+  final TeamRepository? repository;
+  final UserRepository? userRepository;
+  final AuthService? authService;
+
+  const TeamsPage({
+    super.key,
+    this.repository,
+    this.userRepository,
+    this.authService,
+  });
 
   @override
   State<TeamsPage> createState() => _TeamsPageState();
@@ -20,8 +29,9 @@ class TeamsPage extends StatefulWidget {
 
 class _TeamsPageState extends State<TeamsPage> {
   final TextEditingController _searchController = TextEditingController();
-  final _repository = TeamRepository();
-  final _userRepository = UserRepository();
+  late final TeamRepository _repository;
+  late final UserRepository _userRepository;
+  late final AuthService _authService;
 
   Future<List<TeamListItem>>? _teamsFuture;
   Future<int>? _totalElementsFuture;
@@ -36,13 +46,19 @@ class _TeamsPageState extends State<TeamsPage> {
   List<String> _userRoles = [];
   bool _canEdit = false;
   bool _canDelete = false;
+  bool _canRestore = false;
   bool _canCreate = false;
   bool _isProfessor = false;
   String? _professorId;
+  bool _showDeleted = false;
+  String? _restoringTeamId;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? TeamRepository();
+    _userRepository = widget.userRepository ?? UserRepository();
+    _authService = widget.authService ?? AuthService();
     _initialize();
   }
 
@@ -53,13 +69,13 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   Future<void> _loadUserRoles() async {
-    final authService = AuthService();
-    final roles = await authService.getUserRoles();
+    final roles = await _authService.getUserRoles();
     if (mounted) {
       setState(() {
         _userRoles = roles ?? [];
         _canEdit = PermissionsService.canEditTeam(_userRoles);
         _canDelete = PermissionsService.canDeleteTeam(_userRoles);
+        _canRestore = PermissionsService.canRestoreTeam(_userRoles);
         _canCreate = PermissionsService.canCreateTeam(_userRoles);
         _isProfessor =
             _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
@@ -72,8 +88,7 @@ class _TeamsPageState extends State<TeamsPage> {
       return;
     }
 
-    final authService = AuthService();
-    final userId = await authService.getUserId();
+    final userId = await _authService.getUserId();
     if (userId == null) {
       return;
     }
@@ -102,14 +117,79 @@ class _TeamsPageState extends State<TeamsPage> {
       _teamsFuture = _repository.getTeamsListItems(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
+        includeDeleted: _showDeleted,
         page: targetPage,
         size: _teamsPerPage,
       );
       _totalElementsFuture = _repository.getTotalTeams(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
+        includeDeleted: _showDeleted,
       );
     });
+  }
+
+  Future<void> _handleRestoreTeam(TeamListItem team) async {
+    if (!_canRestore || _restoringTeamId != null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.tokens.card1,
+        title: Text(
+          'Restaurar equipo',
+          style: TextStyle(color: context.tokens.text),
+        ),
+        content: Text(
+          'Vas a restaurar el equipo "${team.nombre}". ¿Querés continuar?',
+          style: TextStyle(color: context.tokens.placeholder),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: context.tokens.placeholder),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.tokens.green,
+            ),
+            child: const Text('Restaurar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _restoringTeamId = team.id);
+    try {
+      await _repository.restoreTeam(team.id);
+      _loadTeams(page: 0);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${team.nombre} fue restaurado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al restaurar el equipo: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _restoringTeamId = null);
+      }
+    }
   }
 
   @override
@@ -283,6 +363,44 @@ class _TeamsPageState extends State<TeamsPage> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.tokens.card1,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: context.tokens.stroke),
+                ),
+                child: SwitchListTile.adaptive(
+                  value: _showDeleted,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  title: Text(
+                    'Mostrar eliminados',
+                    style: TextStyle(
+                      color: context.tokens.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _showDeleted
+                        ? 'Viendo solo equipos eliminados'
+                        : 'Ocultando equipos eliminados',
+                    style: TextStyle(
+                      color: context.tokens.placeholder,
+                      fontSize: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _showDeleted = value;
+                      _currentPage = 0;
+                    });
+                    _loadTeams(page: 0);
+                  },
+                ),
+              ),
+            ),
             Expanded(
               child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,
@@ -334,7 +452,9 @@ class _TeamsPageState extends State<TeamsPage> {
                           const SizedBox(height: 16),
                           Text(
                             _searchQuery.isEmpty
-                                ? 'No hay equipos'
+                                ? (_showDeleted
+                                      ? 'No hay equipos eliminados'
+                                      : 'No hay equipos')
                                 : 'No se encontraron equipos',
                             style: TextStyle(
                               color: context.tokens.placeholder,
@@ -386,9 +506,52 @@ class _TeamsPageState extends State<TeamsPage> {
                                     DataColumn(label: SizedBox(width: 0)),
                                   ],
                                   rows: teams.map((team) {
+                                    final isDeleted = team.isDeleted;
+                                    final isRestoring =
+                                        _restoringTeamId == team.id;
+
                                     return DataRow(
                                       cells: [
-                                        DataCell(Text(team.nombre)),
+                                        DataCell(
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(team.nombre),
+                                              ),
+                                              if (isDeleted) ...[
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: context
+                                                        .tokens
+                                                        .redToRosita
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    'Eliminado',
+                                                    style: TextStyle(
+                                                      color: context
+                                                          .tokens
+                                                          .redToRosita,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
                                         DataCell(Text(team.entrenador)),
                                         DataCell(
                                           Row(
@@ -439,8 +602,8 @@ class _TeamsPageState extends State<TeamsPage> {
                                                       () async {
                                                         final updated =
                                                             await context.push(
-                                                          '/teams/edit/${team.id}',
-                                                        );
+                                                              '/teams/edit/${team.id}',
+                                                            );
                                                         if (updated == true &&
                                                             mounted) {
                                                           _loadTeams();
@@ -452,6 +615,10 @@ class _TeamsPageState extends State<TeamsPage> {
                                                         team.id,
                                                         team.nombre,
                                                       );
+                                                      break;
+                                                    case _TeamMenuAction
+                                                        .restore:
+                                                      _handleRestoreTeam(team);
                                                       break;
                                                   }
                                                 },
@@ -481,7 +648,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                                       ],
                                                     ),
                                                   ),
-                                                  if (_canEdit)
+                                                  if (_canEdit && !isDeleted)
                                                     PopupMenuItem(
                                                       value:
                                                           _TeamMenuAction.edit,
@@ -508,7 +675,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                                         ],
                                                       ),
                                                     ),
-                                                  if (_canDelete)
+                                                  if (_canDelete && !isDeleted)
                                                     PopupMenuItem(
                                                       value: _TeamMenuAction
                                                           .delete,
@@ -530,6 +697,37 @@ class _TeamsPageState extends State<TeamsPage> {
                                                               color: context
                                                                   .tokens
                                                                   .redToRosita,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  if (isDeleted && _canRestore)
+                                                    PopupMenuItem(
+                                                      value: _TeamMenuAction
+                                                          .restore,
+                                                      enabled: !isRestoring,
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Symbols
+                                                                .settings_backup_restore,
+                                                            size: 18,
+                                                            color: context
+                                                                .tokens
+                                                                .green,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 8,
+                                                          ),
+                                                          Text(
+                                                            isRestoring
+                                                                ? 'Restaurando...'
+                                                                : 'Restaurar',
+                                                            style: TextStyle(
+                                                              color: context
+                                                                  .tokens
+                                                                  .green,
                                                             ),
                                                           ),
                                                         ],
@@ -565,8 +763,7 @@ class _TeamsPageState extends State<TeamsPage> {
                                 ? 0
                                 : _currentPage * _teamsPerPage + 1;
                             final end =
-                                (_currentPage * _teamsPerPage) +
-                                teams.length;
+                                (_currentPage * _teamsPerPage) + teams.length;
                             final canNext = end < total;
 
                             return Row(

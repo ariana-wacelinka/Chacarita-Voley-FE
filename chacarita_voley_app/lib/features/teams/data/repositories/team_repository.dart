@@ -34,6 +34,7 @@ class TeamRepository implements TeamRepositoryInterface {
     name
     abbreviation
     isCompetitive
+    isDeleted
     players {
       id
     }
@@ -83,8 +84,8 @@ class TeamRepository implements TeamRepositoryInterface {
 
   String _getAllTeamsQuery({bool minimal = true}) =>
       '''
-    query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String, \$professorId: ID, \$isCompetitive: Boolean, \$playerId: ID) {
-      getAllTeams(page: \$page, size: \$size, filters: {professorId: \$professorId, name: \$name, isCompetitive: \$isCompetitive, playerId: \$playerId}) {
+    query GetAllTeams(\$page: Int!, \$size: Int!, \$name: String, \$professorId: ID, \$isCompetitive: Boolean, \$playerId: ID, \$isDeleted: Boolean) {
+      getAllTeams(page: \$page, size: \$size, filters: {professorId: \$professorId, name: \$name, isCompetitive: \$isCompetitive, playerId: \$playerId, isDeleted: \$isDeleted}) {
         content {
           ${minimal ? _teamFieldsMinimal : _teamFields}
         }
@@ -161,7 +162,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
-      'isDeleted': includeDeleted ? null : false,
+      'isDeleted': includeDeleted ? true : false,
     };
 
     final result = await _query(
@@ -203,7 +204,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
-      'isDeleted': includeDeleted ? null : false,
+      'isDeleted': includeDeleted ? true : false,
     };
 
     final result = await _query(
@@ -245,7 +246,7 @@ class TeamRepository implements TeamRepositoryInterface {
       'professorId': professorId,
       'isCompetitive': isCompetitive,
       'playerId': playerId,
-      'isDeleted': includeDeleted ? null : false,
+      'isDeleted': includeDeleted ? true : false,
     };
 
     final result = await _query(
@@ -482,6 +483,7 @@ class TeamRepository implements TeamRepositoryInterface {
           )
           .where((name) => name.isNotEmpty)
           .toList(),
+      isDeleted: model.isDeleted,
     );
   }
 

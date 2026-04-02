@@ -420,7 +420,10 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
 
   Future<void> _loadTeam() async {
     try {
-      final team = await _repository.getTeamById(widget.teamId);
+      final team = await _repository.getTeamById(
+        widget.teamId,
+        includeDeleted: true,
+      );
       if (mounted) {
         setState(() {
           _team = team;
