@@ -22,6 +22,14 @@ void main() {
       expect(query, contains('trainingType'));
       expect(query, contains('startDate'));
       expect(query, contains('endDate'));
+      expect(query, contains('isDeleted'));
+    });
+
+    test('includes isDeleted filter when show deleted is enabled', () {
+      final repository = TrainingRepository();
+      final query = repository.buildGetAllSessionsQuery(includeDeleted: true);
+
+      expect(query, contains('isDeleted: true'));
     });
   });
 

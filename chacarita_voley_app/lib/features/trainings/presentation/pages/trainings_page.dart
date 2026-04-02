@@ -13,6 +13,7 @@ enum _TrainingMenuAction {
   editSession,
   editTraining,
   delete,
+  restore,
   cancel,
   reactivate,
 }
@@ -50,6 +51,8 @@ class _TrainingsPageState extends State<TrainingsPage>
   bool _isAdmin = false;
   bool _isProfessor = false;
   String? _professorId;
+  bool _showDeleted = false;
+  String? _restoringTrainingId;
 
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -269,7 +272,8 @@ class _TrainingsPageState extends State<TrainingsPage>
         _endDateController.text.isNotEmpty ||
         _startTimeController.text.isNotEmpty ||
         _endTimeController.text.isNotEmpty ||
-        _selectedStatus != null;
+        _selectedStatus != null ||
+        _showDeleted;
   }
 
   Future<void> _loadTrainings() async {
@@ -322,6 +326,7 @@ class _TrainingsPageState extends State<TrainingsPage>
         status: _selectedStatus,
         professorId: _isProfessor ? _professorId : null,
         teamId: widget.teamId,
+        includeDeleted: _showDeleted,
         page: _currentPage,
         size: _itemsPerPage,
       );
@@ -338,6 +343,68 @@ class _TrainingsPageState extends State<TrainingsPage>
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleRestoreTraining(Training training) async {
+    if (!_isAdmin || _restoringTrainingId != null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.tokens.card1,
+        title: Text(
+          'Restaurar entrenamiento',
+          style: TextStyle(color: context.tokens.text),
+        ),
+        content: Text(
+          'Vas a restaurar este entrenamiento. ¿Querés continuar?',
+          style: TextStyle(color: context.tokens.placeholder),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: context.tokens.placeholder),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.tokens.green,
+            ),
+            child: const Text('Restaurar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _restoringTrainingId = training.id);
+    try {
+      await _repository.restoreTraining(training.trainingId ?? training.id);
+      await _loadTrainings();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Entrenamiento restaurado exitosamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al restaurar el entrenamiento: $e'),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _restoringTrainingId = null);
       }
     }
   }
@@ -550,6 +617,7 @@ class _TrainingsPageState extends State<TrainingsPage>
                       _startTimeController.clear();
                       _endTimeController.clear();
                       _selectedStatus = null;
+                      _showDeleted = false;
                       _currentPage = 0;
                     });
                     _loadTrainings();
@@ -793,6 +861,42 @@ class _TrainingsPageState extends State<TrainingsPage>
               _buildStatusChip(context, 'Cancelados', TrainingStatus.cancelado),
             ],
           ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: context.tokens.card1,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: context.tokens.stroke),
+            ),
+            child: SwitchListTile.adaptive(
+              value: _showDeleted,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              title: Text(
+                'Mostrar eliminados',
+                style: TextStyle(
+                  color: context.tokens.text,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                _showDeleted
+                    ? 'Viendo solo entrenamientos eliminados'
+                    : 'Ocultando entrenamientos eliminados',
+                style: TextStyle(
+                  color: context.tokens.placeholder,
+                  fontSize: 12,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _showDeleted = value;
+                  _currentPage = 0;
+                });
+                _loadTrainings();
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -846,8 +950,12 @@ class _TrainingsPageState extends State<TrainingsPage>
           const SizedBox(height: 16),
           Text(
             widget.teamName != null
-                ? 'No hay entrenamientos para ${widget.teamName}'
-                : 'No hay entrenamientos',
+                ? (_showDeleted
+                      ? 'No hay entrenamientos eliminados para ${widget.teamName}'
+                      : 'No hay entrenamientos para ${widget.teamName}')
+                : (_showDeleted
+                      ? 'No hay entrenamientos eliminados'
+                      : 'No hay entrenamientos'),
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 18,
@@ -856,8 +964,11 @@ class _TrainingsPageState extends State<TrainingsPage>
           ),
           const SizedBox(height: 8),
           Text(
-            'Agregá un entrenamiento para comenzar',
+            _showDeleted
+                ? 'Cuando elimines entrenamientos, van a aparecer acá para restaurarlos'
+                : 'Agregá un entrenamiento para comenzar',
             style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -958,12 +1069,17 @@ class _TrainingsPageState extends State<TrainingsPage>
   }
 
   Widget _buildTrainingCard(BuildContext context, Training training) {
+    final isDeleted = training.isDeleted;
+    final isRestoring = _restoringTrainingId == training.id;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: context.tokens.card1,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tokens.stroke),
+        border: Border.all(
+          color: isDeleted ? context.tokens.redToRosita : context.tokens.stroke,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1066,6 +1182,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                               // No necesitamos hacer nada aquí
                             }
                             break;
+                          case _TrainingMenuAction.restore:
+                            await _handleRestoreTraining(training);
+                            break;
                           case _TrainingMenuAction.cancel:
                             final confirmed = await _showCancelDialog(
                               context,
@@ -1099,11 +1218,11 @@ class _TrainingsPageState extends State<TrainingsPage>
                         return [
                           PopupMenuItem(
                             value: _TrainingMenuAction.view,
-                            enabled: !isCancelled,
+                            enabled: !isCancelled && !isDeleted,
                             child: Text(
                               'Ver',
                               style: TextStyle(
-                                color: isCancelled
+                                color: (isCancelled || isDeleted)
                                     ? context.tokens.placeholder
                                     : context.tokens.text,
                               ),
@@ -1111,11 +1230,11 @@ class _TrainingsPageState extends State<TrainingsPage>
                           ),
                           PopupMenuItem(
                             value: _TrainingMenuAction.editSession,
-                            enabled: !isCancelled && !isCompleted,
+                            enabled: !isCancelled && !isCompleted && !isDeleted,
                             child: Text(
                               'Modificar este entrenamiento',
                               style: TextStyle(
-                                color: (isCancelled || isCompleted)
+                                color: (isCancelled || isCompleted || isDeleted)
                                     ? context.tokens.placeholder
                                     : context.tokens.text,
                               ),
@@ -1125,20 +1244,24 @@ class _TrainingsPageState extends State<TrainingsPage>
                             PopupMenuItem(
                               value: _TrainingMenuAction.editTraining,
                               enabled:
-                                  !isCancelled && !isCompleted && hasTraining,
+                                  !isCancelled &&
+                                  !isCompleted &&
+                                  !isDeleted &&
+                                  hasTraining,
                               child: Text(
                                 'Modificar este y posteriores',
                                 style: TextStyle(
                                   color:
                                       (isCancelled ||
                                           isCompleted ||
+                                          isDeleted ||
                                           !hasTraining)
                                       ? context.tokens.placeholder
                                       : context.tokens.text,
                                 ),
                               ),
                             ),
-                          if (isFuture && !isCancelled)
+                          if (isFuture && !isCancelled && !isDeleted)
                             PopupMenuItem(
                               value: _TrainingMenuAction.cancel,
                               child: Text(
@@ -1146,6 +1269,15 @@ class _TrainingsPageState extends State<TrainingsPage>
                                 style: TextStyle(
                                   color: context.tokens.redToRosita,
                                 ),
+                              ),
+                            ),
+                          if (isDeleted && _isAdmin)
+                            PopupMenuItem(
+                              value: _TrainingMenuAction.restore,
+                              enabled: !isRestoring,
+                              child: Text(
+                                isRestoring ? 'Restaurando...' : 'Restaurar',
+                                style: TextStyle(color: context.tokens.green),
                               ),
                             ),
                           if (isCancelled)
@@ -1158,10 +1290,13 @@ class _TrainingsPageState extends State<TrainingsPage>
                             ),
                           PopupMenuItem(
                             value: _TrainingMenuAction.delete,
+                            enabled: !isDeleted,
                             child: Text(
                               'Eliminar',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
+                                color: isDeleted
+                                    ? context.tokens.placeholder
+                                    : Theme.of(context).colorScheme.primary,
                               ),
                             ),
                           ),
@@ -1194,6 +1329,29 @@ class _TrainingsPageState extends State<TrainingsPage>
                               fontStyle: FontStyle.italic,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        if (isDeleted) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.tokens.redToRosita.withOpacity(
+                                0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Eliminado',
+                              style: TextStyle(
+                                color: context.tokens.redToRosita,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
@@ -1256,7 +1414,8 @@ class _TrainingsPageState extends State<TrainingsPage>
                 ),
                 const SizedBox(height: 16),
                 InkWell(
-                  onTap: training.status != TrainingStatus.cancelado
+                  onTap:
+                      training.status != TrainingStatus.cancelado && !isDeleted
                       ? () async {
                           final result = await context.push(
                             '/trainings/${training.id}/attendance',
@@ -1273,7 +1432,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: training.status != TrainingStatus.cancelado
+                      color:
+                          training.status != TrainingStatus.cancelado &&
+                              !isDeleted
                           ? context.tokens.card1
                           : context.tokens.card1.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(16),
@@ -1284,7 +1445,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                         Icon(
                           Symbols.check_circle,
                           size: 20,
-                          color: training.status != TrainingStatus.cancelado
+                          color:
+                              training.status != TrainingStatus.cancelado &&
+                                  !isDeleted
                               ? context.tokens.text
                               : context.tokens.placeholder,
                         ),
@@ -1293,7 +1456,9 @@ class _TrainingsPageState extends State<TrainingsPage>
                           child: Text(
                             'Pasar asistencia',
                             style: TextStyle(
-                              color: training.status != TrainingStatus.cancelado
+                              color:
+                                  training.status != TrainingStatus.cancelado &&
+                                      !isDeleted
                                   ? context.tokens.text
                                   : context.tokens.placeholder,
                               fontSize: 16,

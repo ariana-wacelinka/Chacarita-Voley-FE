@@ -145,6 +145,14 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   ''';
 
+  static const String _restoreTrainingMutation = r'''
+    mutation RestoreTraining($id: ID!) {
+      restoreTraining(id: $id) {
+        id
+      }
+    }
+  ''';
+
   static const String _deleteSessionMutation = r'''
     mutation DeleteSession($id: ID!) {
       deleteSession(id: $id)
@@ -176,10 +184,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? professorId,
     String? teamId,
     String? playerId,
+    bool includeDeleted = false,
   }) =>
       '''
     query GetAllSessions(\$page: Int!, \$size: Int!) {
-      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, professorId: "${professorId ?? ''}", teamId: "${teamId ?? ''}", playerId: "${playerId ?? ''}"}) {
+      getAllSessions(page: \$page, size: \$size, filters: {dateFrom: "${dateFrom ?? ''}", dateTo: "${dateTo ?? ''}", startTimeFrom: "${startTimeFrom ?? ''}", startTimeTo: "${startTimeTo ?? ''}", statuses: ${statusValue ?? 'null'}, professorId: "${professorId ?? ''}", teamId: "${teamId ?? ''}", playerId: "${playerId ?? ''}", isDeleted: ${includeDeleted ? 'true' : 'false'}}) {
         totalPages
         totalElements
         pageSize
@@ -194,6 +203,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
           location
           trainingType
           status
+          isDeleted
           countOfPlayers
           countOfAssisted
           team {
@@ -239,6 +249,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? professorId,
     String? teamId,
     String? playerId,
+    bool includeDeleted = false,
   }) {
     return _getAllSessionsQuery(
       dateFrom: dateFrom,
@@ -249,6 +260,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       professorId: professorId,
       teamId: teamId,
       playerId: playerId,
+      includeDeleted: includeDeleted,
     );
   }
 
@@ -340,6 +352,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
     String? professorId,
     String? teamId,
     String? playerId,
+    bool includeDeleted = false,
     int page = 0,
     int size = 10,
   }) async {
@@ -355,6 +368,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
             professorId: professorId,
             teamId: teamId,
             playerId: playerId,
+            includeDeleted: includeDeleted,
           ),
         ),
         variables: {'page': page, 'size': size},
@@ -655,6 +669,25 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
   }
 
+  @override
+  Future<void> restoreTraining(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_restoreTrainingMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final restored = result.data?['restoreTraining'] as Map<String, dynamic>?;
+    if (restored == null || restored['id'] == null) {
+      throw Exception('No se pudo restaurar el entrenamiento');
+    }
+  }
+
   Future<void> deleteSession(String id) async {
     final result = await _mutate(
       MutationOptions(
@@ -835,6 +868,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       hasTraining: trainingData != null,
       countOfPlayers: data['countOfPlayers'] as int?,
       countOfAssisted: data['countOfAssisted'] as int?,
+      isDeleted: data['isDeleted'] as bool? ?? false,
     );
   }
 
@@ -972,6 +1006,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
       hasTraining: trainingData != null,
       countOfPlayers: effectiveCountOfPlayers,
       countOfAssisted: effectiveCountOfAssisted,
+      isDeleted: data['isDeleted'] as bool? ?? false,
     );
   }
 
@@ -1024,6 +1059,7 @@ class TrainingRepository implements TrainingRepositoryInterface {
         data['status'] as String? ?? 'UPCOMING',
       ),
       attendances: attendances,
+      isDeleted: data['isDeleted'] as bool? ?? false,
     );
   }
 }

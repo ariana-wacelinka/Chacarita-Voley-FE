@@ -18,6 +18,8 @@ abstract class TrainingRepositoryInterface {
 
   Future<void> deleteTraining(String id);
 
+  Future<void> restoreTraining(String id);
+
   Future<Training> updateAttendance(
     String trainingId,
     List<PlayerAttendance> attendances,
