@@ -196,6 +196,53 @@ class _UsersPageState extends State<UsersPage> {
     );
   }
 
+  void _showRestoreDialog(User user) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Restaurar usuario'),
+        content: Text(
+          'Se va a restaurar a ${user.nombreCompleto}. Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await _repository.restoreUser(user.id!);
+                await Future.delayed(const Duration(milliseconds: 400));
+                _loadUsers();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${user.nombreCompleto} fue restaurado exitosamente',
+                    ),
+                    backgroundColor: context.tokens.green,
+                  ),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'No se pudo restaurar el usuario: ${BackendErrorMapper.fromException(e)}',
+                    ),
+                    backgroundColor: context.tokens.redToRosita,
+                  ),
+                );
+              }
+            },
+            child: const Text('Restaurar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -614,6 +661,9 @@ class _UsersPageState extends State<UsersPage> {
                                     DataColumn(label: SizedBox(width: 32)),
                                   ],
                                   rows: users.map((user) {
+                                    final isDeleted =
+                                        (_isAdmin && _showOnlyDeleted) ||
+                                        user.isDeleted;
                                     return DataRow(
                                       cells: [
                                         DataCell(Text(user.dni)),
@@ -672,7 +722,8 @@ class _UsersPageState extends State<UsersPage> {
                                                   ],
                                                 ),
                                               ),
-                                              if (_canEdit &&
+                                              if (!isDeleted &&
+                                                  _canEdit &&
                                                   !(_userRoles.contains(
                                                         'PROFESSOR',
                                                       ) &&
@@ -712,7 +763,7 @@ class _UsersPageState extends State<UsersPage> {
                                                     ],
                                                   ),
                                                 ),
-                                              if (_canDelete)
+                                              if (!isDeleted && _canDelete)
                                                 PopupMenuItem(
                                                   onTap: () {
                                                     Future.microtask(() {
@@ -735,6 +786,35 @@ class _UsersPageState extends State<UsersPage> {
                                                           color: context
                                                               .tokens
                                                               .redToRosita,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              if (isDeleted && _isAdmin)
+                                                PopupMenuItem(
+                                                  onTap: () {
+                                                    Future.microtask(() {
+                                                      _showRestoreDialog(user);
+                                                    });
+                                                  },
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Symbols
+                                                            .settings_backup_restore,
+                                                        size: 18,
+                                                        color: context
+                                                            .tokens
+                                                            .green,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Restaurar',
+                                                        style: TextStyle(
+                                                          color: context
+                                                              .tokens
+                                                              .green,
                                                         ),
                                                       ),
                                                     ],

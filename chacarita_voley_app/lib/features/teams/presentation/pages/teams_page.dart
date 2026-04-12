@@ -578,7 +578,9 @@ class _TeamsPageState extends State<TeamsPage> {
                                     DataColumn(label: SizedBox(width: 0)),
                                   ],
                                   rows: teams.map((team) {
-                                    final isDeleted = team.isDeleted;
+                                    final isDeleted =
+                                        (_isAdmin && _showOnlyDeleted) ||
+                                        team.isDeleted;
                                     final isRestoring =
                                         _restoringTeamId == team.id;
 

@@ -1120,7 +1120,7 @@ class _TrainingsPageState extends State<TrainingsPage>
   }
 
   Widget _buildTrainingCard(BuildContext context, Training training) {
-    final isDeleted = training.isDeleted;
+    final isDeleted = (_isAdmin && _showOnlyDeleted) || training.isDeleted;
     final isRestoring = _restoringTrainingId == training.id;
 
     return Container(
