@@ -1560,7 +1560,8 @@ class _TrainingsPageState extends State<TrainingsPage>
     return showDialog<bool>(
       context: parentContext,
       builder: (dialogContext) {
-        final confirmController = TextEditingController();
+        final passwordController = TextEditingController();
+        var obscurePassword = true;
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
@@ -1577,12 +1578,12 @@ class _TrainingsPageState extends State<TrainingsPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Estás por eliminar este entrenamiento y todos los posteriores. Esta acción no se puede deshacer.',
+                  'Estas por eliminar este entrenamiento y todos los posteriores. Esta accion no se puede deshacer.',
                   style: TextStyle(color: parentContext.tokens.text),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Escribí "ELIMINAR" para confirmar:',
+                  'Ingresa tu contrasena para confirmar:',
                   style: TextStyle(
                     color: parentContext.tokens.text,
                     fontWeight: FontWeight.w600,
@@ -1590,11 +1591,26 @@ class _TrainingsPageState extends State<TrainingsPage>
                 ),
                 const SizedBox(height: 8),
                 TextField(
-                  controller: confirmController,
+                  controller: passwordController,
+                  obscureText: obscurePassword,
+                  onChanged: (_) => setDialogState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'ELIMINAR',
+                    hintText: 'Contrasena',
                     hintStyle: TextStyle(
                       color: parentContext.tokens.placeholder,
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: parentContext.tokens.placeholder,
+                      ),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -1614,12 +1630,11 @@ class _TrainingsPageState extends State<TrainingsPage>
               ),
               TextButton(
                 onPressed: () {
-                  if (confirmController.text.trim().toUpperCase() !=
-                      'ELIMINAR') {
+                  if (passwordController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
-                          'Debés escribir "ELIMINAR" para confirmar',
+                          'Ingresa tu contrasena para confirmar.',
                         ),
                         backgroundColor: parentContext.tokens.redToRosita,
                       ),

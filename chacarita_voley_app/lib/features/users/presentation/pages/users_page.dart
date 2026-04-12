@@ -38,6 +38,9 @@ class _UsersPageState extends State<UsersPage> {
   bool _canCreate = false;
   bool _canEdit = false;
   bool _canDelete = false;
+  bool _showOnlyDeleted = false;
+
+  bool get _isAdmin => _userRoles.contains('ADMIN');
 
   @override
   void initState() {
@@ -72,6 +75,7 @@ class _UsersPageState extends State<UsersPage> {
             searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
             role: _selectedRole,
             statusCurrentDue: _selectedDueState,
+            includeDeleted: _isAdmin && _showOnlyDeleted,
             page: _currentPage,
             size: _usersPerPage,
           )
@@ -82,6 +86,7 @@ class _UsersPageState extends State<UsersPage> {
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         role: _selectedRole,
         statusCurrentDue: _selectedDueState,
+        includeDeleted: _isAdmin && _showOnlyDeleted,
       );
     });
   }
@@ -118,6 +123,7 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       _selectedRole = null;
       _selectedDueState = null;
+      _showOnlyDeleted = false;
       _currentPage = 0;
     });
     _loadUsers();
@@ -258,7 +264,9 @@ class _UsersPageState extends State<UsersPage> {
                         Symbols.tune,
                         color: Colors.white,
                         fill:
-                            (_selectedRole != null || _selectedDueState != null)
+                            (_selectedRole != null ||
+                                _selectedDueState != null ||
+                                (_isAdmin && _showOnlyDeleted))
                             ? 1
                             : 0,
                       ),
@@ -426,9 +434,50 @@ class _UsersPageState extends State<UsersPage> {
                             ),
                           ),
                         ),
+                        if (_isAdmin) ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _showOnlyDeleted,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _showOnlyDeleted = value ?? false;
+                                    _currentPage = 0;
+                                  });
+                                  _loadUsers();
+                                },
+                                activeColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _showOnlyDeleted = !_showOnlyDeleted;
+                                      _currentPage = 0;
+                                    });
+                                    _loadUsers();
+                                  },
+                                  child: Text(
+                                    'Solo usuarios dados de baja',
+                                    style: TextStyle(
+                                      color: context.tokens.text,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
-                    if (_selectedRole != null || _selectedDueState != null)
+                    if (_selectedRole != null ||
+                        _selectedDueState != null ||
+                        (_isAdmin && _showOnlyDeleted))
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Align(
@@ -639,28 +688,7 @@ class _UsersPageState extends State<UsersPage> {
                                                           );
                                                       if (updated == true &&
                                                           mounted) {
-                                                        setState(() {
-                                                          _usersFuture =
-                                                              _repository.getUsers(
-                                                                searchQuery:
-                                                                    _searchQuery
-                                                                        .isEmpty
-                                                                    ? null
-                                                                    : _searchQuery,
-                                                                page:
-                                                                    _currentPage,
-                                                                size:
-                                                                    _usersPerPage,
-                                                              );
-                                                          _totalElementsFuture =
-                                                              _repository.getTotalUsers(
-                                                                searchQuery:
-                                                                    _searchQuery
-                                                                        .isEmpty
-                                                                    ? null
-                                                                    : _searchQuery,
-                                                              );
-                                                        });
+                                                        _loadUsers();
                                                       }
                                                     });
                                                   },
