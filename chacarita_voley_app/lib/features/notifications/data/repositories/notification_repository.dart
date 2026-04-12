@@ -99,7 +99,7 @@ class NotificationRepository {
       'page': page,
       'size': size,
       'search': search ?? '',
-      'isDeleted': includeDeleted ? true : null,
+      'isDeleted': includeDeleted ? true : false,
     };
 
     final result = await _query(

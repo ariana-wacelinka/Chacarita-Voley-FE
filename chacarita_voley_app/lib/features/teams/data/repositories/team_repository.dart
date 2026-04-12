@@ -34,7 +34,6 @@ class TeamRepository implements TeamRepositoryInterface {
     name
     abbreviation
     isCompetitive
-    countOfPlayers
     players {
       id
     }
@@ -52,7 +51,6 @@ class TeamRepository implements TeamRepositoryInterface {
     abbreviation
     isCompetitive
     name
-    countOfPlayers
     players {
       id
       jerseyNumber
