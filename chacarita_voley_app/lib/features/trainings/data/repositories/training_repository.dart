@@ -203,7 +203,6 @@ class TrainingRepository implements TrainingRepositoryInterface {
           location
           trainingType
           status
-          isDeleted
           countOfPlayers
           countOfAssisted
           team {
@@ -332,6 +331,11 @@ class TrainingRepository implements TrainingRepositoryInterface {
           assistance
           player {
             id
+            person {
+              dni
+              name
+              surname
+            }
           }
         }
       }
@@ -900,44 +904,67 @@ class TrainingRepository implements TrainingRepositoryInterface {
     }
 
     final playersData = (teamData?['players'] as List<dynamic>?) ?? [];
-    final attendances = playersData.whereType<Map<String, dynamic>>().map((
-      player,
-    ) {
-      final personData = player['person'] as Map<String, dynamic>?;
-      final name = personData?['name'] as String? ?? '';
-      final surname = personData?['surname'] as String? ?? '';
 
-      bool isPresent = false;
-      String? assistanceId;
-      final assistance = assistanceByPlayer[player['id'] as String? ?? ''];
-      if (assistance != null) {
-        isPresent = assistance['assistance'] as bool? ?? false;
-        assistanceId = assistance['id'] as String?;
+    final attendances = <PlayerAttendance>[];
+    if (assistanceByPlayer.isNotEmpty) {
+      for (final entry in assistanceByPlayer.entries) {
+        final assistance = entry.value;
+        final playerData = assistance['player'] as Map<String, dynamic>?;
+        final personData = playerData?['person'] as Map<String, dynamic>?;
+        final name = personData?['name'] as String? ?? '';
+        final surname = personData?['surname'] as String? ?? '';
+        final dni = personData?['dni'] as String? ?? '';
+
+        attendances.add(
+          PlayerAttendance(
+            playerId: entry.key,
+            playerDni: dni,
+            playerName: '$surname $name'.trim(),
+            isPresent: assistance['assistance'] as bool? ?? false,
+            assistanceId: assistance['id'] as String?,
+          ),
+        );
       }
+    } else {
+      attendances.addAll(
+        playersData.whereType<Map<String, dynamic>>().map((player) {
+          final personData = player['person'] as Map<String, dynamic>?;
+          final name = personData?['name'] as String? ?? '';
+          final surname = personData?['surname'] as String? ?? '';
 
-      EstadoCuota? estadoCuota;
-      final currentDueData = player['currentDue'] as Map<String, dynamic>?;
-      if (currentDueData != null) {
-        final stateString = currentDueData['state'] as String?;
-        if (stateString != null) {
-          final dueState = DueState.values.firstWhere(
-            (e) => e.name == stateString,
-            orElse: () => DueState.PENDING,
+          bool isPresent = false;
+          String? assistanceId;
+          final assistance = assistanceByPlayer[player['id'] as String? ?? ''];
+          if (assistance != null) {
+            isPresent = assistance['assistance'] as bool? ?? false;
+            assistanceId = assistance['id'] as String?;
+          }
+
+          EstadoCuota? estadoCuota;
+          final currentDueData = player['currentDue'] as Map<String, dynamic>?;
+          if (currentDueData != null) {
+            final stateString = currentDueData['state'] as String?;
+            if (stateString != null) {
+              final dueState = DueState.values.firstWhere(
+                (e) => e.name == stateString,
+                orElse: () => DueState.PENDING,
+              );
+              estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
+            }
+          }
+
+          final dni = personData?['dni'] as String? ?? '';
+          return PlayerAttendance(
+            playerId: player['id'] as String? ?? '',
+            playerDni: dni,
+            playerName: '$surname $name'.trim(),
+            isPresent: isPresent,
+            estadoCuota: estadoCuota,
+            assistanceId: assistanceId,
           );
-          estadoCuota = EstadoCuotaExtension.fromDueState(dueState);
-        }
-      }
-
-      final dni = personData?['dni'] as String? ?? '';
-      return PlayerAttendance(
-        playerId: player['id'] as String? ?? '',
-        playerDni: dni,
-        playerName: '$surname $name'.trim(),
-        isPresent: isPresent,
-        estadoCuota: estadoCuota,
-        assistanceId: assistanceId,
+        }),
       );
-    }).toList();
+    }
 
     final calculatedCountOfPlayers = attendances.length;
     final calculatedCountOfAssisted = attendances

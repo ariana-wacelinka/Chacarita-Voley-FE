@@ -29,7 +29,7 @@ abstract class TeamRepositoryInterface {
     bool includeDeleted = false,
   });
   Future<TeamDetail?> getTeamDetailById(String id);
-  Future<Team?> getTeamById(String id, {bool includeDeleted = false});
+  Future<Team?> getTeamById(String id);
   Future<void> createTeam(Team team);
   Future<void> updateTeam(Team team);
   Future<void> deleteTeam(String id);

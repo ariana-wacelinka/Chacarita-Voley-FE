@@ -51,7 +51,6 @@ class _TrainingsPageState extends State<TrainingsPage>
   bool _isAdmin = false;
   bool _isProfessor = false;
   String? _professorId;
-  bool _showDeleted = false;
   String? _restoringTrainingId;
 
   final _startDateController = TextEditingController();
@@ -272,8 +271,7 @@ class _TrainingsPageState extends State<TrainingsPage>
         _endDateController.text.isNotEmpty ||
         _startTimeController.text.isNotEmpty ||
         _endTimeController.text.isNotEmpty ||
-        _selectedStatus != null ||
-        _showDeleted;
+        _selectedStatus != null;
   }
 
   Future<void> _loadTrainings() async {
@@ -326,7 +324,6 @@ class _TrainingsPageState extends State<TrainingsPage>
         status: _selectedStatus,
         professorId: _isProfessor ? _professorId : null,
         teamId: widget.teamId,
-        includeDeleted: _showDeleted,
         page: _currentPage,
         size: _itemsPerPage,
       );
@@ -617,7 +614,6 @@ class _TrainingsPageState extends State<TrainingsPage>
                       _startTimeController.clear();
                       _endTimeController.clear();
                       _selectedStatus = null;
-                      _showDeleted = false;
                       _currentPage = 0;
                     });
                     _loadTrainings();
@@ -861,42 +857,6 @@ class _TrainingsPageState extends State<TrainingsPage>
               _buildStatusChip(context, 'Cancelados', TrainingStatus.cancelado),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: context.tokens.card1,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: context.tokens.stroke),
-            ),
-            child: SwitchListTile.adaptive(
-              value: _showDeleted,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              title: Text(
-                'Mostrar eliminados',
-                style: TextStyle(
-                  color: context.tokens.text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                _showDeleted
-                    ? 'Viendo solo entrenamientos eliminados'
-                    : 'Ocultando entrenamientos eliminados',
-                style: TextStyle(
-                  color: context.tokens.placeholder,
-                  fontSize: 12,
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _showDeleted = value;
-                  _currentPage = 0;
-                });
-                _loadTrainings();
-              },
-            ),
-          ),
         ],
       ),
     );
@@ -950,12 +910,8 @@ class _TrainingsPageState extends State<TrainingsPage>
           const SizedBox(height: 16),
           Text(
             widget.teamName != null
-                ? (_showDeleted
-                      ? 'No hay entrenamientos eliminados para ${widget.teamName}'
-                      : 'No hay entrenamientos para ${widget.teamName}')
-                : (_showDeleted
-                      ? 'No hay entrenamientos eliminados'
-                      : 'No hay entrenamientos'),
+                ? 'No hay entrenamientos para ${widget.teamName}'
+                : 'No hay entrenamientos',
             style: TextStyle(
               color: context.tokens.text,
               fontSize: 18,
@@ -964,9 +920,7 @@ class _TrainingsPageState extends State<TrainingsPage>
           ),
           const SizedBox(height: 8),
           Text(
-            _showDeleted
-                ? 'Cuando elimines entrenamientos, van a aparecer acá para restaurarlos'
-                : 'Agregá un entrenamiento para comenzar',
+            'Agregá un entrenamiento para comenzar',
             style: TextStyle(color: context.tokens.placeholder, fontSize: 14),
             textAlign: TextAlign.center,
           ),

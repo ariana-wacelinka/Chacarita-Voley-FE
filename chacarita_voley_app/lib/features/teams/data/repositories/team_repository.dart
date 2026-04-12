@@ -34,7 +34,6 @@ class TeamRepository implements TeamRepositoryInterface {
     name
     abbreviation
     isCompetitive
-    isDeleted
     players {
       id
     }
@@ -104,10 +103,10 @@ class TeamRepository implements TeamRepositoryInterface {
     return _getAllTeamsQuery(minimal: minimal);
   }
 
-  String _getTeamByIdQuery({bool includeDeleted = false}) =>
+  String _getTeamByIdQuery() =>
       '''
-    query GetTeamById(\$id: ID!, \$isDeleted: Boolean) {
-      getTeamById(id: \$id, isDeleted: \$isDeleted) {
+    query GetTeamById(\$id: ID!) {
+      getTeamById(id: \$id) {
         $_teamFields
       }
     }
@@ -268,8 +267,8 @@ class TeamRepository implements TeamRepositoryInterface {
   Future<TeamDetail?> getTeamDetailById(String id) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getTeamByIdQuery(includeDeleted: false)),
-        variables: {'id': id, 'isDeleted': false},
+        document: gql(_getTeamByIdQuery()),
+        variables: {'id': id},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -284,11 +283,11 @@ class TeamRepository implements TeamRepositoryInterface {
   }
 
   @override
-  Future<Team?> getTeamById(String id, {bool includeDeleted = false}) async {
+  Future<Team?> getTeamById(String id) async {
     final result = await _query(
       QueryOptions(
-        document: gql(_getTeamByIdQuery(includeDeleted: includeDeleted)),
-        variables: {'id': id, 'isDeleted': includeDeleted ? null : false},
+        document: gql(_getTeamByIdQuery()),
+        variables: {'id': id},
         fetchPolicy: FetchPolicy.networkOnly,
       ),
     );
@@ -452,6 +451,7 @@ class TeamRepository implements TeamRepositoryInterface {
           .map(
             (player) => TeamMember(
               playerId: player.id,
+              personId: player.person?.id,
               // En query mínima, person puede ser null
               dni: player.person?.dni ?? '',
               nombre: player.person?.name ?? '',

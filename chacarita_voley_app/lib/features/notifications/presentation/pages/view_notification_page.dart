@@ -23,7 +23,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
   NotificationModel? _notification;
   bool _isLoading = true;
   String? _errorMessage;
-  
+
   Map<String, String> _teamNames = {};
   Map<String, String> _playerNames = {};
 
@@ -35,7 +35,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
   Future<void> _loadNotification() async {
     try {
-      final notification = await _repository.getNotificationById(widget.notificationId);
+      final notification = await _repository.getNotificationById(
+        widget.notificationId,
+      );
 
       // Cargar nombres de equipos y jugadores
       await _loadTeamAndPlayerNames(notification);
@@ -62,18 +64,20 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       final playerIds = <String>{};
 
       for (var destination in notification.destinations) {
-        if (destination.type == DestinationType.TEAM && 
+        if (destination.type == DestinationType.TEAM &&
             destination.referenceId != null) {
           teamIds.add(destination.referenceId!);
-        } else if (destination.type == DestinationType.PLAYER && 
-                   destination.referenceId != null) {
+        } else if (destination.type == DestinationType.PLAYER &&
+            destination.referenceId != null) {
           playerIds.add(destination.referenceId!);
         }
       }
 
       // Cargar equipos
       if (teamIds.isNotEmpty) {
-        final teams = await _teamRepository.getTeamsListItems();
+        final teams = await _teamRepository.getTeamsListItems(
+          includeDeleted: true,
+        );
         for (var team in teams) {
           if (teamIds.contains(team.id)) {
             _teamNames[team.id] = team.nombre;
@@ -83,7 +87,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
       // Cargar jugadores
       if (playerIds.isNotEmpty) {
-        final users = await _userRepository.getUsersForNotifications();
+        final users = await _userRepository.getUsersForNotifications(
+          includeDeleted: true,
+        );
         for (var user in users) {
           final userId = user.id;
           if (userId != null && playerIds.contains(userId)) {
@@ -515,14 +521,14 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
         return 'Todos los jugadores';
       case DestinationType.TEAM:
         if (destination.referenceId != null) {
-          return _teamNames[destination.referenceId] ?? 
-                 'Equipo (ID: ${destination.referenceId})';
+          return _teamNames[destination.referenceId] ??
+              'Equipo (ID: ${destination.referenceId})';
         }
         return 'Equipo';
       case DestinationType.PLAYER:
         if (destination.referenceId != null) {
-          return _playerNames[destination.referenceId] ?? 
-                 'Jugador (ID: ${destination.referenceId})';
+          return _playerNames[destination.referenceId] ??
+              'Jugador (ID: ${destination.referenceId})';
         }
         return 'Jugador';
       case DestinationType.DUES_PENDING:
@@ -548,7 +554,7 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
 
   Widget _buildActionButtons(BuildContext context) {
     final isSent = _notification?.status == NotificationStatus.SENT;
-    
+
     return Column(
       children: [
         if (!isSent) ...[

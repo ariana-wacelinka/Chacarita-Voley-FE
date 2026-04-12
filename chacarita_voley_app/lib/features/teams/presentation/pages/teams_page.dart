@@ -50,7 +50,6 @@ class _TeamsPageState extends State<TeamsPage> {
   bool _canCreate = false;
   bool _isProfessor = false;
   String? _professorId;
-  bool _showDeleted = false;
   String? _restoringTeamId;
 
   @override
@@ -117,14 +116,12 @@ class _TeamsPageState extends State<TeamsPage> {
       _teamsFuture = _repository.getTeamsListItems(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
-        includeDeleted: _showDeleted,
         page: targetPage,
         size: _teamsPerPage,
       );
       _totalElementsFuture = _repository.getTotalTeams(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
-        includeDeleted: _showDeleted,
       );
     });
   }
@@ -363,44 +360,6 @@ class _TeamsPageState extends State<TeamsPage> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.tokens.card1,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: context.tokens.stroke),
-                ),
-                child: SwitchListTile.adaptive(
-                  value: _showDeleted,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  title: Text(
-                    'Mostrar eliminados',
-                    style: TextStyle(
-                      color: context.tokens.text,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    _showDeleted
-                        ? 'Viendo solo equipos eliminados'
-                        : 'Ocultando equipos eliminados',
-                    style: TextStyle(
-                      color: context.tokens.placeholder,
-                      fontSize: 12,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _showDeleted = value;
-                      _currentPage = 0;
-                    });
-                    _loadTeams(page: 0);
-                  },
-                ),
-              ),
-            ),
             Expanded(
               child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,
@@ -452,9 +411,7 @@ class _TeamsPageState extends State<TeamsPage> {
                           const SizedBox(height: 16),
                           Text(
                             _searchQuery.isEmpty
-                                ? (_showDeleted
-                                      ? 'No hay equipos eliminados'
-                                      : 'No hay equipos')
+                                ? 'No hay equipos'
                                 : 'No se encontraron equipos',
                             style: TextStyle(
                               color: context.tokens.placeholder,

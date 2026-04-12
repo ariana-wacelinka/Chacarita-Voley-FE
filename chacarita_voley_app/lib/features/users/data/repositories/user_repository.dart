@@ -45,7 +45,6 @@ class UserRepository implements UserRepositoryInterface {
         abbreviation
       }
     }
-    isDeleted
   ''';
 
   // Query para selección en equipos - Incluye IDs necesarios
@@ -63,7 +62,6 @@ class UserRepository implements UserRepositoryInterface {
     professor {
       id
     }
-    isDeleted
   ''';
 
   // Query ultra liviana para notificaciones - Solo id, nombre y apellido
@@ -71,7 +69,6 @@ class UserRepository implements UserRepositoryInterface {
     id
     name
     surname
-    isDeleted
   ''';
 
   // Query completa para DETALLE (ver/editar usuario)
@@ -112,7 +109,6 @@ class UserRepository implements UserRepositoryInterface {
       id
       teams { id isCompetitive name abbreviation }
     }
-    isDeleted
   ''';
 
   String _getAllPersonsQuery() =>

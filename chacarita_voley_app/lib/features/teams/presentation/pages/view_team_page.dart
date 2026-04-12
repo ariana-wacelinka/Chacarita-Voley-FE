@@ -420,13 +420,13 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
 
   Future<void> _loadTeam() async {
     try {
-      final team = await _repository.getTeamById(
-        widget.teamId,
-        includeDeleted: true,
-      );
+      final team = await _repository.getTeamById(widget.teamId);
+      final filteredMembers = team == null
+          ? <TeamMember>[]
+          : await _getCurrentActiveMembers(team.integrantes);
       if (mounted) {
         setState(() {
-          _team = team;
+          _team = team?.copyWith(integrantes: filteredMembers);
           _isLoading = false;
         });
       }
@@ -439,6 +439,27 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
         });
       }
     }
+  }
+
+  Future<List<TeamMember>> _getCurrentActiveMembers(
+    List<TeamMember> members,
+  ) async {
+    if (members.isEmpty) return const [];
+
+    final activeUsers = await _userRepository.getUsersForNotifications(
+      includeDeleted: false,
+    );
+    final activePersonIds = activeUsers
+        .map((user) => user.id)
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    return members.where((member) {
+      final personId = member.personId;
+      if (personId == null || personId.isEmpty) return false;
+      return activePersonIds.contains(personId);
+    }).toList();
   }
 
   Future<void> _handleDeleteTeam() async {
