@@ -47,8 +47,8 @@ class NotificationRepository {
   ''';
 
   String _getAllNotificationsQuery() => '''
-    query GetAllNotifications(\$page: Int!, \$size: Int!, \$search: String) {
-      getAllNotifications(page: \$page, size: \$size, filters: {search: \$search}) {
+    query GetAllNotifications(\$page: Int!, \$size: Int!, \$search: String, \$isDeleted: Boolean) {
+      getAllNotifications(page: \$page, size: \$size, filters: {search: \$search, isDeleted: \$isDeleted}) {
         totalPages
         totalElements
         pageSize
@@ -93,11 +93,13 @@ class NotificationRepository {
     int page = 0,
     int size = 10,
     String? search,
+    bool includeDeleted = false,
   }) async {
     final variables = {
       'page': page,
       'size': size,
       'search': search ?? '',
+      'isDeleted': includeDeleted ? true : null,
     };
 
     final result = await _query(
@@ -250,6 +252,7 @@ class NotificationRepository {
       countOfPlayers: data['countOfPlayers'] as int? ?? 0,
       sender: sender,
       status: status,
+      isDeleted: data['isDeleted'] as bool? ?? false,
     );
   }
 
@@ -458,6 +461,28 @@ class NotificationRepository {
     final mutation = '''
       mutation DeleteNotification(\$id: ID!) {
         deleteNotification(id: \$id)
+      }
+    ''';
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(mutation),
+        variables: {'id': id},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+  }
+
+  Future<void> restoreNotification(String id) async {
+    final mutation = '''
+      mutation RestoreNotification(\$id: ID!) {
+        restoreNotification(id: \$id) {
+          id
+        }
       }
     ''';
 

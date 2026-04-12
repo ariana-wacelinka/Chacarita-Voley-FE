@@ -290,6 +290,7 @@ class NotificationModel {
   final int countOfPlayers;
   final NotificationSender? sender;
   final NotificationStatus? status;
+  final bool isDeleted;
 
   NotificationModel({
     required this.id,
@@ -305,6 +306,7 @@ class NotificationModel {
     this.countOfPlayers = 0,
     this.sender,
     this.status,
+    this.isDeleted = false,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -336,6 +338,7 @@ class NotificationModel {
       status: json['status'] != null
           ? NotificationStatus.fromString(json['status'] as String)
           : null,
+      isDeleted: json['isDeleted'] as bool? ?? false,
     );
   }
 
@@ -352,6 +355,7 @@ class NotificationModel {
       'destinations': destinations.map((d) => d.toJson()).toList(),
       'deliveries': deliveries.map((d) => d.toJson()).toList(),
       'countOfPlayers': countOfPlayers,
+      'isDeleted': isDeleted,
       if (sender != null) 'sender': sender!.toJson(),
     };
   }

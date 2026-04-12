@@ -51,6 +51,8 @@ class _TrainingsPageState extends State<TrainingsPage>
   List<String> _userRoles = [];
   bool _isAdmin = false;
   bool _isProfessor = false;
+  bool _showOnlyDeleted = false;
+  bool _showAdminFiltersExpanded = false;
   String? _professorId;
   String? _restoringTrainingId;
 
@@ -280,7 +282,8 @@ class _TrainingsPageState extends State<TrainingsPage>
         _endDateController.text.isNotEmpty ||
         _startTimeController.text.isNotEmpty ||
         _endTimeController.text.isNotEmpty ||
-        _selectedStatus != null;
+        _selectedStatus != null ||
+        (_isAdmin && _showOnlyDeleted);
   }
 
   Future<void> _loadTrainings() async {
@@ -333,6 +336,7 @@ class _TrainingsPageState extends State<TrainingsPage>
         status: _selectedStatus,
         professorId: _isProfessor ? _professorId : null,
         teamId: widget.teamId,
+        includeDeleted: _isAdmin && _showOnlyDeleted,
         page: _currentPage,
         size: _itemsPerPage,
       );
@@ -625,6 +629,7 @@ class _TrainingsPageState extends State<TrainingsPage>
                       _startTimeController.clear();
                       _endTimeController.clear();
                       _selectedStatus = null;
+                      _showOnlyDeleted = false;
                       _currentPage = 0;
                     });
                     _loadTrainings();
@@ -866,8 +871,51 @@ class _TrainingsPageState extends State<TrainingsPage>
                 TrainingStatus.completado,
               ),
               _buildStatusChip(context, 'Cancelados', TrainingStatus.cancelado),
+              if (_isAdmin)
+                _buildAdminMoreChip(
+                  context,
+                  expanded: _showAdminFiltersExpanded,
+                ),
             ],
           ),
+          if (_isAdmin) ...[
+            if (_showAdminFiltersExpanded) const SizedBox(height: 6),
+            if (_showAdminFiltersExpanded)
+              Row(
+                children: [
+                  Checkbox(
+                    value: _showOnlyDeleted,
+                    onChanged: (value) {
+                      setState(() {
+                        _showOnlyDeleted = value ?? false;
+                        _currentPage = 0;
+                      });
+                      _loadTrainings();
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showOnlyDeleted = !_showOnlyDeleted;
+                          _currentPage = 0;
+                        });
+                        _loadTrainings();
+                      },
+                      child: Text(
+                        'Ver solo entrenamientos dados de baja',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
         ],
       ),
     );
@@ -907,6 +955,44 @@ class _TrainingsPageState extends State<TrainingsPage>
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminMoreChip(BuildContext context, {required bool expanded}) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _showAdminFiltersExpanded = !_showAdminFiltersExpanded;
+        });
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: expanded ? context.tokens.card2 : Colors.transparent,
+          border: Border.all(color: context.tokens.stroke),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              expanded ? Symbols.expand_less : Symbols.expand_more,
+              size: 14,
+              color: context.tokens.text,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              expanded ? 'Menos' : 'Mas filtros',
+              style: TextStyle(
+                color: context.tokens.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

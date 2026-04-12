@@ -50,8 +50,12 @@ class _TeamsPageState extends State<TeamsPage> {
   bool _canRestore = false;
   bool _canCreate = false;
   bool _isProfessor = false;
+  bool _showFilters = false;
+  bool _showOnlyDeleted = false;
   String? _professorId;
   String? _restoringTeamId;
+
+  bool get _isAdmin => _userRoles.contains('ADMIN');
 
   @override
   void initState() {
@@ -117,12 +121,14 @@ class _TeamsPageState extends State<TeamsPage> {
       _teamsFuture = _repository.getTeamsListItems(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
+        includeDeleted: _isAdmin && _showOnlyDeleted,
         page: targetPage,
         size: _teamsPerPage,
       );
       _totalElementsFuture = _repository.getTotalTeams(
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         professorId: _isProfessor ? _professorId : null,
+        includeDeleted: _isAdmin && _showOnlyDeleted,
       );
     });
   }
@@ -335,34 +341,140 @@ class _TeamsPageState extends State<TeamsPage> {
                   ),
                 ],
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF1E1E1E)
-                      : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.tokens.stroke),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar por nombre...',
-                    hintStyle: TextStyle(color: context.tokens.placeholder),
-                    prefixIcon: Icon(
-                      Symbols.search,
-                      color: context.tokens.placeholder,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF1E1E1E)
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: context.tokens.stroke),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: 'Buscar por nombre...',
+                              hintStyle: TextStyle(
+                                color: context.tokens.placeholder,
+                              ),
+                              prefixIcon: Icon(
+                                Symbols.search,
+                                color: context.tokens.placeholder,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            style: TextStyle(color: context.tokens.text),
+                          ),
+                        ),
+                      ),
+                      if (_isAdmin) ...[
+                        const SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _showFilters = !_showFilters;
+                              });
+                            },
+                            icon: Icon(
+                              Symbols.tune,
+                              color: Colors.white,
+                              fill: _showOnlyDeleted ? 1 : 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  style: TextStyle(color: context.tokens.text),
-                ),
+                  if (_isAdmin && _showFilters)
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: context.tokens.stroke),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _showOnlyDeleted,
+                            onChanged: (value) {
+                              setState(() {
+                                _showOnlyDeleted = value ?? false;
+                                _currentPage = 0;
+                              });
+                              _loadTeams(page: 0);
+                            },
+                            activeColor: Theme.of(context).colorScheme.primary,
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showOnlyDeleted = !_showOnlyDeleted;
+                                  _currentPage = 0;
+                                });
+                                _loadTeams(page: 0);
+                              },
+                              child: Text(
+                                'Ver solo equipos dados de baja',
+                                style: TextStyle(
+                                  color: context.tokens.text,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
+            if (_isAdmin && _showOnlyDeleted)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showOnlyDeleted = false;
+                        _currentPage = 0;
+                      });
+                      _loadTeams(page: 0);
+                    },
+                    icon: Icon(
+                      Symbols.close,
+                      size: 16,
+                      color: context.tokens.redToRosita,
+                    ),
+                    label: Text(
+                      'Limpiar filtro',
+                      style: TextStyle(
+                        color: context.tokens.redToRosita,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Expanded(
               child: FutureBuilder<List<TeamListItem>>(
                 future: _teamsFuture,

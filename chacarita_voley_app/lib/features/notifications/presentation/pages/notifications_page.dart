@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
 import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
@@ -17,6 +18,7 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final _repository = NotificationRepository();
+  final _authService = AuthService();
   final _searchController = TextEditingController();
   List<NotificationModel> _notifications = [];
   Future<void>? _notificationsFuture;
@@ -27,12 +29,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _hasNext = false;
   bool _hasPrevious = false;
   String _searchQuery = '';
+  bool _showFilters = false;
+  bool _showOnlyDeleted = false;
+  List<String> _userRoles = [];
   Timer? _debounceTimer;
+
+  bool get _isAdmin => _userRoles.contains('ADMIN');
 
   @override
   void initState() {
     super.initState();
+    _loadUserRoles();
     _loadNotifications();
+  }
+
+  Future<void> _loadUserRoles() async {
+    final roles = await _authService.getUserRoles();
+    if (!mounted) return;
+    setState(() {
+      _userRoles = roles ?? [];
+    });
   }
 
   @override
@@ -54,6 +70,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         page: _currentPage - 1, // Backend usa 0-based indexing
         size: _itemsPerPage,
         search: _searchQuery,
+        includeDeleted: _isAdmin && _showOnlyDeleted,
       );
       if (!mounted) return;
       setState(() {
@@ -180,6 +197,31 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
+  Future<void> _restoreNotification(String id) async {
+    try {
+      await _repository.restoreNotification(id);
+      if (!mounted) return;
+      await _loadNotifications();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Notificacion restaurada correctamente'),
+          backgroundColor: context.tokens.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo restaurar la notificacion: ${BackendErrorMapper.fromException(e)}',
+          ),
+          backgroundColor: context.tokens.redToRosita,
+        ),
+      );
+    }
+  }
+
   void _nextPage() {
     if (_hasNext) {
       setState(() {
@@ -293,29 +335,133 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1E1E1E)
-              : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.tokens.stroke),
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged,
-          decoration: InputDecoration(
-            hintText: 'Buscar por título...',
-            hintStyle: TextStyle(color: context.tokens.placeholder),
-            prefixIcon: Icon(Symbols.search, color: context.tokens.placeholder),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: context.tokens.stroke),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por título...',
+                      hintStyle: TextStyle(color: context.tokens.placeholder),
+                      prefixIcon: Icon(
+                        Symbols.search,
+                        color: context.tokens.placeholder,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    style: TextStyle(color: context.tokens.text),
+                  ),
+                ),
+              ),
+              if (_isAdmin) ...[
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                      });
+                    },
+                    icon: Icon(
+                      Symbols.tune,
+                      color: Colors.white,
+                      fill: _showOnlyDeleted ? 1 : 0,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
-          style: TextStyle(color: context.tokens.text),
-        ),
+          if (_isAdmin && _showFilters)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: context.tokens.stroke),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _showOnlyDeleted,
+                    onChanged: (value) {
+                      setState(() {
+                        _showOnlyDeleted = value ?? false;
+                        _currentPage = 1;
+                      });
+                      _loadNotifications();
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showOnlyDeleted = !_showOnlyDeleted;
+                          _currentPage = 1;
+                        });
+                        _loadNotifications();
+                      },
+                      child: Text(
+                        'Ver solo notificaciones dadas de baja',
+                        style: TextStyle(
+                          color: context.tokens.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_isAdmin && _showOnlyDeleted)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showOnlyDeleted = false;
+                    _currentPage = 1;
+                  });
+                  _loadNotifications();
+                },
+                icon: Icon(
+                  Symbols.close,
+                  size: 16,
+                  color: context.tokens.redToRosita,
+                ),
+                label: Text(
+                  'Limpiar filtro',
+                  style: TextStyle(
+                    color: context.tokens.redToRosita,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -369,6 +515,28 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   ),
                                 ),
                               ),
+                              if (_isAdmin && _showOnlyDeleted) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.tokens.redToRosita
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Eliminada',
+                                    style: TextStyle(
+                                      color: context.tokens.redToRosita,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (!notification.repeatable) ...[
                                 const SizedBox(width: 8),
                                 Container(
@@ -466,6 +634,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           case 'delete':
                             _showDeleteConfirmation(notification.id);
                             break;
+                          case 'restore':
+                            _restoreNotification(notification.id);
+                            break;
                         }
                       },
                       itemBuilder: (context) {
@@ -473,6 +644,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             (notification.sendMode == SendMode.SCHEDULED ||
                                 notification.deliveries.isEmpty) &&
                             notification.status != NotificationStatus.SENT;
+                        final isDeleted = _isAdmin && _showOnlyDeleted;
 
                         return [
                           PopupMenuItem(
@@ -492,51 +664,77 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               ],
                             ),
                           ),
-                          PopupMenuItem(
-                            value: 'edit',
-                            enabled: canEdit,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Symbols.edit,
-                                  size: 20,
-                                  color: canEdit
-                                      ? context.tokens.text
-                                      : context.tokens.text.withOpacity(0.3),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Modificar',
-                                  style: TextStyle(
+                          if (!isDeleted)
+                            PopupMenuItem(
+                              value: 'edit',
+                              enabled: canEdit,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Symbols.edit,
+                                    size: 20,
                                     color: canEdit
                                         ? context.tokens.text
                                         : context.tokens.text.withOpacity(0.3),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Modificar',
+                                    style: TextStyle(
+                                      color: canEdit
+                                          ? context.tokens.text
+                                          : context.tokens.text.withOpacity(
+                                              0.3,
+                                            ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Symbols.delete,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Eliminar',
-                                  style: TextStyle(
+                          if (!isDeleted)
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Symbols.delete,
+                                    size: 20,
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.primary,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Eliminar',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          if (isDeleted && _isAdmin)
+                            PopupMenuItem(
+                              value: 'restore',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Symbols.settings_backup_restore,
+                                    size: 20,
+                                    color: context.tokens.green,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Restaurar',
+                                    style: TextStyle(
+                                      color: context.tokens.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ];
                       },
                     ),
