@@ -19,6 +19,8 @@ class AuthService {
 
   // Lock para evitar múltiples refresh simultáneos
   Future<AuthResponse?>? _refreshInFlight;
+  static bool _handlingSessionExpired = false;
+  static final AuthSessionNotifier sessionNotifier = AuthSessionNotifier();
 
   /// Login con email y password
   /// Por ahora en modo desarrollo: permite entrar aunque falle
@@ -315,6 +317,7 @@ class AuthService {
 
     // Actualizar el token en GraphQLClient
     GraphQLClientFactory.updateToken(accessToken);
+    sessionNotifier.markChanged();
   }
 
   @visibleForTesting
@@ -405,8 +408,24 @@ class AuthService {
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await getToken();
+    final token = await getValidAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  static bool isUnauthorizedMessage(String? message) {
+    final upper = (message ?? '').toUpperCase();
+    if (upper.isEmpty) return false;
+    return upper.contains('USER NOT AUTHENTICATED') ||
+        upper.contains('INVALID AUTHENTICATION TOKEN') ||
+        upper.contains('INVALID_REFRESH_TOKEN') ||
+        upper.contains('TOKEN EXPIRED') ||
+        upper.contains('JWT EXPIRED') ||
+        upper.contains('UNAUTHORIZED') ||
+        upper.contains('401');
+  }
+
+  static bool isUnauthorizedError(Object error) {
+    return isUnauthorizedMessage(error.toString());
   }
 
   Future<void> _saveRememberMe(bool rememberMe) async {
@@ -464,6 +483,10 @@ class AuthService {
     }
 
     // Limpiar datos locales siempre
+    await _clearLocalSession();
+  }
+
+  Future<void> _clearLocalSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_refreshTokenKey);
@@ -476,6 +499,20 @@ class AuthService {
 
     // Limpiar el token en GraphQLClient
     GraphQLClientFactory.updateToken(null);
+    sessionNotifier.markChanged();
+  }
+
+  Future<void> handleSessionExpired({bool showMessage = false}) async {
+    if (_handlingSessionExpired) return;
+    _handlingSessionExpired = true;
+    try {
+      await _clearLocalSession();
+      if (showMessage) {
+        SnackbarService.showError('Sesion expirada. Inicia sesion nuevamente.');
+      }
+    } finally {
+      _handlingSessionExpired = false;
+    }
   }
 
   /// Renovar el access token usando el refresh token
@@ -546,7 +583,7 @@ class AuthService {
         // Si el refresh token es inválido, limpiar sesión
         if (response.statusCode == 401) {
           print('🚨 Refresh token inválido, cerrando sesión');
-          await logout();
+          await handleSessionExpired();
         }
         return null;
       }
@@ -636,5 +673,11 @@ class AuthUser {
       'gender': gender,
       'roles': roles,
     };
+  }
+}
+
+class AuthSessionNotifier extends ChangeNotifier {
+  void markChanged() {
+    notifyListeners();
   }
 }

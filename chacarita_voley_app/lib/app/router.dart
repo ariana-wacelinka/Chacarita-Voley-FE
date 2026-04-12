@@ -38,6 +38,7 @@ import '../core/services/permissions_service.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
+  refreshListenable: AuthService.sessionNotifier,
   redirect: (context, state) async {
     final isLoginPage = state.matchedLocation == '/login';
     final isForgotPasswordPage = state.matchedLocation == '/forgot-password';
@@ -46,7 +47,7 @@ final appRouter = GoRouter(
     // Si estamos en login o forgot password, permitir acceso
     if (isLoginPage) {
       final shouldRemember = await authService.shouldRememberSession();
-      final token = await authService.getToken();
+      final token = await authService.getValidAccessToken();
 
       // Si tiene "recordarme" activo y tiene token, redirigir a home
       if (shouldRemember && token != null) {
@@ -60,7 +61,7 @@ final appRouter = GoRouter(
       return null;
     }
 
-    final token = await authService.getToken();
+    final token = await authService.getValidAccessToken();
 
     if (token == null) {
       return '/login';
@@ -386,14 +387,18 @@ final appRouter = GoRouter(
       path: '/notifications/:id',
       name: 'notifications-view',
       builder: (_, state) => PageWrapper(
-        child: ViewNotificationPage(notificationId: state.pathParameters['id']!),
+        child: ViewNotificationPage(
+          notificationId: state.pathParameters['id']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/notifications/:id/edit',
       name: 'notifications-edit',
       builder: (_, state) => PageWrapper(
-        child: EditNotificationPage(notificationId: state.pathParameters['id']!),
+        child: EditNotificationPage(
+          notificationId: state.pathParameters['id']!,
+        ),
       ),
     ),
     GoRoute(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/io_client.dart';
@@ -44,8 +45,22 @@ class GraphQLClientFactory {
     );
 
     final errorLink = ErrorLink(
-      onGraphQLError: (request, forward, response) => forward(request),
-      onException: (request, forward, exception) => forward(request),
+      onGraphQLError: (request, forward, response) {
+        final errors = response.errors ?? const <GraphQLError>[];
+        for (final error in errors) {
+          if (AuthService.isUnauthorizedMessage(error.message)) {
+            unawaited(AuthService().handleSessionExpired());
+            break;
+          }
+        }
+        return forward(request);
+      },
+      onException: (request, forward, exception) {
+        if (AuthService.isUnauthorizedError(exception)) {
+          unawaited(AuthService().handleSessionExpired());
+        }
+        return forward(request);
+      },
     );
 
     final link = Link.from([errorLink, authLink, httpLink]);
@@ -109,8 +124,22 @@ class GraphQLClientFactory {
     );
 
     final errorLink = ErrorLink(
-      onGraphQLError: (request, forward, response) => forward(request),
-      onException: (request, forward, exception) => forward(request),
+      onGraphQLError: (request, forward, response) {
+        final errors = response.errors ?? const <GraphQLError>[];
+        for (final error in errors) {
+          if (AuthService.isUnauthorizedMessage(error.message)) {
+            unawaited(AuthService().handleSessionExpired());
+            break;
+          }
+        }
+        return forward(request);
+      },
+      onException: (request, forward, exception) {
+        if (AuthService.isUnauthorizedError(exception)) {
+          unawaited(AuthService().handleSessionExpired());
+        }
+        return forward(request);
+      },
     );
 
     final link = Link.from([errorLink, authLink, httpLink]);
