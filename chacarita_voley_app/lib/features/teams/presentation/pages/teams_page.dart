@@ -8,6 +8,7 @@ import '../../data/repositories/team_repository.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
 import '../../../users/data/repositories/user_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 enum _TeamMenuAction { view, edit, delete, restore }
 
@@ -178,7 +179,9 @@ class _TeamsPageState extends State<TeamsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al restaurar el equipo: $e'),
+          content: Text(
+            'No se pudo restaurar el equipo: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );

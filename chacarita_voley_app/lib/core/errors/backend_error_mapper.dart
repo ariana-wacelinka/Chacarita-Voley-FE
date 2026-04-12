@@ -2,9 +2,9 @@ import 'dart:convert';
 
 class BackendErrorMapper {
   static String fromMessage(String? message) {
-    final normalized = (message ?? '').trim();
+    final normalized = _normalizeMessage(message ?? '');
     if (normalized.isEmpty) {
-      return 'Ocurrio un error. Intenta nuevamente.';
+      return 'No pudimos completar la operacion. Intenta nuevamente.';
     }
 
     final upper = normalized.toUpperCase();
@@ -22,6 +22,22 @@ class BackendErrorMapper {
         upper.contains('ACCESO DENEGADO') ||
         upper.contains('FORBIDDEN')) {
       return 'No tenes permisos para realizar esta accion.';
+    }
+
+    if (upper.contains(
+      'CANNOT_CHANGE_TO_NON_COMPETITIVE_WITH_COMPETITIVE_PLAYERS',
+    )) {
+      return 'No podes cambiar el equipo a recreativo si tiene jugadores competitivos. Revisa la lista de integrantes.';
+    }
+    if (upper.contains('COMPETITIVE_PLAYER') &&
+        upper.contains('NON_COMPETITIVE')) {
+      return 'Hay jugadores incompatibles con el tipo de equipo seleccionado. Revisa los integrantes antes de guardar.';
+    }
+    if (upper.contains('PLAYER_ALREADY_IN_COMPETITIVE_TEAM')) {
+      return 'Ese jugador ya pertenece a un equipo competitivo.';
+    }
+    if (upper.contains('PLAYER_ALREADY_IN_RECREATIVE_TEAM')) {
+      return 'Ese jugador ya pertenece a un equipo recreativo.';
     }
 
     if (upper.contains('EMAIL NOT REGISTERED')) {
@@ -113,6 +129,10 @@ class BackendErrorMapper {
       return 'La fecha ingresada no es valida.';
     }
 
+    if (_looksTechnical(normalized)) {
+      return 'No pudimos completar la operacion. Revisa los datos e intenta nuevamente.';
+    }
+
     return normalized;
   }
 
@@ -136,12 +156,63 @@ class BackendErrorMapper {
       case 422:
         return 'Hay datos invalidos. Revisa los campos.';
       default:
-        return 'Ocurrio un error. Intenta nuevamente.';
+        return 'No pudimos completar la operacion. Intenta nuevamente.';
     }
   }
 
   static String fromException(Object error) {
     return fromMessage(error.toString());
+  }
+
+  static bool _looksTechnical(String value) {
+    final upper = value.toUpperCase();
+    return upper.contains('GRAPHQL') ||
+        upper.contains('OPERATIONEXCEPTION') ||
+        upper.contains('LINKEXCEPTION') ||
+        upper.contains('SOCKETEXCEPTION') ||
+        upper.contains('TYPEMISMATCH') ||
+        upper.contains('STACKTRACE') ||
+        upper.contains('LOCATIONS:') ||
+        upper.contains('EXTENSIONS:') ||
+        upper.contains('PATH:') ||
+        upper.contains('RESPONSE') ||
+        upper.contains('REQUEST');
+  }
+
+  static String _normalizeMessage(String value) {
+    var result = value.trim();
+    if (result.isEmpty) return result;
+
+    result = result
+        .replaceAll(RegExp(r'^Exception:\s*', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'^OperationException:\s*', caseSensitive: false),
+          '',
+        )
+        .trim();
+
+    final graphqlMatch = RegExp(
+      r'GraphQLError\(message:\s*([^,\)]+)',
+      caseSensitive: false,
+    ).firstMatch(result);
+    if (graphqlMatch != null) {
+      return graphqlMatch.group(1)?.trim() ?? result;
+    }
+
+    final cannotMatch = RegExp(
+      r'(CANNOT_[A-Z_]+)',
+      caseSensitive: false,
+    ).firstMatch(result);
+    if (cannotMatch != null) {
+      return cannotMatch.group(1)?.trim() ?? result;
+    }
+
+    final playerIdIndex = result.toUpperCase().indexOf('PLAYER ID');
+    if (playerIdIndex != -1) {
+      return result.substring(0, playerIdIndex).trim();
+    }
+
+    return result;
   }
 
   static String? _extractMessage(String body) {

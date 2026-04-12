@@ -12,6 +12,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/banner_action_color.dart';
 import '../../domain/entities/pay.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentsValidationPage extends StatefulWidget {
   final String? refresh;
@@ -70,7 +71,11 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar estadísticas: $e')),
+          SnackBar(
+            content: Text(
+              'No se pudieron cargar las estadisticas: ${BackendErrorMapper.fromException(e)}',
+            ),
+          ),
         );
       }
     }
@@ -105,9 +110,13 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error al cargar pagos: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No se pudieron cargar los pagos: ${BackendErrorMapper.fromException(e)}',
+            ),
+          ),
+        );
       }
     }
   }
@@ -162,7 +171,9 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
         messenger.hideCurrentMaterialBanner();
         messenger.showMaterialBanner(
           MaterialBanner(
-            content: Text('Error al descargar comprobante: $e'),
+            content: Text(
+              'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
             actions: [
               TextButton(
@@ -1319,7 +1330,7 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Error al ${approve ? 'aprobar' : 'rechazar'} el pago: $e',
+                              'No se pudo ${approve ? 'aprobar' : 'rechazar'} el pago: ${BackendErrorMapper.fromException(e)}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,

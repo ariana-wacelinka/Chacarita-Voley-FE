@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentListWidget extends StatefulWidget {
   final List<Pay> initialPayments;
@@ -101,7 +102,9 @@ class _PaymentListWidgetState extends State<PaymentListWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al descargar comprobante: $e'),
+            content: Text(
+              'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
           ),
         );

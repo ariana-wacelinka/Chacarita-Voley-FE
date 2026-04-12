@@ -8,6 +8,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../data/repositories/pay_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentDetailContent extends StatefulWidget {
   final Pay payment;
@@ -300,7 +301,9 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
         messenger.hideCurrentMaterialBanner();
         messenger.showMaterialBanner(
           MaterialBanner(
-            content: Text('Error al descargar comprobante: $e'),
+            content: Text(
+              'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
             actions: [
               TextButton(
@@ -346,7 +349,9 @@ class _PaymentDetailContentState extends State<PaymentDetailContent> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al actualizar pago: $e'),
+            content: Text(
+              'No se pudo actualizar el pago: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
           ),
         );

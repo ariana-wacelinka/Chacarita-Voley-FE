@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -170,7 +171,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al eliminar: $e'),
+          content: Text(
+            'No se pudo eliminar la notificacion: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -256,9 +259,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 return RefreshIndicator(
                   onRefresh: () async {
                     _loadNotifications();
-                    await Future.delayed(
-                      const Duration(milliseconds: 500),
-                    );
+                    await Future.delayed(const Duration(milliseconds: 500));
                   },
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),

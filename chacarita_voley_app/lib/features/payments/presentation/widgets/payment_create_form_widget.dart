@@ -12,6 +12,7 @@ import '../../../users/data/repositories/user_repository.dart';
 
 import '../../domain/entities/pay.dart' as payment_entities;
 import '../../domain/entities/pay_state.dart' as payment_state;
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 payment_state.PayState resolvePaymentStatus({
   required bool isAdmin,
@@ -1102,7 +1103,9 @@ class _PaymentCreateFormState extends State<PaymentCreateForm> {
         setState(() => _isUploadingFile = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al subir archivo: $e'),
+            content: Text(
+              'No se pudo subir el archivo: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
             duration: const Duration(seconds: 4),
           ),

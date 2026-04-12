@@ -7,6 +7,7 @@ import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
 import '../../../users/data/repositories/user_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 enum _TrainingMenuAction {
   view,
@@ -141,7 +142,9 @@ class _TrainingsPageState extends State<TrainingsPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al eliminar el entrenamiento: $e'),
+          content: Text(
+            'No se pudo eliminar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -177,7 +180,9 @@ class _TrainingsPageState extends State<TrainingsPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al eliminar el entrenamiento: $e'),
+          content: Text(
+            'No se pudo eliminar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -209,7 +214,9 @@ class _TrainingsPageState extends State<TrainingsPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al cancelar el entrenamiento: $e'),
+          content: Text(
+            'No se pudo cancelar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -241,7 +248,9 @@ class _TrainingsPageState extends State<TrainingsPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al reactivar el entrenamiento: $e'),
+          content: Text(
+            'No se pudo reactivar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -395,7 +404,9 @@ class _TrainingsPageState extends State<TrainingsPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al restaurar el entrenamiento: $e'),
+          content: Text(
+            'No se pudo restaurar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );

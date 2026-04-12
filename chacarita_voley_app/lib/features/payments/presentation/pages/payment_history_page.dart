@@ -13,6 +13,7 @@ import '../../domain/entities/pay_page.dart';
 import '../widgets/payment_history_content_widget.dart';
 import '../../../users/domain/entities/due.dart' show CurrentDue;
 import '../../../users/data/repositories/user_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
   final String userId;
@@ -157,7 +158,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al cargar historial de pagos: $e'),
+          content: Text(
+            'No se pudo cargar el historial de pagos: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -197,7 +200,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al descargar: $e'),
+            content: Text(
+              'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
           ),
         );

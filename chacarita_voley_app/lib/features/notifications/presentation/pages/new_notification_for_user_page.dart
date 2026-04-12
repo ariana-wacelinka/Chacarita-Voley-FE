@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class NewNotificationForUserPage extends StatefulWidget {
   final String userId;
@@ -200,7 +201,9 @@ class _NewNotificationForUserPageState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(
+              'No se pudo crear la notificacion: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -236,7 +239,12 @@ class _NewNotificationForUserPageState
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewPadding.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.of(context).viewPadding.bottom,
+          ),
           children: [
             // Destinatario
             Container(

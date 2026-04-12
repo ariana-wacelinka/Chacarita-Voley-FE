@@ -6,6 +6,7 @@ import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
 import '../../data/repositories/pay_repository.dart';
 import '../widgets/payment_detail_content_widget.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentDetailPage extends StatefulWidget {
   final String paymentId; // ID del pago a mostrar
@@ -67,7 +68,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al cargar detalle del pago: $e'),
+              content: Text(
+                'No se pudo cargar el detalle del pago: ${BackendErrorMapper.fromException(e)}',
+              ),
               backgroundColor: context.tokens.redToRosita,
             ),
           );

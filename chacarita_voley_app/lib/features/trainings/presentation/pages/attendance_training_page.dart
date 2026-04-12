@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../users/domain/entities/user.dart' show EstadoCuota;
 import '../../domain/entities/training.dart';
 import '../../data/repositories/training_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class AttendanceTrainingPage extends StatefulWidget {
   final String trainingId;
@@ -102,7 +103,9 @@ class _AttendanceTrainingPageState extends State<AttendanceTrainingPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al guardar asistencia: $e'),
+            content: Text(
+              'No se pudo guardar la asistencia: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
           ),
         );

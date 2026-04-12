@@ -9,6 +9,7 @@ import '../../domain/usecases/delete_user_usecase.dart';
 import '../widgets/delete_user_dialog.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({super.key});
@@ -177,7 +178,9 @@ class _UsersPageState extends State<UsersPage> {
           } catch (e) {
             messenger.showSnackBar(
               SnackBar(
-                content: Text('Error al eliminar usuario: $e'),
+                content: Text(
+                  'No se pudo eliminar el usuario: ${BackendErrorMapper.fromException(e)}',
+                ),
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );

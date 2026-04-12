@@ -7,6 +7,7 @@ import '../../domain/entities/team.dart';
 import '../../domain/entities/team_detail.dart';
 import '../../data/repositories/team_repository.dart';
 import '../widgets/team_form_widget.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class EditTeamPage extends StatefulWidget {
   final String teamId;
@@ -261,7 +262,7 @@ class _EditTeamPageState extends State<EditTeamPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Error al actualizar equipo: $e',
+                    'No se pudo actualizar el equipo: ${BackendErrorMapper.fromException(e)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

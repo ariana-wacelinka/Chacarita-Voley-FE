@@ -10,6 +10,7 @@ import '../../data/repositories/user_repository.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class ViewUserPage extends StatefulWidget {
   final String userId;
@@ -587,11 +588,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDataColumn(
-                      context,
-                      'Nombre',
-                      _user!.nombreCompleto,
-                    ),
+                    _buildDataColumn(context, 'Nombre', _user!.nombreCompleto),
                     const SizedBox(height: 16),
                     _buildDataColumn(
                       context,
@@ -1096,7 +1093,9 @@ class _ViewUserPageState extends State<ViewUserPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al eliminar usuario: $e'),
+              content: Text(
+                'No se pudo eliminar el usuario: ${BackendErrorMapper.fromException(e)}',
+              ),
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );

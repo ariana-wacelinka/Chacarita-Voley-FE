@@ -11,6 +11,7 @@ import '../../domain/entities/assistance.dart';
 import '../../domain/entities/assistance_stats.dart';
 import '../../domain/entities/user.dart';
 import '../../data/repositories/user_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class AttendanceHistoryPage extends StatefulWidget {
   final String userId;
@@ -128,7 +129,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _loadError = 'Error al cargar datos: $e';
+        _loadError =
+            'No se pudieron cargar los datos: ${BackendErrorMapper.fromException(e)}';
       });
     }
   }
@@ -161,7 +163,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
       if (!mounted) return;
       setState(() {
         _isLoadingPage = false;
-        _loadError = 'Error al cargar asistencias: $e';
+        _loadError =
+            'No se pudieron cargar las asistencias: ${BackendErrorMapper.fromException(e)}';
       });
     }
   }

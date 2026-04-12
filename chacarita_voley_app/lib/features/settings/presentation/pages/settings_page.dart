@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -77,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Error al cerrar sesión: $e',
+                    'No se pudo cerrar sesion: ${BackendErrorMapper.fromException(e)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

@@ -8,6 +8,7 @@ import '../../domain/entities/user.dart';
 import '../../domain/usecases/create_user_usecase.dart';
 import '../../data/repositories/user_repository.dart';
 import '../widgets/user_form_widget.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class RegisterUserPage extends StatefulWidget {
   final CreateUserUseCase? createUserUseCase;
@@ -96,7 +97,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Error al registrar usuario: $e',
+                    'No se pudo registrar el usuario: ${BackendErrorMapper.fromException(e)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

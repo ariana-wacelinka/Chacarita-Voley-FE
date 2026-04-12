@@ -12,6 +12,7 @@ import '../../../teams/data/repositories/team_repository.dart';
 import '../../../teams/domain/entities/team_list_item.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../../users/domain/entities/user.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class NewNotificationPage extends StatefulWidget {
   const NewNotificationPage({super.key});
@@ -81,10 +82,12 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         _userRoles = roles ?? [];
         _isProfessor =
             _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
-        _canSelectPlayers =
-            PermissionsService.canSelectNotificationPlayers(_userRoles);
-        _canSelectFilters =
-          PermissionsService.canSelectNotificationFilters(_userRoles);
+        _canSelectPlayers = PermissionsService.canSelectNotificationPlayers(
+          _userRoles,
+        );
+        _canSelectFilters = PermissionsService.canSelectNotificationFilters(
+          _userRoles,
+        );
       });
     }
   }
@@ -387,7 +390,7 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Error al crear la notificación: $e',
+                    'No se pudo crear la notificacion: ${BackendErrorMapper.fromException(e)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -871,19 +874,20 @@ class _NewNotificationPageState extends State<NewNotificationPage> {
         .where((team) => team.nombre.toLowerCase().contains(searchText))
         .toList();
 
-    final searchTextPlayers =
-      _canSelectPlayers ? _playersSearchController.text.toLowerCase() : '';
+    final searchTextPlayers = _canSelectPlayers
+        ? _playersSearchController.text.toLowerCase()
+        : '';
     final filteredPlayers = _canSelectPlayers
-      ? _allPlayers
-        .where(
-          (player) =>
-            player.nombreCompleto
-              .toLowerCase()
-              .contains(searchTextPlayers) ||
-            player.dni.toLowerCase().contains(searchTextPlayers),
-        )
-        .toList()
-      : <User>[];
+        ? _allPlayers
+              .where(
+                (player) =>
+                    player.nombreCompleto.toLowerCase().contains(
+                      searchTextPlayers,
+                    ) ||
+                    player.dni.toLowerCase().contains(searchTextPlayers),
+              )
+              .toList()
+        : <User>[];
 
     return [
       Text(

@@ -6,6 +6,7 @@ import '../../domain/entities/notification.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../../teams/data/repositories/team_repository.dart';
 import '../../../users/data/repositories/user_repository.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class ViewNotificationPage extends StatefulWidget {
   final String notificationId;
@@ -189,7 +190,9 @@ class _ViewNotificationPageState extends State<ViewNotificationPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al eliminar: $e'),
+          content: Text(
+            'No se pudo eliminar la notificacion: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );

@@ -8,6 +8,7 @@ import '../../data/repositories/team_repository.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/permissions_service.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 enum _MemberMenuAction {
   viewUser,
@@ -369,7 +370,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Error al actualizar datos: $e'),
+                          content: Text(
+                            'No se pudieron actualizar los datos: ${BackendErrorMapper.fromException(e)}',
+                          ),
                           backgroundColor: Theme.of(
                             context,
                           ).colorScheme.primary,
@@ -560,7 +563,9 @@ class _ViewTeamPageState extends State<ViewTeamPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al restaurar el equipo: $e'),
+          content: Text(
+            'No se pudo restaurar el equipo: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: context.tokens.redToRosita,
         ),
       );
@@ -1404,7 +1409,9 @@ class _DeleteTeamDialogState extends State<_DeleteTeamDialog> {
         setState(() => _isDeleting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al eliminar: $e'),
+            content: Text(
+              'No se pudo eliminar el equipo: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: Colors.red,
           ),
         );

@@ -7,6 +7,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../domain/entities/pay.dart';
 import '../../domain/entities/pay_state.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class PaymentEditFormWidget extends StatefulWidget {
   final Pay payment;
@@ -515,7 +516,9 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al descargar: $e'),
+            content: Text(
+              'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
           ),
         );
@@ -672,7 +675,9 @@ class _PaymentEditFormWidgetState extends State<PaymentEditFormWidget> {
         setState(() => _isUploadingFile = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al seleccionar archivo: $e'),
+            content: Text(
+              'No se pudo seleccionar el archivo: ${BackendErrorMapper.fromException(e)}',
+            ),
             backgroundColor: context.tokens.redToRosita,
             duration: const Duration(seconds: 4),
           ),

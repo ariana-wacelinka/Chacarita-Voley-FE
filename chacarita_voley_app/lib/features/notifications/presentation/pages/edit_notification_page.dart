@@ -12,6 +12,7 @@ import '../../../teams/data/repositories/team_repository.dart';
 import '../../../teams/domain/entities/team_list_item.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../../users/domain/entities/user.dart';
+import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
 class EditNotificationPage extends StatefulWidget {
   final String notificationId;
@@ -85,10 +86,12 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
         _userRoles = roles ?? [];
         _isProfessor =
             _userRoles.contains('PROFESSOR') && !_userRoles.contains('ADMIN');
-        _canSelectPlayers =
-            PermissionsService.canSelectNotificationPlayers(_userRoles);
-        _canSelectFilters =
-          PermissionsService.canSelectNotificationFilters(_userRoles);
+        _canSelectPlayers = PermissionsService.canSelectNotificationPlayers(
+          _userRoles,
+        );
+        _canSelectFilters = PermissionsService.canSelectNotificationFilters(
+          _userRoles,
+        );
       });
     }
   }
@@ -230,7 +233,9 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al cargar notificación: $e'),
+          content: Text(
+            'No se pudo cargar la notificacion: ${BackendErrorMapper.fromException(e)}',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -458,7 +463,7 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Error al actualizar la notificación: $e',
+                    'No se pudo actualizar la notificacion: ${BackendErrorMapper.fromException(e)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -974,19 +979,20 @@ class _EditNotificationPageState extends State<EditNotificationPage> {
         .where((team) => team.nombre.toLowerCase().contains(searchText))
         .toList();
 
-    final searchTextPlayers =
-      _canSelectPlayers ? _playersSearchController.text.toLowerCase() : '';
+    final searchTextPlayers = _canSelectPlayers
+        ? _playersSearchController.text.toLowerCase()
+        : '';
     final filteredPlayers = _canSelectPlayers
-      ? _allPlayers
-        .where(
-          (player) =>
-            player.nombreCompleto
-              .toLowerCase()
-              .contains(searchTextPlayers) ||
-            player.dni.toLowerCase().contains(searchTextPlayers),
-        )
-        .toList()
-      : <User>[];
+        ? _allPlayers
+              .where(
+                (player) =>
+                    player.nombreCompleto.toLowerCase().contains(
+                      searchTextPlayers,
+                    ) ||
+                    player.dni.toLowerCase().contains(searchTextPlayers),
+              )
+              .toList()
+        : <User>[];
 
     return [
       Text(
