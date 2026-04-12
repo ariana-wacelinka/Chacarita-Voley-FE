@@ -34,6 +34,7 @@ class TeamRepository implements TeamRepositoryInterface {
     name
     abbreviation
     isCompetitive
+    countOfPlayers
     players {
       id
     }
@@ -51,6 +52,7 @@ class TeamRepository implements TeamRepositoryInterface {
     abbreviation
     isCompetitive
     name
+    countOfPlayers
     players {
       id
       jerseyNumber
@@ -476,7 +478,7 @@ class TeamRepository implements TeamRepositoryInterface {
               .substring(0, model.name.length > 4 ? 4 : model.name.length)
               .toUpperCase(),
       tipo: model.isCompetitive ? TeamType.competitivo : TeamType.recreativo,
-      cantidadJugadores: (model.players ?? []).length,
+      cantidadJugadores: model.countOfPlayers ?? (model.players ?? []).length,
       entrenadores: professors
           .map(
             (p) => '${p.person?.name ?? ''} ${p.person?.surname ?? ''}'.trim(),

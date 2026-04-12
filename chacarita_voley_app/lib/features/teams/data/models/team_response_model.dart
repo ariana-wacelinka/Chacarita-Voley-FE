@@ -111,6 +111,7 @@ class TeamResponseModel {
   final String name;
   final String? abbreviation;
   final bool isCompetitive;
+  final int? countOfPlayers;
   final List<UserModel>? players;
   final List<UserModel>? professors;
   final List<TrainingModel>? trainings;
@@ -121,6 +122,7 @@ class TeamResponseModel {
     required this.name,
     this.abbreviation,
     required this.isCompetitive,
+    this.countOfPlayers,
     this.players,
     this.professors,
     this.trainings,
@@ -133,6 +135,7 @@ class TeamResponseModel {
       name: json['name'] as String,
       abbreviation: json['abbreviation'] as String?,
       isCompetitive: json['isCompetitive'] as bool,
+      countOfPlayers: json['countOfPlayers'] as int?,
       players: (json['players'] as List<dynamic>?)
           ?.map((p) => UserModel.fromJson(p as Map<String, dynamic>))
           .toList(),
@@ -152,6 +155,7 @@ class TeamResponseModel {
       'name': name,
       if (abbreviation != null) 'abbreviation': abbreviation,
       'isCompetitive': isCompetitive,
+      if (countOfPlayers != null) 'countOfPlayers': countOfPlayers,
       if (players != null) 'players': players!.map((p) => p.toJson()).toList(),
       if (professors != null)
         'professors': professors!.map((p) => p.toJson()).toList(),

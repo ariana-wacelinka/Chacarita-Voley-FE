@@ -972,14 +972,9 @@ class TrainingRepository implements TrainingRepositoryInterface {
         .length;
     final countOfPlayers = data['countOfPlayers'] as int?;
     final countOfAssisted = data['countOfAssisted'] as int?;
-    final effectiveCountOfPlayers =
-        (countOfPlayers == null || countOfPlayers == 0)
-        ? calculatedCountOfPlayers
-        : countOfPlayers;
+    final effectiveCountOfPlayers = countOfPlayers ?? calculatedCountOfPlayers;
     final effectiveCountOfAssisted =
-        (countOfAssisted == null || countOfAssisted == 0)
-        ? calculatedCountOfAssisted
-        : countOfAssisted;
+        countOfAssisted ?? calculatedCountOfAssisted;
 
     // Parse startDate and endDate from training
     DateTime? trainingStartDate;

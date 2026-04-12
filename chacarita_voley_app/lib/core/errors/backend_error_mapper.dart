@@ -39,6 +39,25 @@ class BackendErrorMapper {
     if (upper.contains('PLAYER_ALREADY_IN_RECREATIVE_TEAM')) {
       return 'Ese jugador ya pertenece a un equipo recreativo.';
     }
+    if (upper.contains('TEAM_MEMBERSHIP_TYPE_CONFLICT')) {
+      return 'Hay jugadores con conflictos de tipo de equipo (competitivo/recreativo). Revisa los integrantes antes de guardar.';
+    }
+    if (upper.contains('PLAYERS_ALREADY_IN_TEAM')) {
+      return 'Algunos jugadores ya pertenecen a este equipo.';
+    }
+    if (upper.contains('PERSON_CANNOT_BE_PLAYER_AND_PROFESSOR_IN_SAME_TEAM')) {
+      return 'Una misma persona no puede ser jugador y profesor en el mismo equipo.';
+    }
+    if (upper.contains(
+      'PERSON_ALREADY_PROFESSOR_CANNOT_BE_PLAYER_IN_SAME_TEAM',
+    )) {
+      return 'No podes agregar como jugador a una persona que ya es profesor de este equipo.';
+    }
+    if (upper.contains(
+      'PERSON_ALREADY_PLAYER_CANNOT_BE_PROFESSOR_IN_SAME_TEAM',
+    )) {
+      return 'No podes agregar como profesor a una persona que ya es jugador de este equipo.';
+    }
 
     if (upper.contains('EMAIL NOT REGISTERED')) {
       return 'El email no esta registrado.';

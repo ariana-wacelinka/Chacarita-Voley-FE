@@ -37,7 +37,10 @@ class TrainingPreview {
     int attendance = json['countOfAssisted'] as int? ?? 0;
 
     // Si no están disponibles, calcular desde el array (para compatibilidad)
-    if (totalPlayers == 0 && team != null) {
+    final hasCountValues =
+        json.containsKey('countOfPlayers') &&
+        json.containsKey('countOfAssisted');
+    if (!hasCountValues && team != null) {
       final players = (team['players'] as List?) ?? [];
       totalPlayers = players.length;
 
