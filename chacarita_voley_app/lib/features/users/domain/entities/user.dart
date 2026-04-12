@@ -7,6 +7,7 @@ class TeamInfo with SoftDeletable {
   final String name;
   final String abbreviation;
   final bool isCompetitive;
+  final List<String> roleLabels;
   @override
   final bool isDeleted;
 
@@ -15,6 +16,7 @@ class TeamInfo with SoftDeletable {
     required this.name,
     required this.abbreviation,
     required this.isCompetitive,
+    this.roleLabels = const [],
     this.isDeleted = false,
   });
 
@@ -24,6 +26,7 @@ class TeamInfo with SoftDeletable {
     name: name,
     abbreviation: abbreviation,
     isCompetitive: isCompetitive,
+    roleLabels: roleLabels,
     isDeleted: value,
   );
 }
@@ -96,6 +99,9 @@ class User with SoftDeletable {
                   name: e['name'] as String,
                   abbreviation: e['abbreviation'] as String,
                   isCompetitive: e['isCompetitive'] as bool,
+                  roleLabels: List<String>.from(
+                    (e['roleLabels'] as List<dynamic>?) ?? const [],
+                  ),
                   isDeleted: e['isDeleted'] ?? false,
                 ),
               )
@@ -130,6 +136,7 @@ class User with SoftDeletable {
               'name': e.name,
               'abbreviation': e.abbreviation,
               'isCompetitive': e.isCompetitive,
+              'roleLabels': e.roleLabels,
               'isDeleted': e.isDeleted,
             },
           )

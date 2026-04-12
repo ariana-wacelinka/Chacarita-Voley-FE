@@ -694,7 +694,7 @@ class _ViewUserPageState extends State<ViewUserPage> {
                   .map(
                     (team) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: _buildTeamItem(context, team.name),
+                      child: _buildTeamItem(context, _formatTeamLabel(team)),
                     ),
                   )
                   .toList(),
@@ -702,6 +702,12 @@ class _ViewUserPageState extends State<ViewUserPage> {
         ],
       ),
     );
+  }
+
+  String _formatTeamLabel(TeamInfo team) {
+    final baseName = team.name.isNotEmpty ? team.name : team.abbreviation;
+    if (team.roleLabels.isEmpty) return baseName;
+    return '$baseName (${team.roleLabels.join(' / ')})';
   }
 
   Widget _buildQuickActionsSection(BuildContext context) {

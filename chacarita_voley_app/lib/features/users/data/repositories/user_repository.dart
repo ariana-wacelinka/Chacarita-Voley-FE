@@ -578,25 +578,7 @@ class UserRepository implements UserRepositoryInterface {
     final player = person['player'] as Map<String, dynamic>?;
     final jerseyNumber = player?['jerseyNumber'];
     final leagueId = player?['leagueId'];
-    final teams = (player?['teams'] as List<dynamic>?) ?? const [];
-
-    final equipo = teams.isNotEmpty
-        ? ((teams.first as Map<String, dynamic>)['abbreviation'] as String? ??
-              '')
-        : '';
-
-    final equipos = teams
-        .map((t) {
-          final teamMap = t as Map<String, dynamic>;
-          return TeamInfo(
-            id: teamMap['id'] as String? ?? '',
-            name: teamMap['name'] as String? ?? '',
-            abbreviation: teamMap['abbreviation'] as String? ?? '',
-            isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
-          );
-        })
-        .where((team) => team.id.isNotEmpty)
-        .toList();
+    final playerTeams = (player?['teams'] as List<dynamic>?) ?? const [];
 
     final birthDate = person['birthDate'] as String?;
     final parsedBirthDate = birthDate != null && birthDate.isNotEmpty
@@ -605,27 +587,50 @@ class UserRepository implements UserRepositoryInterface {
 
     final professor = person['professor'] as Map<String, dynamic>?;
 
-    // Si tiene rol PROFESSOR y no es jugador (o no tiene equipos como jugador), usar equipos del profesor
+    // Combinar equipos de jugador/profesor y discriminar rol por equipo
     final professorTeams = (professor?['teams'] as List<dynamic>?) ?? const [];
-    final isProfessor = tipos.contains(UserType.profesor);
-    final isPlayer = tipos.contains(UserType.jugador);
+    final teamById = <String, TeamInfo>{};
+    final rolesByTeamId = <String, Set<String>>{};
 
-    final equiposFinales = (isPlayer && equipos.isNotEmpty)
-        ? equipos
-        : (isProfessor && professorTeams.isNotEmpty)
-        ? professorTeams
-              .map((t) {
-                final teamMap = t as Map<String, dynamic>;
-                return TeamInfo(
-                  id: teamMap['id'] as String? ?? '',
-                  name: teamMap['name'] as String? ?? '',
-                  abbreviation: teamMap['abbreviation'] as String? ?? '',
-                  isCompetitive: teamMap['isCompetitive'] as bool? ?? false,
-                );
-              })
-              .where((team) => team.id.isNotEmpty)
-              .toList()
-        : equipos;
+    void mergeTeam(dynamic rawTeam, String roleLabel) {
+      final teamMap = rawTeam as Map<String, dynamic>;
+      final id = teamMap['id'] as String? ?? '';
+      if (id.isEmpty) return;
+
+      final existing = teamById[id];
+      final mergedName = (teamMap['name'] as String?) ?? existing?.name ?? '';
+      final mergedAbbreviation =
+          (teamMap['abbreviation'] as String?) ?? existing?.abbreviation ?? '';
+      final mergedCompetitive =
+          (teamMap['isCompetitive'] as bool?) ??
+          existing?.isCompetitive ??
+          false;
+
+      final labels = rolesByTeamId.putIfAbsent(id, () => <String>{});
+      labels.add(roleLabel);
+      final sortedLabels = labels.toList()..sort();
+
+      teamById[id] = TeamInfo(
+        id: id,
+        name: mergedName,
+        abbreviation: mergedAbbreviation,
+        isCompetitive: mergedCompetitive,
+        roleLabels: sortedLabels,
+      );
+    }
+
+    for (final team in playerTeams) {
+      mergeTeam(team, 'Jugador');
+    }
+    for (final team in professorTeams) {
+      mergeTeam(team, 'Profesor');
+    }
+
+    final equiposFinales = teamById.values.toList();
+
+    final equipo = equiposFinales.isNotEmpty
+        ? equiposFinales.first.abbreviation
+        : '';
 
     // Estado de cuota: obtener desde currentDue del backend
     EstadoCuota estadoCuota = EstadoCuota.alDia;
