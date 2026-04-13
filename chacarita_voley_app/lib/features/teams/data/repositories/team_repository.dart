@@ -6,6 +6,7 @@ import '../../domain/entities/team.dart';
 import '../../domain/entities/team_type.dart';
 import '../../domain/entities/team_list_item.dart';
 import '../../domain/entities/team_detail.dart';
+import '../../domain/entities/team_update_conflict.dart';
 import '../../domain/repositories/team_repository_interface.dart';
 import '../models/team_response_model.dart';
 
@@ -126,6 +127,37 @@ class TeamRepository implements TeamRepositoryInterface {
     mutation UpdateTeam(\$id: ID!, \$input: UpdateTeamInput!) {
       updateTeam(id: \$id, input: \$input) {
         $_teamFields
+      }
+    }
+  ''';
+
+  static const String _attemptUpdateTeamMutation = r'''
+    mutation AttemptUpdateTeam($id: ID!, $input: UpdateTeamInput!) {
+      attemptUpdateTeam(id: $id, input: $input) {
+        hasConflicts
+        conflicts {
+          key
+          playerId
+          conflictingTeamId
+          conflictingTeamName
+          conflictingTeamIsCompetitive
+        }
+      }
+    }
+  ''';
+
+  static const String _applyUpdateTeamMutation = r'''
+    mutation ApplyUpdateTeam($id: ID!, $input: UpdateTeamInput!, $keys: [String!]!) {
+      applyUpdateTeam(id: $id, input: $input, selectedConflictKeys: $keys) {
+        applied
+        hasConflicts
+        conflicts {
+          key
+          playerId
+          conflictingTeamId
+          conflictingTeamName
+          conflictingTeamIsCompetitive
+        }
       }
     }
   ''';
@@ -360,33 +392,71 @@ class TeamRepository implements TeamRepositoryInterface {
 
   @override
   Future<void> updateTeam(Team team) async {
-    final playerIds = team.integrantes
-        .where((m) => m.playerId != null)
-        .map((m) => m.playerId!)
-        .toList();
-
-    final request = UpdateTeamRequestModel(
-      id: team.id,
-      name: team.nombre,
-      abbreviation: team.abreviacion,
-      isCompetitive: team.tipo == TeamType.competitivo,
-      playerIds: playerIds.isNotEmpty ? playerIds : null,
-      professorIds: team.professorIds.isNotEmpty ? team.professorIds : null,
-    );
-
-    final variables = request.toJson();
-    final id = variables.remove('id');
+    final updatePayload = _buildUpdatePayload(team);
+    final id = updatePayload.id;
 
     final result = await _mutate(
       MutationOptions(
         document: gql(_updateTeamMutation()),
-        variables: {'id': id, 'input': variables},
+        variables: {'id': id, 'input': updatePayload.input},
       ),
     );
 
     if (result.hasException) {
       throw Exception(result.exception.toString());
     }
+  }
+
+  @override
+  Future<AttemptUpdateTeamResult> attemptUpdateTeam(Team team) async {
+    final updatePayload = _buildUpdatePayload(team);
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_attemptUpdateTeamMutation),
+        variables: {'id': updatePayload.id, 'input': updatePayload.input},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final data = result.data?['attemptUpdateTeam'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw Exception('No se pudo validar conflictos del equipo');
+    }
+
+    return AttemptUpdateTeamResult.fromJson(data);
+  }
+
+  @override
+  Future<ApplyUpdateTeamResult> applyUpdateTeam(
+    Team team,
+    List<String> selectedConflictKeys,
+  ) async {
+    final updatePayload = _buildUpdatePayload(team);
+
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_applyUpdateTeamMutation),
+        variables: {
+          'id': updatePayload.id,
+          'input': updatePayload.input,
+          'keys': selectedConflictKeys,
+        },
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final data = result.data?['applyUpdateTeam'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw Exception('No se pudo aplicar la actualizacion del equipo');
+    }
+
+    return ApplyUpdateTeamResult.fromJson(data);
   }
 
   @override
@@ -530,4 +600,31 @@ class TeamRepository implements TeamRepositoryInterface {
           .toList(),
     );
   }
+
+  _TeamUpdatePayload _buildUpdatePayload(Team team) {
+    final playerIds = team.integrantes
+        .where((m) => m.playerId != null)
+        .map((m) => m.playerId!)
+        .toList();
+
+    final request = UpdateTeamRequestModel(
+      id: team.id,
+      name: team.nombre,
+      abbreviation: team.abreviacion,
+      isCompetitive: team.tipo == TeamType.competitivo,
+      playerIds: playerIds.isNotEmpty ? playerIds : null,
+      professorIds: team.professorIds.isNotEmpty ? team.professorIds : null,
+    );
+
+    final data = request.toJson();
+    final id = data.remove('id')?.toString() ?? team.id;
+    return _TeamUpdatePayload(id: id, input: data);
+  }
+}
+
+class _TeamUpdatePayload {
+  final String id;
+  final Map<String, dynamic> input;
+
+  _TeamUpdatePayload({required this.id, required this.input});
 }

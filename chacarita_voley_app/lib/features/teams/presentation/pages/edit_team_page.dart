@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../users/data/repositories/user_repository.dart';
 import '../../domain/entities/team.dart';
 import '../../domain/entities/team_detail.dart';
+import '../../domain/entities/team_update_conflict.dart';
 import '../../data/repositories/team_repository.dart';
 import '../widgets/team_form_widget.dart';
 import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
@@ -30,6 +31,179 @@ class _EditTeamPageState extends State<EditTeamPage> {
     _repository = TeamRepository();
     _userRepository = UserRepository();
     _loadTeam();
+  }
+
+  Future<bool> _applyTeamUpdateWithConflictResolution(Team team) async {
+    var attemptResult = await _repository.attemptUpdateTeam(team);
+
+    if (!attemptResult.hasConflicts) {
+      await _repository.updateTeam(team);
+      return true;
+    }
+
+    while (mounted) {
+      final selectedKeys = await _showConflictSelectionDialog(
+        team,
+        attemptResult.conflicts,
+      );
+      if (selectedKeys == null) {
+        return false;
+      }
+      if (selectedKeys.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Selecciona al menos un conflicto para continuar.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+        return false;
+      }
+
+      final applyResult = await _repository.applyUpdateTeam(team, selectedKeys);
+      if (applyResult.applied) {
+        return true;
+      }
+
+      if (!applyResult.hasConflicts || applyResult.conflicts.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'No se pudo aplicar la actualizacion. Intenta nuevamente.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+        return false;
+      }
+
+      attemptResult = AttemptUpdateTeamResult(
+        hasConflicts: true,
+        conflicts: applyResult.conflicts,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Los conflictos cambiaron. Revisalos y confirma de nuevo.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+
+    return false;
+  }
+
+  Future<List<String>?> _showConflictSelectionDialog(
+    Team team,
+    List<TeamUpdateConflict> conflicts,
+  ) async {
+    final selected = <String>{...conflicts.map((c) => c.key)};
+
+    return showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: context.tokens.card1,
+              title: Text(
+                'Conflictos detectados',
+                style: TextStyle(color: context.tokens.text),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selecciona los conflictos que queres resolver automaticamente.',
+                      style: TextStyle(color: context.tokens.placeholder),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: conflicts.length,
+                        itemBuilder: (_, index) {
+                          final conflict = conflicts[index];
+                          final isSelected = selected.contains(conflict.key);
+                          final playerName = _playerNameFromConflict(
+                            team,
+                            conflict.playerId,
+                          );
+                          final teamName =
+                              conflict.conflictingTeamName ??
+                              'Equipo desconocido';
+                          final teamType =
+                              (conflict.conflictingTeamIsCompetitive ?? false)
+                              ? 'competitivo'
+                              : 'recreativo';
+
+                          return CheckboxListTile(
+                            dense: true,
+                            value: isSelected,
+                            onChanged: (value) {
+                              setDialogState(() {
+                                if (value == true) {
+                                  selected.add(conflict.key);
+                                } else {
+                                  selected.remove(conflict.key);
+                                }
+                              });
+                            },
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              playerName,
+                              style: TextStyle(color: context.tokens.text),
+                            ),
+                            subtitle: Text(
+                              'Conflicto con $teamName ($teamType)',
+                              style: TextStyle(
+                                color: context.tokens.placeholder,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, null),
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(color: context.tokens.placeholder),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.pop(dialogContext, selected.toList()),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _playerNameFromConflict(Team team, String? playerId) {
+    if (playerId == null || playerId.isEmpty) return 'Jugador';
+    for (final member in team.integrantes) {
+      if (member.playerId == playerId) {
+        final fullName = '${member.nombre} ${member.apellido}'.trim();
+        return fullName.isEmpty ? 'Jugador ID $playerId' : fullName;
+      }
+    }
+    return 'Jugador ID $playerId';
   }
 
   Future<void> _loadTeam() async {
@@ -112,7 +286,10 @@ class _EditTeamPageState extends State<EditTeamPage> {
 
       // Solo actualizar el equipo si hubo cambios en datos básicos o integrantes
       if (hasBasicChanges || hasPlayerChanges) {
-        await _repository.updateTeam(team);
+        final updated = await _applyTeamUpdateWithConflictResolution(team);
+        if (!updated) {
+          return;
+        }
       }
 
       // Actualizar números de camiseta si es necesario
