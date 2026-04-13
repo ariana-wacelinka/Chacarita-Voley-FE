@@ -207,6 +207,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         SnackBar(
           content: const Text('Notificacion restaurada correctamente'),
           backgroundColor: context.tokens.green,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     } catch (e) {
@@ -217,6 +219,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
             'No se pudo restaurar la notificacion: ${BackendErrorMapper.fromException(e)}',
           ),
           backgroundColor: context.tokens.redToRosita,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     }

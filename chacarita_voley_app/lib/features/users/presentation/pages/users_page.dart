@@ -223,6 +223,8 @@ class _UsersPageState extends State<UsersPage> {
                       '${user.nombreCompleto} fue restaurado exitosamente',
                     ),
                     backgroundColor: context.tokens.green,
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                   ),
                 );
               } catch (e) {
@@ -232,6 +234,8 @@ class _UsersPageState extends State<UsersPage> {
                       'No se pudo restaurar el usuario: ${BackendErrorMapper.fromException(e)}',
                     ),
                     backgroundColor: context.tokens.redToRosita,
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                   ),
                 );
               }

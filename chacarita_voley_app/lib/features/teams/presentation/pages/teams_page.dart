@@ -179,6 +179,8 @@ class _TeamsPageState extends State<TeamsPage> {
         SnackBar(
           content: Text('${team.nombre} fue restaurado exitosamente'),
           backgroundColor: context.tokens.green,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     } catch (e) {
@@ -189,6 +191,8 @@ class _TeamsPageState extends State<TeamsPage> {
             'No se pudo restaurar el equipo: ${BackendErrorMapper.fromException(e)}',
           ),
           backgroundColor: context.tokens.redToRosita,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     } finally {

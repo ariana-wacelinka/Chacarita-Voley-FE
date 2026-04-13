@@ -402,6 +402,8 @@ class _TrainingsPageState extends State<TrainingsPage>
         SnackBar(
           content: const Text('Sesion restaurada exitosamente'),
           backgroundColor: context.tokens.green,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     } catch (e) {
@@ -412,6 +414,8 @@ class _TrainingsPageState extends State<TrainingsPage>
             'No se pudo restaurar la sesion: ${BackendErrorMapper.fromException(e)}',
           ),
           backgroundColor: context.tokens.redToRosita,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         ),
       );
     } finally {
