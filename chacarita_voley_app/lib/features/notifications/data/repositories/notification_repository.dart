@@ -480,9 +480,7 @@ class NotificationRepository {
   Future<void> restoreNotification(String id) async {
     final mutation = '''
       mutation RestoreNotification(\$id: ID!) {
-        restoreNotification(id: \$id) {
-          id
-        }
+        restoreNotification(id: \$id)
       }
     ''';
 
@@ -496,6 +494,11 @@ class NotificationRepository {
 
     if (result.hasException) {
       throw Exception(result.exception.toString());
+    }
+
+    final restored = result.data?['restoreNotification'] as bool?;
+    if (restored != true) {
+      throw Exception('No se pudo restaurar la notificacion');
     }
   }
 }

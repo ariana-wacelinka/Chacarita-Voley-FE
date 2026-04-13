@@ -147,9 +147,13 @@ class TrainingRepository implements TrainingRepositoryInterface {
 
   static const String _restoreTrainingMutation = r'''
     mutation RestoreTraining($id: ID!) {
-      restoreTraining(id: $id) {
-        id
-      }
+      restoreTraining(id: $id)
+    }
+  ''';
+
+  static const String _restoreSessionMutation = r'''
+    mutation RestoreSession($id: ID!) {
+      restoreSession(id: $id)
     }
   ''';
 
@@ -686,9 +690,27 @@ class TrainingRepository implements TrainingRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final restored = result.data?['restoreTraining'] as Map<String, dynamic>?;
-    if (restored == null || restored['id'] == null) {
+    final restored = result.data?['restoreTraining'] as bool?;
+    if (restored != true) {
       throw Exception('No se pudo restaurar el entrenamiento');
+    }
+  }
+
+  Future<void> restoreSession(String id) async {
+    final result = await _mutate(
+      MutationOptions(
+        document: gql(_restoreSessionMutation),
+        variables: {'id': id},
+      ),
+    );
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final restored = result.data?['restoreSession'] as bool?;
+    if (restored != true) {
+      throw Exception('No se pudo restaurar la sesion');
     }
   }
 

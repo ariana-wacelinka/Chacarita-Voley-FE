@@ -586,46 +586,7 @@ class _TeamsPageState extends State<TeamsPage> {
 
                                     return DataRow(
                                       cells: [
-                                        DataCell(
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(team.nombre),
-                                              ),
-                                              if (isDeleted) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: context
-                                                        .tokens
-                                                        .redToRosita
-                                                        .withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          10,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    'Eliminado',
-                                                    style: TextStyle(
-                                                      color: context
-                                                          .tokens
-                                                          .redToRosita,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
+                                        DataCell(Text(team.nombre)),
                                         DataCell(Text(team.entrenador)),
                                         DataCell(
                                           Row(

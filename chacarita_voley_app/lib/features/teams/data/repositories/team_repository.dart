@@ -138,9 +138,7 @@ class TeamRepository implements TeamRepositoryInterface {
 
   static const String _restoreTeamMutation = r'''
     mutation RestoreTeam($id: ID!) {
-      restoreTeam(id: $id) {
-        id
-      }
+      restoreTeam(id: $id)
     }
   ''';
 
@@ -423,8 +421,8 @@ class TeamRepository implements TeamRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final restored = result.data?['restoreTeam'] as Map<String, dynamic>?;
-    if (restored == null || restored['id'] == null) {
+    final restored = result.data?['restoreTeam'] as bool?;
+    if (restored != true) {
       throw Exception('No se pudo restaurar el equipo');
     }
   }

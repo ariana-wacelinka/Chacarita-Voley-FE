@@ -222,9 +222,7 @@ class UserRepository implements UserRepositoryInterface {
 
   static const String _restorePersonMutation = r'''
     mutation RestorePerson($id: ID!) {
-      restorePerson(id: $id) {
-        id
-      }
+      restorePerson(id: $id)
     }
   ''';
 
@@ -536,8 +534,8 @@ class UserRepository implements UserRepositoryInterface {
       throw Exception(result.exception.toString());
     }
 
-    final restored = result.data?['restorePerson'] as Map<String, dynamic>?;
-    if (restored == null || restored['id'] == null) {
+    final restored = result.data?['restorePerson'] as bool?;
+    if (restored != true) {
       throw Exception('No se pudo restaurar el usuario');
     }
   }

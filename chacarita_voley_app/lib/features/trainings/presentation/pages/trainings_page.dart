@@ -365,11 +365,11 @@ class _TrainingsPageState extends State<TrainingsPage>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: context.tokens.card1,
         title: Text(
-          'Restaurar entrenamiento',
+          'Restaurar sesion',
           style: TextStyle(color: context.tokens.text),
         ),
         content: Text(
-          'Vas a restaurar este entrenamiento. ¿Querés continuar?',
+          'Vas a restaurar esta sesion. ¿Queres continuar?',
           style: TextStyle(color: context.tokens.placeholder),
         ),
         actions: [
@@ -395,12 +395,12 @@ class _TrainingsPageState extends State<TrainingsPage>
 
     setState(() => _restoringTrainingId = training.id);
     try {
-      await _repository.restoreTraining(training.trainingId ?? training.id);
+      await _repository.restoreSession(training.id);
       await _loadTrainings();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Entrenamiento restaurado exitosamente'),
+          content: const Text('Sesion restaurada exitosamente'),
           backgroundColor: context.tokens.green,
         ),
       );
@@ -409,7 +409,7 @@ class _TrainingsPageState extends State<TrainingsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo restaurar el entrenamiento: ${BackendErrorMapper.fromException(e)}',
+            'No se pudo restaurar la sesion: ${BackendErrorMapper.fromException(e)}',
           ),
           backgroundColor: context.tokens.redToRosita,
         ),
