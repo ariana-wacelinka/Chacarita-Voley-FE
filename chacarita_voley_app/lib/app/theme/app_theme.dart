@@ -210,6 +210,11 @@ class AppTheme {
         borderSide: BorderSide(color: _lightTokens.stroke),
       ),
     ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
     timePickerTheme: TimePickerThemeData(
       backgroundColor: _lightScheme.surface,
       hourMinuteColor: _lightScheme.surface,
@@ -349,6 +354,11 @@ class AppTheme {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: _darkTokens.stroke),
       ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     timePickerTheme: TimePickerThemeData(
       backgroundColor: _darkScheme.surface,

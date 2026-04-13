@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/utils/banner_action_color.dart';
 import '../../domain/entities/pay.dart';
 import 'package:chacarita_voley_app/core/errors/backend_error_mapper.dart';
 
@@ -139,62 +138,26 @@ class _PaymentsValidationPageState extends State<PaymentsValidationPage> {
 
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
-        messenger.hideCurrentMaterialBanner();
-        messenger.showMaterialBanner(
-          MaterialBanner(
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
             content: const Text('Comprobante descargado exitosamente'),
             backgroundColor: context.tokens.green,
-            actions: [
-              TextButton(
-                onPressed: messenger.hideCurrentMaterialBanner,
-                style: TextButton.styleFrom(
-                  foregroundColor: bannerActionColor(
-                    isSuccess: true,
-                    successColor: context.tokens.permanentWhite,
-                    errorColor: context.tokens.redToRosita,
-                  ),
-                ),
-                child: const Text('Cerrar'),
-              ),
-            ],
           ),
         );
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) {
-            messenger.hideCurrentMaterialBanner();
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
-        messenger.hideCurrentMaterialBanner();
-        messenger.showMaterialBanner(
-          MaterialBanner(
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
             content: Text(
               'No se pudo descargar el comprobante: ${BackendErrorMapper.fromException(e)}',
             ),
-            backgroundColor: context.tokens.redToRosita.withOpacity(0.12),
-            actions: [
-              TextButton(
-                onPressed: messenger.hideCurrentMaterialBanner,
-                style: TextButton.styleFrom(
-                  foregroundColor: bannerActionColor(
-                    isSuccess: false,
-                    successColor: context.tokens.permanentWhite,
-                    errorColor: context.tokens.redToRosita,
-                  ),
-                ),
-                child: const Text('Cerrar'),
-              ),
-            ],
+            backgroundColor: context.tokens.redToRosita,
           ),
         );
-        Future.delayed(const Duration(seconds: 4), () {
-          if (mounted) {
-            messenger.hideCurrentMaterialBanner();
-          }
-        });
       }
     } finally {
       if (mounted) {
