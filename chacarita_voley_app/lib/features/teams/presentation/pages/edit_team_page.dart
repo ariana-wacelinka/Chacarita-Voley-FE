@@ -34,7 +34,16 @@ class _EditTeamPageState extends State<EditTeamPage> {
   }
 
   Future<bool> _applyTeamUpdateWithConflictResolution(Team team) async {
-    var attemptResult = await _repository.attemptUpdateTeam(team);
+    AttemptUpdateTeamResult attemptResult;
+    try {
+      attemptResult = await _repository.attemptUpdateTeam(team);
+    } catch (e) {
+      if (_isConflictWorkflowUnavailable(e)) {
+        await _repository.updateTeam(team);
+        return true;
+      }
+      rethrow;
+    }
 
     if (!attemptResult.hasConflicts) {
       await _repository.updateTeam(team);
@@ -93,6 +102,13 @@ class _EditTeamPageState extends State<EditTeamPage> {
     }
 
     return false;
+  }
+
+  bool _isConflictWorkflowUnavailable(Object error) {
+    final upper = error.toString().toUpperCase();
+    return upper.contains('FIELDUNDEFINED@ATTEMPTUPDATETEAM') ||
+        upper.contains('FIELDUNDEFINED@APPLYUPDATETEAM') ||
+        upper.contains('UNKNOWNARGUMENT@APPLYUPDATETEAM');
   }
 
   Future<List<String>?> _showConflictSelectionDialog(
