@@ -56,9 +56,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
   }
 
   bool? _playerCompetitiveFilter() {
-    if (_selectedTipo == TeamType.recreativo) {
-      return false;
-    }
+    // Se listan todos los jugadores y la validacion de conflictos
+    // queda a cargo del flujo de confirmacion al guardar.
     return null;
   }
 
@@ -250,8 +249,9 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      final invalidProfessors =
-          _selectedEntrenadores.where((u) => u.professorId == null).toList();
+      final invalidProfessors = _selectedEntrenadores
+          .where((u) => u.professorId == null)
+          .toList();
       if (invalidProfessors.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -278,8 +278,8 @@ class _TeamFormWidgetState extends State<TeamFormWidget> {
             : _abreviacionController.text,
         tipo: _selectedTipo,
         professorIds: _selectedEntrenadores
-          .map((u) => u.professorId)
-          .whereType<String>()
+            .map((u) => u.professorId)
+            .whereType<String>()
             .toList(),
         entrenadores: _selectedEntrenadores
             .map((u) => u.nombreCompleto)
