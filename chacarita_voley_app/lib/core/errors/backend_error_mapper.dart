@@ -58,6 +58,11 @@ class BackendErrorMapper {
     )) {
       return 'No podes agregar como profesor a una persona que ya es jugador de este equipo.';
     }
+    if (upper.contains('FIELDUNDEFINED@ATTEMPTUPDATETEAM') ||
+        upper.contains('FIELDUNDEFINED@APPLYUPDATETEAM') ||
+        upper.contains('UNKNOWNARGUMENT@APPLYUPDATETEAM')) {
+      return 'Tu backend no tiene disponible la validacion avanzada de conflictos para equipos. Actualizalo e intenta nuevamente.';
+    }
 
     if (upper.contains('EMAIL NOT REGISTERED')) {
       return 'El email no esta registrado.';
@@ -126,6 +131,12 @@ class BackendErrorMapper {
       return 'No se encontro el recurso solicitado.';
     }
 
+    if (upper.contains('VALIDATION ERROR') ||
+        upper.contains('FIELDUNDEFINED@') ||
+        upper.contains('UNKNOWNARGUMENT@')) {
+      return 'No pudimos procesar la solicitud por una incompatibilidad temporal. Intenta nuevamente en unos segundos.';
+    }
+
     if (normalized.contains('is required') ||
         normalized.contains('is required (@NotBlank)')) {
       return 'Hay campos obligatorios pendientes.';
@@ -188,6 +199,10 @@ class BackendErrorMapper {
     return upper.contains('GRAPHQL') ||
         upper.contains('OPERATIONEXCEPTION') ||
         upper.contains('LINKEXCEPTION') ||
+        upper.contains('VALIDATION ERROR') ||
+        upper.contains('FIELDUNDEFINED@') ||
+        upper.contains('UNKNOWNARGUMENT@') ||
+        upper.contains('SUBSELECTIONNOTALLOWED') ||
         upper.contains('SOCKETEXCEPTION') ||
         upper.contains('TYPEMISMATCH') ||
         upper.contains('STACKTRACE') ||
